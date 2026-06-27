@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "SANA",
+    "slug": "rota-hesaplaniyor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mamikaplaan.sana",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Rotayı dışarıda takip ederken konumunu haritada göstermek için."
+      }
+    },
+    "android": {
+      "package": "com.mamikaplaan.sana",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "***REMOVED***"
+        }
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Rotayı dışarıda takip ederken konumunu haritada göstermek için."
+        }
+      ],
+      "expo-font"
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "35bbf823-b223-430a-92bd-72fc385f0831"
+      }
+    },
+    "owner": "mamikaplaan"
+  }
+}

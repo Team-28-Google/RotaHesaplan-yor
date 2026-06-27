@@ -1,0 +1,39 @@
+# --- Genel ---
+.DS_Store
+Thumbs.db
+*.log
+
+# --- Ortam değişkenleri (ASLA commit edilmez) ---
+.env
+.env.local
+.env.*.local
+*/.env
+!.env.example
+!*/.env.example
+
+# --- Node / Expo (app/) ---
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.tsbuildinfo
+.eas/
+
+# --- Python (ai-service/) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Supabase ---
+supabase/.branches/
+supabase/.temp/
+
+# --- IDE ---
+.vscode/
+.idea/

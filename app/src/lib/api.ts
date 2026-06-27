@@ -1,0 +1,211 @@
+import { AI_SERVICE_URL } from "./config";
+import { supabase } from "./supabase";
+import type { CreateStop, EnrichResult, PlaceResult, PlanResponse, RouteWithWaypoints, Waypoint } from "./types";
+
+const bySeq = (a: Waypoint, b: Waypoint) => a.seq - b.seq;
+
+/** Tüm rotaları sıralı waypoint'leriyle birlikte getirir (harita için). */
+export async function fetchRoutes(): Promise<RouteWithWaypoints[]> {
+  const { data, error } = await supabase
+    .from("routes")
+    .select("*, waypoints(*)")
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    ...(r as RouteWithWaypoints),
+    waypoints: ((r as RouteWithWaypoints).waypoints ?? []).slice().sort(bySeq),
+  }));
+}
+
+/** Tek bir rotayı sıralı waypoint'leriyle getirir (flood detayı için). */
+export async function fetchRoute(routeId: string): Promise<RouteWithWaypoints> {
+  const { data, error } = await supabase
+    .from("routes")
+    .select("*, waypoints(*)")
+    .eq("id", routeId)
+    .single();
+
+  if (error) throw error;
+  const route = data as RouteWithWaypoints;
+  route.waypoints = (route.waypoints ?? []).slice().sort(bySeq);
+  return route;
+}
+
+// --------------------------- Favoriler ---------------------------
+async function currentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
+
+/** Kullanıcının favori rota id'leri (hızlı kontrol için Set). */
+export async function getFavoriteIds(): Promise<Set<string>> {
+  const uid = await currentUserId();
+  if (!uid) return new Set();
+  const { data } = await supabase.from("route_favorites").select("route_id").eq("user_id", uid);
+  return new Set((data ?? []).map((r) => r.route_id as string));
+}
+
+/** Favori ekle/çıkar (like_count trigger ile otomatik güncellenir). */
+export async function setFavorite(routeId: string, fav: boolean): Promise<void> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Giriş gerekli");
+  if (fav) {
+    const { error } = await supabase.from("route_favorites").insert({ user_id: uid, route_id: routeId });
+    if (error && !`${error.message}`.toLowerCase().includes("duplicate")) throw error;
+  } else {
+    const { error } = await supabase.from("route_favorites").delete().eq("user_id", uid).eq("route_id", routeId);
+    if (error) throw error;
+  }
+}
+
+/** Kullanıcının kaydettiği rotalar (waypoint'leriyle). */
+export async function fetchFavoriteRoutes(): Promise<RouteWithWaypoints[]> {
+  const uid = await currentUserId();
+  if (!uid) return [];
+  const { data, error } = await supabase
+    .from("route_favorites")
+    .select("routes(*, waypoints(*))")
+    .eq("user_id", uid);
+  if (error) throw error;
+  const routes = (data ?? [])
+    .map((row) => (row as unknown as { routes: RouteWithWaypoints }).routes)
+    .filter(Boolean);
+  return routes.map((r) => ({ ...r, waypoints: (r.waypoints ?? []).slice().sort(bySeq) }));
+}
+
+/** AI servisine doğal dil niyeti gönderir → kişiselleştirilmiş rota + flood anlatısı. */
+export async function planRoute(text: string): Promise<PlanResponse> {
+  let res: Response;
+  try {
+    res = await fetch(`${AI_SERVICE_URL}/plan-route`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+  } catch {
+    throw new Error("AI servisine ulaşılamadı. PC'de sunucu açık ve aynı Wi-Fi'de mi? (npm run ai)");
+  }
+  if (!res.ok) throw new Error(`AI servisi hatası (${res.status})`);
+  const data = (await res.json()) as PlanResponse;
+  if (data.route) {
+    data.route.waypoints = (data.route.waypoints ?? []).slice().sort(bySeq);
+  }
+  return data;
+}
+
+// --------------------------- Rota oluşturma ---------------------------
+interface PhotonFeature {
+  geometry?: { coordinates?: [number, number] };
+  properties?: {
+    name?: string; street?: string; housenumber?: string;
+    district?: string; city?: string; county?: string; state?: string; country?: string;
+    osm_key?: string; osm_value?: string;
+  };
+}
+
+/**
+ * Mekan ara — Photon (Komoot, OpenStreetMap tabanlı) ile DOĞRUDAN.
+ * Sunucu/anahtar/fatura gerekmez; AI servisi kapalı olsa bile çalışır.
+ * İstanbul merkezine yanlı; yazdıkça çağrılabilir.
+ */
+export async function searchPlaces(q: string): Promise<PlaceResult[]> {
+  const url =
+    `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}` +
+    `&limit=8&lang=default&lat=41.0082&lon=28.9784&location_bias_scale=0.4`;
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { Accept: "application/json" } });
+  } catch {
+    throw new Error("İnternete ulaşılamadı. Bağlantını kontrol et.");
+  }
+  if (!res.ok) throw new Error(`Arama hatası (${res.status})`);
+  const data = (await res.json()) as { features?: PhotonFeature[] };
+  return (data.features ?? [])
+    .filter((f) => Array.isArray(f.geometry?.coordinates) && f.geometry!.coordinates!.length === 2)
+    .map((f) => {
+      const p = f.properties ?? {};
+      const [lng, lat] = f.geometry!.coordinates!;
+      const line = [
+        p.street ? (p.housenumber ? `${p.street} ${p.housenumber}` : p.street) : undefined,
+        p.district, p.city ?? p.county, p.state,
+      ].filter(Boolean) as string[];
+      return {
+        name: p.name || p.street || p.city || q,
+        lat, lng,
+        address: line.length ? Array.from(new Set(line)).join(", ") : undefined,
+        type: p.osm_value || p.osm_key || undefined,
+      } as PlaceResult;
+    });
+}
+
+/** Eklenen durakları AI ile zenginleştir (başlık/etiket/kategori/anlatı). */
+export async function enrichRoute(stops: CreateStop[]): Promise<EnrichResult> {
+  let res: Response;
+  try {
+    res = await fetch(`${AI_SERVICE_URL}/enrich-route`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stops }),
+    });
+  } catch {
+    throw new Error("AI servisine ulaşılamadı (npm run ai açık mı, aynı Wi-Fi mi?)");
+  }
+  if (!res.ok) throw new Error(`AI zenginleştirme hatası (${res.status})`);
+  return res.json();
+}
+
+function haversineM(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371000, toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)));
+}
+
+export interface CreateRouteInput {
+  title: string;
+  description: string;
+  vibe_tags: string[];
+  weather_fit: string;
+  stops: (CreateStop & { category: string; narrative: string })[];
+}
+
+/** Rotayı + waypoint'leri kaydeder, sonra hafızaya embedler. Yeni route_id döner. */
+export async function createRoute(input: CreateRouteInput): Promise<string> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Giriş gerekli");
+
+  let dist = 0;
+  for (let i = 1; i < input.stops.length; i++) dist += haversineM(input.stops[i - 1], input.stops[i]);
+
+  const { data: routeRow, error } = await supabase
+    .from("routes")
+    .insert({
+      author_id: uid, title: input.title, description: input.description, city: "Istanbul",
+      vibe_tags: input.vibe_tags, weather_fit: input.weather_fit, budget_level: 2,
+      is_seed: false, total_distance_m: dist, total_duration_min: Math.round(dist / 80),
+    })
+    .select("id")
+    .single();
+  if (error || !routeRow) throw error ?? new Error("Rota kaydedilemedi");
+  const routeId = routeRow.id as string;
+
+  const waypoints = input.stops.map((s, i) => ({
+    route_id: routeId, seq: i, name: s.name, lat: s.lat, lng: s.lng,
+    category: s.category, kind: "experience", note: s.narrative || s.note || null,
+    transport_mode: i === 0 ? "start" : "walk",
+  }));
+  const { error: wErr } = await supabase.from("waypoints").insert(waypoints);
+  if (wErr) throw wErr;
+
+  // hafızaya embedle (başkalarının AI aramasında çıksın) — başarısız olsa da rota kayıtlı
+  try {
+    await fetch(`${AI_SERVICE_URL}/embed-route`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ route_id: routeId }),
+    });
+  } catch { /* yoksay */ }
+
+  return routeId;
+}

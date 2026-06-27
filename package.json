@@ -1,0 +1,15 @@
+{
+  "name": "sana",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SANA — sosyal rota & deneyim platformu (monorepo kökü)",
+  "scripts": {
+    "start": "cd app && npm start",
+    "app": "cd app && npm start",
+    "reset": "cd app && npx expo start -c",
+    "tunnel": "cd app && npx expo start --tunnel -c",
+    "ai": "cd ai-service && .venv\\Scripts\\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "seed": "py ai-service/scripts/build_seed.py",
+    "backfill": "py ai-service/scripts/backfill.py"
+  }
+}
