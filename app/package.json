@@ -34,7 +34,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "update:preview": "eas update --channel preview",
-    "share:link": "node -e \"console.log('\\n------ EXPO GO TESTING LINK ------\\nexp://u.expo.dev/35bbf823-b223-430a-92bd-72fc385f0831?channel-name=preview\\n----------------------------------\\n')\""
+    "share:link": "node -e \"console.log('\\n------ EXPO GO TESTING LINK ------\\nexp://u.expo.dev/35bbf823-b223-430a-92bd-72fc385f0831?channel-name=preview\\n----------------------------------\\n')\"",
+    "build:android": "eas build --platform android --profile preview",
+    "build:ios": "eas build --platform ios --profile preview",
+    "build:all": "eas build --platform all --profile preview"
   },
   "private": true
 }
