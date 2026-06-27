@@ -44,7 +44,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/d657a049-d387-4d43-8d8f-ceace124fdfc"
     },
