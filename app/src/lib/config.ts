@@ -13,8 +13,9 @@ export const AI_SERVICE_URL = "http://192.168.1.5:8000";
 // Giriş ekranı aç/kapa. false = giriş ekranı GÖSTERME, dev hesabıyla otomatik gir.
 // Demo/teslimde true yap → kullanıcılar kendi hesaplarıyla girer.
 export const AUTH_ENABLED = false;
-export const DEV_EMAIL = "dev@sana.app";
-export const DEV_PASSWORD = "***REMOVED***";
+// Dev kimlik bilgileri app/.env'den gelir (EXPO_PUBLIC_*); repo'da tutulmaz.
+export const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL ?? "";
+export const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD ?? "";
 
 // İstanbul merkez (harita başlangıç bölgesi)
 export const ISTANBUL_REGION = {

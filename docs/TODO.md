@@ -28,10 +28,14 @@
   (SHA-1 için: `eas credentials -p android` çıktısındaki fingerprint; dev build sonrası).
 - [ ] *API restrictions* → yalnızca "Maps SDK for Android".
 
-**B. Key'i koddan çıkarma 🤖 (yapı) + 👤 (değer)**
-- [ ] `app.json` → `app.config.js`'e çevir; `googleMaps.apiKey: process.env.GOOGLE_MAPS_API_KEY`.
-- [ ] Lokal: `app/.env` (gitignore'lu) → `GOOGLE_MAPS_API_KEY=...`; EAS: `eas secret:create --name GOOGLE_MAPS_API_KEY`.
-- [ ] Eski key'in geçtiği commit geçmişi: repo zaten private; public'e açmadan önce rotasyon yeterli (geçmiş temizliği gerekmez).
+**B. Key'i koddan çıkarma 🤖 (yapı) + 👤 (değer) — ✅ YAPI TAMAM (3 Tem)**
+- [x] `app.config.js` oluşturuldu: `googleMaps.apiKey` artık `process.env.GOOGLE_MAPS_API_KEY`'den
+  enjekte ediliyor; `app.json`'dan anahtar silindi. `npx expo config` ile doğrulandı.
+- [x] Lokal: `app/.env` (gitignore'lu, doğrulandı) + `app/.env.example` şablonu.
+- [x] Bonus: `config.ts`'teki dev e-posta/şifre de `.env`'e taşındı (`EXPO_PUBLIC_DEV_*`).
+- [ ] 👤 EAS build öncesi: `eas secret:create --name GOOGLE_MAPS_API_KEY --value <YENİ_KEY>`.
+- [ ] ⚠️ Eski key git GEÇMİŞİNDE duruyor (app.json'lu eski commit'ler). Repo public
+  olmadan önce **rotasyon şart** (geçmiş temizliği gerekmez, rotasyon yeter).
 
 **C. Diğer anahtarlar 👤**
 - [ ] Supabase Dashboard → Settings → API → **service_role** key'i *Rotate*.
@@ -262,5 +266,6 @@
 | Tarih | Madde | Durum / Not |
 |---|---|---|
 | 3 Tem | Yol haritası + TODO oluşturuldu | — |
-| 3 Tem | 0.1 Git düzeni | 6 tematik commit atıldı (61ab621…1e2965f); working tree temiz |
+| 3 Tem | 0.1 Git düzeni | 7 tematik commit; Claude imzaları filter-branch ile temizlendi; **GitHub'a push edildi** (Team-28-Google/RotaHesaplan-yor, private) |
+| 3 Tem | 0.2-B Key'ler koddan çıktı | app.config.js + app/.env (+dev creds EXPO_PUBLIC_*); expo config ile doğrulandı. **Kalan 👤: 4 anahtar rotasyonu (A/C) — public'ten önce ŞART** |
 | 3 Tem | **FAZ 1 tamamlandı (1.1–1.7)** | İkon/splash üretildi (GDI+, mercan rota motifi); expo-image + haptics + skeleton + mikro-animasyonlar + onboarding (3 adım, vibe/bütçe) + boş/hata turu. tsc + export temiz. Cihaz doğrulaması ve ikon beğeni onayı bekliyor. Faz 0 kullanıcı isteğiyle atlandı — anahtar güvenliği (0.2) repo public olmadan önce hâlâ ŞART. |
