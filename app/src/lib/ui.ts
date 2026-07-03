@@ -1,8 +1,8 @@
-import { ROUTE_COLORS } from "./theme";
 import type { TransportMode, Waypoint } from "./types";
 
-// Rota başına renk (harita polyline + marker) — palet theme.ts'te
-export const routeColor = (i: number) => ROUTE_COLORS[i % ROUTE_COLORS.length];
+// Rota başına renk (harita polyline + marker) — palet aktif temadan gelir (colors.routeColors)
+export const routeColor = (i: number, palette: readonly string[]) =>
+  palette[i % palette.length];
 
 const TRANSPORT_ICON: Record<TransportMode, string> = {
   start: "📍", walk: "🚶", ferry: "⛴️", metro: "🚇", tram: "🚊",
