@@ -1,10 +1,9 @@
 // Genel yapılandırma.
-// NOT: anon key tasarımı gereği publictir; RLS politikaları korur. Client paketine
-// gömülmesi normaldir (service_role ASLA burada olmaz).
+// NOT: publishable key tasarımı gereği publictir; RLS politikaları korur. Client
+// paketine gömülmesi normaldir (secret key ASLA burada olmaz).
 
 export const SUPABASE_URL = "https://vwqeupcbmlqkbhmwqyuq.supabase.co";
-export const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cWV1cGNibWxxa2JobXdxeXVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNTU4MjcsImV4cCI6MjA5NzczMTgyN30.-1eH5R0WjP8ow2QrDd0xC8ycuqKHaaOFs4IMSuJPwto";
+export const SUPABASE_ANON_KEY = "sb_publishable_t3W_PR3kQGe-b_WfnATq6g_OqErHKGd";
 
 // AI servisi (FastAPI). Telefon, PC'ye yerel ağ IP'si ile erişir.
 // PC IP değişirse burayı güncelle (PowerShell: ipconfig → Wi-Fi IPv4).
