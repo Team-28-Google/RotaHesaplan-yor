@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from "react-native";
 import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
+import type { ThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
+
 export type LatLng = { lat: number; lng: number };
 export type OSMMarker = {
   id: string;
@@ -32,6 +35,7 @@ type Props = {
   focusId?: string | null;
   userLocation?: LatLng | null;
   followLocation?: LatLng | null;   // verilirse kamera bu konumu takip eder (yolculuk modu)
+  guideLine?: LatLng[] | null;      // konum → hedef durak kesikli rehber çizgisi (yolculuk)
   showRecenter?: boolean;
   padding?: number;
   style?: StyleProp<ViewStyle>;
@@ -40,42 +44,87 @@ type Props = {
 const ISTANBUL = { latitude: 41.02, longitude: 28.99, latitudeDelta: 0.3, longitudeDelta: 0.3 };
 const TRANSIT = new Set(["ferry", "metro", "tram", "marmaray", "bus", "metrobus", "funicular", "teleferik", "minibus"]);
 const ll = (c: LatLng) => ({ latitude: c.lat, longitude: c.lng });
-const ringOf = (v?: string) => (v === "start" ? "#16A34A" : v === "end" ? "#F97316" : "#0EA5A4");
+const ringOf = (v?: string) => (v === "start" ? "#22C55E" : v === "end" ? "#F97316" : "#FF6B54");
 
-// Temiz, premium harita stili (POI kalabalığı kapalı, yumuşak renkler)
-const MAP_STYLE = [
+// Harita stilleri — app temasıyla bütünleşik (POI kalabalığı iki modda da kapalı)
+const DARK_MAP_STYLE = [
+  { elementType: "geometry", stylers: [{ color: "#141B33" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8A93B8" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0B1022" }] },
   { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ visibility: "on" }, { color: "#e6f3ea" }] },
-  { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ visibility: "on" }, { color: "#13291F" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
   { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#cfe7f3" }] },
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#f5f6f8" }] },
-  { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#ffffff" }] },
-  { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#ffe8c7" }] },
+  { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#232C4E" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2E3960" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0E1B33" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#101731" }] },
+];
+const LIGHT_MAP_STYLE = [
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ visibility: "on" }, { color: "#E3F1E7" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#FFFFFF" }] },
+  { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#FFE9CF" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#CFE3F0" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#F4F5F8" }] },
 ];
 
-function MapPin({ m, onSelect, onOpen }: { m: OSMMarker; onSelect: () => void; onOpen: () => void }) {
+type MapStyles = ReturnType<typeof makeStyles>;
+
+function MapPin({ m, onSelect, onOpen, styles }: { m: OSMMarker; onSelect: () => void; onOpen: () => void; styles: MapStyles }) {
   const ring = ringOf(m.variant);
+  // "ÇEYREK MARKER" FIX (Android/Expo Go): foto ağdan gelirken marker bitmap'i erken/yanlış
+  // boyutta çekiliyor. Strateji:
+  //  1) Foto önce Image.prefetch ile cache'e indirilir; o sırada numaralı pin gösterilir.
+  //  2) Hazır olunca Marker `key` değişimiyle YENİDEN MOUNT edilir → bitmap doğru boyutta oluşur.
+  //  3) fadeDuration=0 → Android'in fade animasyonu ortasında snapshot alınmaz.
+  //  4) Tüm varyantlar sabit boyutlu kutuda çizilir → snapshot boyutu hiç değişmez.
+  const [photoReady, setPhotoReady] = useState(false);
+  const [tracks, setTracks] = useState(true);
+
+  useEffect(() => {
+    if (!m.photo) return;
+    let alive = true;
+    Image.prefetch(m.photo)
+      .then(() => { if (alive) { setPhotoReady(true); setTracks(true); } })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [m.photo]);
+
+  // Geçişten kısa süre sonra snapshot'ı dondur (pil/performans)
+  useEffect(() => {
+    if (!tracks) return;
+    const t = setTimeout(() => setTracks(false), 700);
+    return () => clearTimeout(t);
+  }, [tracks]);
+
+  const showPhoto = !!m.photo && photoReady;
 
   return (
     <Marker
+      key={showPhoto ? "photo" : "plain"}
       coordinate={{ latitude: m.lat, longitude: m.lng }}
       onPress={onSelect}
       onCalloutPress={onOpen}
       anchor={{ x: 0.5, y: 0.5 }}
       calloutAnchor={{ x: 0.5, y: 0 }}
-      tracksViewChanges
+      tracksViewChanges={tracks}
     >
-      <View collapsable={false}>
-        {m.photo ? (
+      <View style={styles.pinBox} collapsable={false}>
+        {showPhoto ? (
           <View style={[styles.photoSquare, { borderColor: ring }]} collapsable={false}>
-            <Image source={{ uri: m.photo }} style={styles.photoImg} resizeMode="cover" />
+            <Image source={{ uri: m.photo }} style={styles.photoImg} resizeMode="cover" fadeDuration={0} />
           </View>
         ) : m.emoji ? (
           <View style={styles.emojiWrap} collapsable={false}><Text style={{ fontSize: 16 }}>{m.emoji}</Text></View>
         ) : (
-          <View style={[styles.numWrap, { backgroundColor: ring }]} collapsable={false}><Text style={styles.numText}>{m.label ?? ""}</Text></View>
+          <View style={[styles.numWrap, { backgroundColor: ring }]} collapsable={false}>
+            <Text style={styles.numText}>{m.label ?? "•"}</Text>
+          </View>
         )}
       </View>
 
@@ -96,10 +145,12 @@ function MapPin({ m, onSelect, onOpen }: { m: OSMMarker; onSelect: () => void; o
 
 export default function OSMMap({
   markers = [], polylines = [], transitLines = [], onPressItem, onSelectItem, onMapPress,
-  focusId, userLocation, followLocation, showRecenter, padding = 40, style,
+  focusId, userLocation, followLocation, guideLine, showRecenter, padding = 40, style,
 }: Props) {
   const ref = useRef<MapView>(null);
   const [ready, setReady] = useState(false);
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   // Tek rota (detay) → her zaman çiz. Çok rota (overview) → sadece seçili (tıklanan) görünür.
   const visibleLines = useMemo(
@@ -147,6 +198,7 @@ export default function OSMMap({
         ref={ref}
         style={StyleSheet.absoluteFill}
         provider={PROVIDER_GOOGLE}
+        customMapStyle={mode === "dark" ? DARK_MAP_STYLE : LIGHT_MAP_STYLE}
         initialRegion={ISTANBUL}
         onMapReady={() => setReady(true)}
         onPress={(e) => { const c = e.nativeEvent.coordinate; onMapPress?.(c.latitude, c.longitude); }}
@@ -183,8 +235,20 @@ export default function OSMMap({
           return out;
         })}
 
+        {/* Yolculuk rehber çizgisi: kullanıcı konumu → hedef durak (kesikli mavi) */}
+        {guideLine && guideLine.length >= 2 && (
+          <Polyline
+            coordinates={guideLine.map(ll)}
+            strokeColor="#60A5FA"
+            strokeWidth={4}
+            lineDashPattern={[8, 8]}
+            lineCap="round"
+            zIndex={5}
+          />
+        )}
+
         {markers.map((m) => (
-          <MapPin key={m.id} m={m} onSelect={() => onSelectItem?.(m.id)} onOpen={() => onPressItem?.(m.id)} />
+          <MapPin key={m.id} m={m} styles={styles} onSelect={() => onSelectItem?.(m.id)} onOpen={() => onPressItem?.(m.id)} />
         ))}
 
         {userLocation && (
@@ -203,37 +267,23 @@ export default function OSMMap({
   );
 }
 
-const PHOTO = 56;
-const styles = StyleSheet.create({
-  container: { flex: 1, overflow: "hidden", backgroundColor: "#E8EDF2" },
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, overflow: "hidden", backgroundColor: colors.bg },
 
-  balloon: { width: 46, height: 56, alignItems: "center", paddingTop: 3 },
-  photoWrap: {
-    width: PHOTO, height: PHOTO, borderRadius: PHOTO / 2, borderWidth: 3, overflow: "hidden", backgroundColor: "#fff",
-  },
-  photo: { width: PHOTO - 6, height: PHOTO - 6 },
+  // Sabit marker kutusu: hangi varyant çizilirse çizilsin snapshot boyutu değişmez
+  pinBox: { width: 66, height: 66, alignItems: "center", justifyContent: "center" },
   photoSquare: {
     width: 66, height: 66, borderRadius: 16, borderWidth: 3, overflow: "hidden", backgroundColor: "#fff",
   },
   photoImg: { width: 60, height: 60 },
-  badge: {
-    position: "absolute", top: 0, right: 6, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 4,
-    alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff",
-  },
-  badgeText: { color: "#fff", fontWeight: "800", fontSize: 11 },
 
-  callout: { flexDirection: "row", alignItems: "center", gap: 10, width: 210, padding: 8, backgroundColor: "#fff", borderRadius: 12 },
-  calloutPhoto: { width: 46, height: 46, borderRadius: 9, backgroundColor: "#eee" },
-  calloutTitle: { fontSize: 14, fontWeight: "800", color: "#0F172A" },
-  calloutHint: { fontSize: 12, fontWeight: "600", color: "#0EA5A4", marginTop: 2 },
-  pointer: {
-    width: 0, height: 0, marginTop: -2,
-    borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 9,
-    borderLeftColor: "transparent", borderRightColor: "transparent",
-  },
+  callout: { flexDirection: "row", alignItems: "center", gap: 10, width: 210, padding: 8, backgroundColor: colors.surface, borderRadius: 12 },
+  calloutPhoto: { width: 46, height: 46, borderRadius: 9, backgroundColor: colors.surfaceAlt },
+  calloutTitle: { fontSize: 14, fontWeight: "800", color: colors.text },
+  calloutHint: { fontSize: 12, fontWeight: "600", color: colors.primaryDark, marginTop: 2 },
   emojiWrap: {
     width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center",
-    backgroundColor: "#fff", borderWidth: 2, borderColor: "#CBD5E1",
+    backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.border,
   },
   numWrap: {
     width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "#fff",
@@ -245,8 +295,8 @@ const styles = StyleSheet.create({
 
   recenter: {
     position: "absolute", right: 12, bottom: 12, width: 42, height: 42, borderRadius: 21,
-    backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
-    shadowColor: "#0F172A", shadowOpacity: 0.2, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 5,
+    backgroundColor: colors.surface, alignItems: "center", justifyContent: "center",
+    shadowColor: "#000", shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 5,
   },
-  recenterIcon: { fontSize: 22, color: "#0F172A" },
+  recenterIcon: { fontSize: 22, color: colors.text },
 });

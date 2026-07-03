@@ -4,12 +4,24 @@ import type { CreateStop, EnrichResult, PlaceResult, PlanResponse, RouteWithWayp
 
 const bySeq = (a: Waypoint, b: Waypoint) => a.seq - b.seq;
 
-/** Tüm rotaları sıralı waypoint'leriyle birlikte getirir (harita için). */
+/** fetch + zaman aşımı — sunucu kapalıyken isteğin dakikalarca askıda kalmasını önler. */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+const isAbort = (e: unknown) => e instanceof Error && e.name === "AbortError";
+
+/** Tüm rotaları sıralı waypoint'leriyle birlikte getirir (en yeni önce). */
 export async function fetchRoutes(): Promise<RouteWithWaypoints[]> {
   const { data, error } = await supabase
     .from("routes")
     .select("*, waypoints(*)")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map((r) => ({
@@ -74,16 +86,74 @@ export async function fetchFavoriteRoutes(): Promise<RouteWithWaypoints[]> {
   return routes.map((r) => ({ ...r, waypoints: (r.waypoints ?? []).slice().sort(bySeq) }));
 }
 
+// --------------------------- Yorumlar (flood) ---------------------------
+export interface FloodComment {
+  id: string;
+  route_id: string;
+  author_id: string;
+  body: string | null;
+  rating: number | null;
+  created_at: string;
+  username: string;
+}
+
+/** Rotanın yorumları (en yeni önce), yazar kullanıcı adıyla birlikte. */
+export async function fetchComments(routeId: string): Promise<FloodComment[]> {
+  const { data, error } = await supabase
+    .from("flood_comments")
+    .select("id, route_id, author_id, body, rating, created_at, profiles(username)")
+    .eq("route_id", routeId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  type Row = Omit<FloodComment, "username"> & { profiles: { username: string } | { username: string }[] | null };
+  return ((data ?? []) as unknown as Row[]).map((r) => {
+    const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+    return { ...r, username: p?.username ?? "gezgin" };
+  });
+}
+
+/** Rotaya yorum + opsiyonel 1-5 puan ekler. */
+export async function addComment(routeId: string, body: string, rating: number | null): Promise<void> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Giriş gerekli");
+  const { error } = await supabase
+    .from("flood_comments")
+    .insert({ route_id: routeId, author_id: uid, body, rating });
+  if (error) throw error;
+}
+
+// --------------------------- Profil sayaçları ---------------------------
+export async function countMyRoutes(): Promise<number> {
+  const uid = await currentUserId();
+  if (!uid) return 0;
+  const { count } = await supabase
+    .from("routes")
+    .select("id", { count: "exact", head: true })
+    .eq("author_id", uid);
+  return count ?? 0;
+}
+
+export async function countMyComments(): Promise<number> {
+  const uid = await currentUserId();
+  if (!uid) return 0;
+  const { count } = await supabase
+    .from("flood_comments")
+    .select("id", { count: "exact", head: true })
+    .eq("author_id", uid);
+  return count ?? 0;
+}
+
 /** AI servisine doğal dil niyeti gönderir → kişiselleştirilmiş rota + flood anlatısı. */
 export async function planRoute(text: string): Promise<PlanResponse> {
   let res: Response;
   try {
-    res = await fetch(`${AI_SERVICE_URL}/plan-route`, {
+    res = await fetchWithTimeout(`${AI_SERVICE_URL}/plan-route`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
-    });
-  } catch {
+    }, 90_000);
+  } catch (e) {
+    if (isAbort(e)) throw new Error("AI servisi yanıt vermedi (zaman aşımı). Sunucu meşgul olabilir, tekrar dene.");
     throw new Error("AI servisine ulaşılamadı. PC'de sunucu açık ve aynı Wi-Fi'de mi? (npm run ai)");
   }
   if (!res.ok) throw new Error(`AI servisi hatası (${res.status})`);
@@ -115,8 +185,9 @@ export async function searchPlaces(q: string): Promise<PlaceResult[]> {
     `&limit=8&lang=default&lat=41.0082&lon=28.9784&location_bias_scale=0.4`;
   let res: Response;
   try {
-    res = await fetch(url, { headers: { Accept: "application/json" } });
-  } catch {
+    res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } }, 12_000);
+  } catch (e) {
+    if (isAbort(e)) throw new Error("Arama zaman aşımına uğradı. Tekrar dene.");
     throw new Error("İnternete ulaşılamadı. Bağlantını kontrol et.");
   }
   if (!res.ok) throw new Error(`Arama hatası (${res.status})`);
@@ -143,12 +214,13 @@ export async function searchPlaces(q: string): Promise<PlaceResult[]> {
 export async function enrichRoute(stops: CreateStop[]): Promise<EnrichResult> {
   let res: Response;
   try {
-    res = await fetch(`${AI_SERVICE_URL}/enrich-route`, {
+    res = await fetchWithTimeout(`${AI_SERVICE_URL}/enrich-route`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stops }),
-    });
-  } catch {
+    }, 60_000);
+  } catch (e) {
+    if (isAbort(e)) throw new Error("AI yanıt vermedi (zaman aşımı). Tekrar dene.");
     throw new Error("AI servisine ulaşılamadı (npm run ai açık mı, aynı Wi-Fi mi?)");
   }
   if (!res.ok) throw new Error(`AI zenginleştirme hatası (${res.status})`);
@@ -200,11 +272,11 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
 
   // hafızaya embedle (başkalarının AI aramasında çıksın) — başarısız olsa da rota kayıtlı
   try {
-    await fetch(`${AI_SERVICE_URL}/embed-route`, {
+    await fetchWithTimeout(`${AI_SERVICE_URL}/embed-route`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ route_id: routeId }),
-    });
+    }, 20_000);
   } catch { /* yoksay */ }
 
   return routeId;
