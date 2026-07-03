@@ -37,7 +37,9 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "update:preview": "eas update --channel preview",
+    "share:link": "node -e \"console.log('\\n------ EXPO GO TEST LINKI ------\\nexp://u.expo.dev/56ef00aa-02fe-4a2f-89c6-fc8ac4ae31cf?channel-name=preview\\n--------------------------------\\n')\""
   },
   "private": true
 }
