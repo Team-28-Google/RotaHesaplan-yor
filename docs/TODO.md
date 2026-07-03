@@ -20,13 +20,13 @@
 - [ ] Her commit mesajı: ilk satır Türkçe özet, gövde madde madde.
 - **Kontrol:** `git log --oneline` okununca hikâye anlaşılıyor.
 
-### ⬜ 0.2 Anahtar güvenliği 👤+🤖 ⚠️ (public repo'dan ÖNCE bitmeli)
-**A. Google Maps key rotasyonu 👤**
-- [ ] [console.cloud.google.com](https://console.cloud.google.com) → APIs & Services → Credentials.
-- [ ] Mevcut key'i (app.json'daki `AIzaSyD7...`) **Regenerate** ile yenile.
-- [ ] Key kısıtı ekle: *Application restrictions → Android apps* → paket `com.mamikaplaan.sana` + SHA-1
-  (SHA-1 için: `eas credentials -p android` çıktısındaki fingerprint; dev build sonrası).
+### 🟡 0.2 Anahtar güvenliği 👤+🤖 (yapı ✅ + geçmiş temizliği ✅; kısıt/rotasyon 👤 kaldı)
+**A. Google Maps key koruması 👤 (git geçmişi temizlendiği için aciliyeti düştü; kısıt yine de ŞART)**
+- [ ] Key kısıtı ekle: [console.cloud.google.com](https://console.cloud.google.com) → Credentials →
+  *Application restrictions → Android apps* → paket `com.mamikaplaan.sana` + SHA-1
+  (SHA-1: `eas credentials -p android`; dev build sonrası). Kısıt varken key sızsa bile başkası kullanamaz.
 - [ ] *API restrictions* → yalnızca "Maps SDK for Android".
+- [ ] (Opsiyonel, tam garanti) Regenerate ile yenile → yeni değeri `app/.env`'e yaz.
 
 **B. Key'i koddan çıkarma 🤖 (yapı) + 👤 (değer) — ✅ YAPI TAMAM (3 Tem)**
 - [x] `app.config.js` oluşturuldu: `googleMaps.apiKey` artık `process.env.GOOGLE_MAPS_API_KEY`'den
@@ -37,12 +37,20 @@
 - [ ] ⚠️ Eski key git GEÇMİŞİNDE duruyor (app.json'lu eski commit'ler). Repo public
   olmadan önce **rotasyon şart** (geçmiş temizliği gerekmez, rotasyon yeter).
 
-**C. Diğer anahtarlar 👤**
-- [ ] Supabase Dashboard → Settings → API → **service_role** key'i *Rotate*.
+**C. Diğer anahtarlar 👤 (bunlar repo'da HİÇ olmadı; sohbette paylaşıldıkları için önerilir)**
+- [ ] Supabase Dashboard → Settings → API → **service_role** key'i *Rotate* → `ai-service/.env`.
 - [ ] NVIDIA NIM (build.nvidia.com) → API key yenile → `ai-service/.env` güncelle.
 - [ ] SerpApi → key yenile → `ai-service/.env` güncelle.
+- [ ] Dev hesabı şifresini değiştir (Supabase → Auth → Users → dev@sana.app) → `app/.env` güncelle.
 - [ ] Rotasyon sonrası smoke test: `npm run ai` + Planla ekranı + seed script'leri (`npm run seed` cache'li, kota yakmaz).
-- **Kontrol:** Repo'da ve geçmişte artık ÇALIŞAN gizli anahtar yok.
+
+**D. Git geçmişi temizliği 🤖 — ✅ YAPILDI (3 Tem)**
+- [x] `git filter-repo --replace-text` ile Maps key + dev şifresi TÜM geçmişten kazındı
+  (14 commit korundu, değerler `***REMOVED***`); GitHub'a **force-push** edildi.
+- [x] Öncesinde tam yedek: scratchpad `sana-backup-pre-scrub.bundle`.
+- [ ] (Opsiyonel 👤, tam garanti) GitHub eski commit objelerini bir süre önbellekte tutabilir;
+  kesin temizlik istersen: GitHub'da repoyu sil → aynı adla yeniden oluştur → ben tekrar push'larım (1 dk).
+- **Not:** Ekipten biri bugün clone almışsa **yeniden clone** almalı (geçmiş değişti).
 
 ### ⬜ 0.3 EAS development build 👤+🤖
 - [ ] 🤖 `eas.json`'a `development` profili ekle (`developmentClient: true, distribution: internal`).
@@ -267,5 +275,6 @@
 |---|---|---|
 | 3 Tem | Yol haritası + TODO oluşturuldu | — |
 | 3 Tem | 0.1 Git düzeni | 7 tematik commit; Claude imzaları filter-branch ile temizlendi; **GitHub'a push edildi** (Team-28-Google/RotaHesaplan-yor, private) |
-| 3 Tem | 0.2-B Key'ler koddan çıktı | app.config.js + app/.env (+dev creds EXPO_PUBLIC_*); expo config ile doğrulandı. **Kalan 👤: 4 anahtar rotasyonu (A/C) — public'ten önce ŞART** |
+| 3 Tem | 0.2-B Key'ler koddan çıktı | app.config.js + app/.env (+dev creds EXPO_PUBLIC_*); expo config ile doğrulandı |
+| 3 Tem | 0.2-D Git geçmişi temizlendi | filter-repo ile Maps key + dev şifresi tüm geçmişten kazındı, force-push. Kalan 👤: Maps key Android kısıtı (şart) + C rotasyonları (önerilir) |
 | 3 Tem | **FAZ 1 tamamlandı (1.1–1.7)** | İkon/splash üretildi (GDI+, mercan rota motifi); expo-image + haptics + skeleton + mikro-animasyonlar + onboarding (3 adım, vibe/bütçe) + boş/hata turu. tsc + export temiz. Cihaz doğrulaması ve ikon beğeni onayı bekliyor. Faz 0 kullanıcı isteğiyle atlandı — anahtar güvenliği (0.2) repo public olmadan önce hâlâ ŞART. |
