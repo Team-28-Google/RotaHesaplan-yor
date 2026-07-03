@@ -18,7 +18,7 @@ import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
-import { budgetLabel, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
+import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 import type { RouteFloodScreenProps } from "../navigation";
 
 // Telefonun harita uygulamasında yürüyüş yol tarifini açar (Google key gerekmez)
@@ -146,12 +146,11 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
 
   const exp = useMemo(() => route?.waypoints.filter((w) => w.kind === "experience") ?? [], [route]);
   const util = useMemo(() => route?.waypoints.filter((w) => w.kind === "utility") ?? [], [route]);
-  const polylines = useMemo<OSMPolyline[]>(
-    () => (exp.length
-      ? [{ id: "route", color: colors.primary, coords: exp.map((w) => ({ lat: w.lat, lng: w.lng })), modes: exp.map((w) => w.transport_mode) }]
-      : []),
-    [exp, colors],
-  );
+  const polylines = useMemo<OSMPolyline[]>(() => {
+    if (!exp.length) return [];
+    const segs = legSegments(exp); // gerçek sokak geometrisi varsa onu kullanır
+    return [{ id: "route", color: colors.primary, coords: segmentsToPath(segs), segments: segs }];
+  }, [exp, colors]);
   const markers = useMemo<OSMMarker[]>(
     () => [
       ...exp.map((w, i) => ({
@@ -344,6 +343,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                     <View style={styles.legPill}>
                       <Text style={styles.legText}>
                         {transportIcon(w.transport_mode)} {transportLabel(w.transport_mode)}
+                        {w.leg_duration_min ? ` · ~${w.leg_duration_min} dk` : ""}
                         {w.transport_note ? ` · ${w.transport_note}` : ""}
                       </Text>
                     </View>

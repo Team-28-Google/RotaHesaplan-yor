@@ -279,5 +279,14 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
     }, 20_000);
   } catch { /* yoksay */ }
 
+  // sokak geometrisi (Google Routes) — başarısız olursa harita kuş uçuşu çizer, sorun değil
+  try {
+    await fetchWithTimeout(`${AI_SERVICE_URL}/route-geometry`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ route_id: routeId }),
+    }, 45_000);
+  } catch { /* yoksay */ }
+
   return routeId;
 }

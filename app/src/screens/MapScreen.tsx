@@ -16,7 +16,7 @@ import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
-import { budgetLabel, routeColor, waypointIcon } from "../lib/ui";
+import { budgetLabel, legSegments, routeColor, segmentsToPath, waypointIcon } from "../lib/ui";
 import type { MapScreenProps } from "../navigation";
 
 const { width } = Dimensions.get("window");
@@ -47,10 +47,14 @@ export default function MapScreen({ navigation }: MapScreenProps) {
   useFocusEffect(load);
 
   const polylines = useMemo<OSMPolyline[]>(
-    () => routes.map((r, i) => ({
-      id: r.id, color: routeColor(i, colors.routeColors),
-      coords: r.waypoints.filter((w) => w.kind === "experience").map((w) => ({ lat: w.lat, lng: w.lng })),
-    })),
+    () => routes.map((r, i) => {
+      const exp = r.waypoints.filter((w) => w.kind === "experience");
+      const segs = legSegments(exp);
+      return {
+        id: r.id, color: routeColor(i, colors.routeColors),
+        coords: segmentsToPath(segs), segments: segs,
+      };
+    }),
     [routes, colors],
   );
   const markers = useMemo<OSMMarker[]>(

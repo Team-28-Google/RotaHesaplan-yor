@@ -1,9 +1,19 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Image, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View,
+  type StyleProp, type ViewStyle,
+} from "react-native";
 import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import { captureRef } from "react-native-view-shot";
 
 import type { ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
+
+// Android'de foto marker'lar canlı View yerine ÖNCEDEN ÜRETİLMİŞ BİTMAP olarak çizilir.
+// (react-native-maps'in "çeyrek render" bug'ı View-tabanlı marker'larda oluşur;
+// native bitmap ikonlar bu yola hiç girmez → kesin çözüm.)
+const BITMAP_MARKERS = Platform.OS === "android";
+const PIN = 66; // foto marker kutusu (dp)
 
 export type LatLng = { lat: number; lng: number };
 export type OSMMarker = {
@@ -20,8 +30,9 @@ export type OSMMarker = {
 export type OSMPolyline = {
   id: string;
   color: string;
-  coords: LatLng[];
+  coords: LatLng[];          // tam yol (fit/odak için; segments varsa birleştirilmiş hali)
   modes?: string[];          // modes[i] = coords[i]'ye ulaşım türü (transit ise kırmızı)
+  segments?: { coords: LatLng[]; mode?: string }[]; // bacak bazlı gerçek geometri (Routes)
 };
 type TransitLineData = { name: string; color: string; dashed?: boolean; coords: LatLng[] };
 
@@ -75,19 +86,51 @@ const LIGHT_MAP_STYLE = [
 
 type MapStyles = ReturnType<typeof makeStyles>;
 
-function MapPin({ m, onSelect, onOpen, styles }: { m: OSMMarker; onSelect: () => void; onOpen: () => void; styles: MapStyles }) {
+/** Ekran DIŞINDA foto marker'ı çizip bir kez PNG'ye çevirir (Android bitmap yolu). */
+function PhotoIconRenderer({ m, styles, onDone }: {
+  m: OSMMarker; styles: MapStyles; onDone: (id: string, uri: string) => void;
+}) {
+  const ref = useRef<View>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const t = setTimeout(async () => {
+      try {
+        const px = Math.round(PIN * PixelRatio.get()); // cihaz yoğunluğunda keskin bitmap
+        const uri = await captureRef(ref, { format: "png", quality: 1, result: "tmpfile", width: px, height: px });
+        onDone(m.id, uri.startsWith("file://") ? uri : `file://${uri}`);
+      } catch {
+        onDone(m.id, ""); // başarısız → numaralı pin'e düş
+      }
+    }, 60);
+    return () => clearTimeout(t);
+  }, [loaded, m.id, onDone]);
+
+  return (
+    <View ref={ref} collapsable={false} style={[styles.photoSquare, { borderColor: ringOf(m.variant) }]}>
+      <Image
+        source={{ uri: m.photo }}
+        style={styles.photoImg}
+        resizeMode="cover"
+        fadeDuration={0}
+        onLoad={() => setLoaded(true)}
+        onError={() => onDone(m.id, "")}
+      />
+    </View>
+  );
+}
+
+function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
+  m: OSMMarker; onSelect: () => void; onOpen: () => void; styles: MapStyles; iconUri?: string;
+}) {
   const ring = ringOf(m.variant);
-  // "ÇEYREK MARKER" FIX (Android/Expo Go): foto ağdan gelirken marker bitmap'i erken/yanlış
-  // boyutta çekiliyor. Strateji:
-  //  1) Foto önce Image.prefetch ile cache'e indirilir; o sırada numaralı pin gösterilir.
-  //  2) Hazır olunca Marker `key` değişimiyle YENİDEN MOUNT edilir → bitmap doğru boyutta oluşur.
-  //  3) fadeDuration=0 → Android'in fade animasyonu ortasında snapshot alınmaz.
-  //  4) Tüm varyantlar sabit boyutlu kutuda çizilir → snapshot boyutu hiç değişmez.
+  // iOS yolu: canlı View marker (orada sorunsuz). Android foto yolu: hazır bitmap (iconUri).
   const [photoReady, setPhotoReady] = useState(false);
   const [tracks, setTracks] = useState(true);
 
   useEffect(() => {
-    if (!m.photo) return;
+    if (!m.photo || BITMAP_MARKERS) return;
     let alive = true;
     Image.prefetch(m.photo)
       .then(() => { if (alive) { setPhotoReady(true); setTracks(true); } })
@@ -102,7 +145,34 @@ function MapPin({ m, onSelect, onOpen, styles }: { m: OSMMarker; onSelect: () =>
     return () => clearTimeout(t);
   }, [tracks]);
 
-  const showPhoto = !!m.photo && photoReady;
+  // Android + foto + bitmap hazır → native ikonlu marker (çeyrek bug'ı imkânsız)
+  if (BITMAP_MARKERS && m.photo && iconUri) {
+    return (
+      <Marker
+        coordinate={{ latitude: m.lat, longitude: m.lng }}
+        onPress={onSelect}
+        onCalloutPress={onOpen}
+        anchor={{ x: 0.5, y: 0.5 }}
+        calloutAnchor={{ x: 0.5, y: 0 }}
+        image={{ uri: iconUri }}
+        tracksViewChanges={false}
+      >
+        {!!m.popup && (
+          <Callout tooltip onPress={onOpen}>
+            <View style={styles.callout}>
+              {!!m.photo && <Image source={{ uri: m.photo }} style={styles.calloutPhoto} />}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.calloutTitle} numberOfLines={2}>{m.popup}</Text>
+                <Text style={styles.calloutHint}>Detayı gör ›</Text>
+              </View>
+            </View>
+          </Callout>
+        )}
+      </Marker>
+    );
+  }
+
+  const showPhoto = !!m.photo && !BITMAP_MARKERS && photoReady;
 
   return (
     <Marker
@@ -151,6 +221,15 @@ export default function OSMMap({
   const [ready, setReady] = useState(false);
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Android foto marker'ları için üretilen bitmap ikonlar (id → file uri; "" = üretilemedi)
+  const [iconUris, setIconUris] = useState<Record<string, string>>({});
+  const saveIcon = useCallback((id: string, uri: string) => {
+    setIconUris((prev) => ({ ...prev, [id]: uri }));
+  }, []);
+  const pendingIcons = BITMAP_MARKERS
+    ? markers.filter((m) => m.photo && iconUris[m.id] === undefined)
+    : [];
 
   // Tek rota (detay) → her zaman çiz. Çok rota (overview) → sadece seçili (tıklanan) görünür.
   const visibleLines = useMemo(
@@ -216,7 +295,19 @@ export default function OSMMap({
           const out: ReactNode[] = [
             <Polyline key={`${line.id}-casing`} coordinates={pts} strokeColor="rgba(255,255,255,0.95)" strokeWidth={9} lineCap="round" lineJoin="round" />,
           ];
-          if (line.modes && line.modes.length === pts.length) {
+          if (line.segments && line.segments.length) {
+            // Bacak bazlı gerçek geometri (Routes API): yürüme = rota rengi, transit = kırmızı
+            line.segments.forEach((seg, idx) => {
+              if (seg.coords.length < 2) return;
+              const transit = TRANSIT.has((seg.mode ?? "").toLowerCase());
+              out.push(
+                <Polyline key={`${line.id}-seg${idx}`} coordinates={seg.coords.map(ll)}
+                  strokeColor={transit ? "#F87171" : line.color} strokeWidth={transit ? 6 : 5}
+                  lineDashPattern={transit ? [10, 10] : undefined}
+                  lineCap="round" lineJoin="round" tappable onPress={() => onPressItem?.(line.id)} />,
+              );
+            });
+          } else if (line.modes && line.modes.length === pts.length) {
             pts.slice(1).forEach((_, idx) => {
               const i = idx + 1;
               const transit = TRANSIT.has(line.modes![i]);
@@ -248,7 +339,10 @@ export default function OSMMap({
         )}
 
         {markers.map((m) => (
-          <MapPin key={m.id} m={m} styles={styles} onSelect={() => onSelectItem?.(m.id)} onOpen={() => onPressItem?.(m.id)} />
+          <MapPin
+            key={m.id} m={m} styles={styles} iconUri={iconUris[m.id]}
+            onSelect={() => onSelectItem?.(m.id)} onOpen={() => onPressItem?.(m.id)}
+          />
         ))}
 
         {userLocation && (
@@ -263,6 +357,15 @@ export default function OSMMap({
           <Text style={styles.recenterIcon}>◎</Text>
         </TouchableOpacity>
       )}
+
+      {/* Ekran dışı ikon fabrikası: foto marker'ları bir kez bitmap'e çevirir (Android) */}
+      {pendingIcons.length > 0 && (
+        <View style={styles.iconFactory} pointerEvents="none">
+          {pendingIcons.map((m) => (
+            <PhotoIconRenderer key={m.id} m={m} styles={styles} onDone={saveIcon} />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -271,11 +374,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, overflow: "hidden", backgroundColor: colors.bg },
 
   // Sabit marker kutusu: hangi varyant çizilirse çizilsin snapshot boyutu değişmez
-  pinBox: { width: 66, height: 66, alignItems: "center", justifyContent: "center" },
+  pinBox: { width: PIN, height: PIN, alignItems: "center", justifyContent: "center" },
   photoSquare: {
-    width: 66, height: 66, borderRadius: 16, borderWidth: 3, overflow: "hidden", backgroundColor: "#fff",
+    width: PIN, height: PIN, borderRadius: 16, borderWidth: 3, overflow: "hidden", backgroundColor: "#fff",
   },
-  photoImg: { width: 60, height: 60 },
+  photoImg: { width: PIN - 6, height: PIN - 6 },
+  // Bitmap üretimi için ekran dışı alan (görünmez ama LAYOUT ALIR — view-shot şartı)
+  iconFactory: { position: "absolute", left: -1000, top: 0 },
 
   callout: { flexDirection: "row", alignItems: "center", gap: 10, width: 210, padding: 8, backgroundColor: colors.surface, borderRadius: 12 },
   calloutPhoto: { width: 46, height: 46, borderRadius: 9, backgroundColor: colors.surfaceAlt },

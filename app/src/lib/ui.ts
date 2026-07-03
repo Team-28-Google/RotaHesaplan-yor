@@ -4,6 +4,32 @@ import type { TransportMode, Waypoint } from "./types";
 export const routeColor = (i: number, palette: readonly string[]) =>
   palette[i % palette.length];
 
+// --------------------------- Rota geometrisi ---------------------------
+export interface LegSegment {
+  coords: { lat: number; lng: number }[];
+  mode: TransportMode;
+}
+
+/** Ardışık deneyim durakları → bacak segmentleri.
+ *  Gerçek sokak geometrisi (leg_geometry) varsa onu, yoksa kuş uçuşu düz hattı kullanır. */
+export function legSegments(exp: Waypoint[]): LegSegment[] {
+  const out: LegSegment[] = [];
+  for (let i = 1; i < exp.length; i++) {
+    const prev = exp[i - 1];
+    const cur = exp[i];
+    const geo = cur.leg_geometry && cur.leg_geometry.length >= 2 ? cur.leg_geometry : null;
+    out.push({
+      mode: cur.transport_mode,
+      coords: geo ?? [{ lat: prev.lat, lng: prev.lng }, { lat: cur.lat, lng: cur.lng }],
+    });
+  }
+  return out;
+}
+
+/** Segmentleri tek kesintisiz yola birleştirir (fit/odak ve genel bakış çizgileri için). */
+export const segmentsToPath = (segs: LegSegment[]) =>
+  segs.flatMap((s, i) => (i === 0 ? s.coords : s.coords.slice(1)));
+
 const TRANSPORT_ICON: Record<TransportMode, string> = {
   start: "📍", walk: "🚶", ferry: "⛴️", metro: "🚇", tram: "🚊",
   marmaray: "🚆", bus: "🚌", metrobus: "🚌", funicular: "🚡",

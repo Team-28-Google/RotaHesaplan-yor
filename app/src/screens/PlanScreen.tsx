@@ -10,7 +10,7 @@ import { planRoute } from "../lib/api";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { PlanResponse } from "../lib/types";
-import { budgetLabel, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
+import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 
 const SUGGESTIONS = [
   "Kafa dinlemek istiyorum, bütçem az",
@@ -110,12 +110,11 @@ function PlanResult({ result, onReset }: { result: PlanResponse; onReset: () => 
   const exp = useMemo(() => (route?.waypoints ?? []).filter((w) => w.kind === "experience"), [route]);
   const util = useMemo(() => (route?.waypoints ?? []).filter((w) => w.kind === "utility"), [route]);
 
-  const polylines = useMemo<OSMPolyline[]>(
-    () => (exp.length
-      ? [{ id: "r", color: colors.primary, coords: exp.map((w) => ({ lat: w.lat, lng: w.lng })), modes: exp.map((w) => w.transport_mode) }]
-      : []),
-    [exp],
-  );
+  const polylines = useMemo<OSMPolyline[]>(() => {
+    if (!exp.length) return [];
+    const segs = legSegments(exp);
+    return [{ id: "r", color: colors.primary, coords: segmentsToPath(segs), segments: segs }];
+  }, [exp, colors]);
   const markers = useMemo<OSMMarker[]>(
     () => [
       ...exp.map((w, i) => ({

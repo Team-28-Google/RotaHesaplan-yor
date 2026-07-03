@@ -22,6 +22,11 @@ export interface Waypoint {
   transport_mode: TransportMode;
   transport_note: string | null;
   metadata: Record<string, unknown> | null;
+  // Önceki duraktan bu durağa YÜRÜME bacağı (Google Routes, yazım anında hesaplanır).
+  // null/eksik = kuş uçuşu çizilir (migration 0006 öncesi satırlar / transit bacaklar).
+  leg_geometry?: { lat: number; lng: number }[] | null;
+  leg_distance_m?: number | null;
+  leg_duration_min?: number | null;
 }
 
 export interface Route {
