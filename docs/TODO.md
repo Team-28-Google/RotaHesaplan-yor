@@ -34,13 +34,12 @@
   enjekte ediliyor; `app.json`'dan anahtar silindi. `npx expo config` ile doğrulandı.
 - [x] Lokal: `app/.env` (gitignore'lu, doğrulandı) + `app/.env.example` şablonu.
 - [x] Bonus: `config.ts`'teki dev e-posta/şifre de `.env`'e taşındı (`EXPO_PUBLIC_DEV_*`).
-- [ ] 👤 EAS build öncesi: `eas secret:create --name GOOGLE_MAPS_API_KEY --value <YENİ_KEY>`.
-- [ ] ⚠️ Eski key git GEÇMİŞİNDE duruyor (app.json'lu eski commit'ler). Repo public
-  olmadan önce **rotasyon şart** (geçmiş temizliği gerekmez, rotasyon yeter).
+- [ ] 👤 EAS build öncesi (0.3'te): `eas secret:create --name GOOGLE_MAPS_API_KEY --value <KEY>`.
+- [x] ~~Eski key git geçmişinde~~ → filter-repo ile kazındı + rotasyon yapıldı (0.2-D). Konu kapandı.
 
 **C. Diğer anahtarlar 👤 (bunlar repo'da HİÇ olmadı; sohbette paylaşıldıkları için önerilir)**
 - [x] **NVIDIA yenilendi (3 Tem)** → `ai-service/.env`; canlı `/embed` testi geçti (1024 dim).
-  - [ ] 👤 build.nvidia.com'da ESKİ key'i **Revoke** et (yeni üretmek eskiyi öldürmez!).
+  - [x] 👤 Eski key Revoke edildi (3 Tem).
 - [x] **Supabase TAMAM (3 Tem):** yeni nesil `sb_publishable_` (app config.ts) + `sb_secret_`
   (ai-service/.env) anahtarlarına geçildi; canlı testler geçti (RLS bypass/engel + GoTrue giriş);
   **Legacy JWT-based API keys DISABLE edildi** — eski anon + service_role 401 dönüyor (kanıtlandı).
@@ -86,56 +85,56 @@
 ## FAZ 1 — PREMIUM HİS
 
 ### ✅ 1.1 Uygulama ikonu + splash 🤖 (üretim) + 👤 (beğeni onayı)
-- [ ] İkon konsepti: koyu lacivert (#0B1022) zemin + mercan (#F4503B) pusula-iğnesi/rota çizgisi motifi.
-- [ ] Üret: `icon.png` (1024×1024), `android-icon-foreground/background/monochrome`, `splash` (koyu zemin + logo).
-- [ ] `app.json`/`app.config.js` içindeki `icon`, `android.adaptiveIcon`, `splash` alanlarını bağla
+- [x] İkon konsepti: koyu lacivert (#0B1022) zemin + mercan (#F4503B) pusula-iğnesi/rota çizgisi motifi.
+- [x] Üret: `icon.png` (1024×1024), `android-icon-foreground/background/monochrome`, `splash` (koyu zemin + logo).
+- [x] `app.json`/`app.config.js` içindeki `icon`, `android.adaptiveIcon`, `splash` alanlarını bağla
   (adaptiveIcon `backgroundColor: "#0B1022"` — şu an `#E6F4FE` açık mavi, eski).
-- [ ] `npx expo prebuild --clean` gerekmez; Expo Go'da görünmez, **dev build'de** doğrulanır (0.3'e bağlı).
+- [x] `npx expo prebuild --clean` gerekmez; Expo Go'da görünmez, **dev build'de** doğrulanır (0.3'e bağlı).
 - **Kontrol:** Ana ekran ikonu + splash markalı.
 
 ### ✅ 1.2 expo-image geçişi 🤖
-- [ ] `npx expo install expo-image`.
-- [ ] Değişecek yerler: `HomeScreen` kapak, `OSMMap` callout foto (marker içi `Image` RN kalabilir —
+- [x] `npx expo install expo-image`.
+- [x] Değişecek yerler: `HomeScreen` kapak, `OSMMap` callout foto (marker içi `Image` RN kalabilir —
   view-shot/snapshot uyumu için test et), `CreateRouteScreen` arama thumb'ları, `RouteFlood` (foto yok, atla).
-- [ ] Her birine: `placeholder` (tek renk blurhash `L6PZfSi_.AyE_3t7t7R**0o#DgR4`), `transition={200}`, `cachePolicy="disk"`.
+- [x] Her birine: `placeholder` (tek renk blurhash `L6PZfSi_.AyE_3t7t7R**0o#DgR4`), `transition={200}`, `cachePolicy="disk"`.
 - **Kontrol:** Uçak modunda ikinci açılış → kapaklar cache'ten geliyor.
 
 ### ✅ 1.3 Skeleton loader'lar 🤖
-- [ ] `src/components/Skeleton.tsx`: `Animated.loop` opacity pulse'lu gri blok (tema-uyumlu, colors.surfaceAlt).
-- [ ] Home: 3 iskelet kart (kapak bloğu + 2 satır). RouteFlood: hero + 3 timeline satırı. Saved: 3 satır kart.
-- [ ] Mevcut `ActivityIndicator`'ları bunlarla değiştir (Plan'ın "AI planlıyor" durumu 2.6'da ayrıca ele alınacak).
+- [x] `src/components/Skeleton.tsx`: `Animated.loop` opacity pulse'lu gri blok (tema-uyumlu, colors.surfaceAlt).
+- [x] Home: 3 iskelet kart (kapak bloğu + 2 satır). RouteFlood: hero + 3 timeline satırı. Saved: 3 satır kart.
+- [x] Mevcut `ActivityIndicator`'ları bunlarla değiştir (Plan'ın "AI planlıyor" durumu 2.6'da ayrıca ele alınacak).
 - **Kontrol:** Yavaş ağda ekranlar iskeletle doluyor, spinner yok.
 
 ### ✅ 1.4 Haptics 🤖
-- [ ] `npx expo install expo-haptics`.
-- [ ] `src/lib/haptics.ts` sarmalayıcı: `tap()` (selection), `success()` (notificationAsync Success), `pop()` (impactAsync Medium).
-- [ ] Bağla: favori toggle, yolculukta varış (`arrived` true olduğunda), rozet ilk açılış (Profile'da diff tespiti),
+- [x] `npx expo install expo-haptics`.
+- [x] `src/lib/haptics.ts` sarmalayıcı: `tap()` (selection), `success()` (notificationAsync Success), `pop()` (impactAsync Medium).
+- [x] Bağla: favori toggle, yolculukta varış (`arrived` true olduğunda), rozet ilk açılış (Profile'da diff tespiti),
   "Yolculuğa Başla", paylaşım başarılı.
 - **Kontrol:** Fiziksel cihazda hissediliyor (emülatörde titreşim olmayabilir).
 
 ### ✅ 1.5 Mikro-animasyonlar 🤖
-- [ ] Kalp pop: `Animated.spring` scale 1→1.4→1 (RouteFlood + gelecekte Home).
-- [ ] Kart press: `Pressable` + `transform: scale(0.98)`.
-- [ ] Journey bar: alttan `translateY` slide-in.
-- [ ] Özet modalındaki paylaşım kartı: açılışta scale 0.9→1 + fade.
+- [x] Kalp pop: `Animated.spring` scale 1→1.4→1 (RouteFlood + gelecekte Home).
+- [x] Kart press: `Pressable` + `transform: scale(0.98)`.
+- [x] Journey bar: alttan `translateY` slide-in.
+- [x] Özet modalındaki paylaşım kartı: açılışta scale 0.9→1 + fade.
 - **Not:** Önce çekirdek RN `Animated`; Reanimated'a ancak takılırsak geçeriz (bundle + Expo Go uyumu basit kalsın).
 - **Kontrol:** 60fps akıcı; abartı yok.
 
 ### ✅ 1.6 Onboarding akışı 🤖 ★ (2.1'in ön koşulu)
-- [ ] `src/screens/OnboardingScreen.tsx`: 3 sayfalık yatay pager (FlatList paging).
+- [x] `src/screens/OnboardingScreen.tsx`: 3 sayfalık yatay pager (FlatList paging).
   - S1: "Şehrin gerçek günlerini keşfet" + görsel.
   - S2: **Vibe seçimi** — çoklu chip: sakin · tarih · deniz · kahve · sanat · gece · yeşil · yürüyüş.
   - S3: Bütçe (₺/₺₺/₺₺₺) + "Başla" CTA.
-- [ ] Seçimler → AsyncStorage `sana_onboarding` `{ vibes: string[], budget: number, done: true }`.
-- [ ] `App.tsx` Root: `onboarded` değilse (ve session hazırsa) Onboarding'i göster.
-- [ ] Profil'e "Tercihlerimi düzenle" satırı (aynı ekranı yeniden açar).
+- [x] Seçimler → AsyncStorage `sana_onboarding` `{ vibes: string[], budget: number, done: true }`.
+- [x] `App.tsx` Root: `onboarded` değilse (ve session hazırsa) Onboarding'i göster.
+- [x] Profil'e "Tercihlerimi düzenle" satırı (aynı ekranı yeniden açar).
 - **Kontrol:** Temiz kurulumda akış çalışıyor; tercihler okunabiliyor (2.1 bunu tüketecek).
 
 ### ✅ 1.7 Boş/hata durumları turu 🤖
-- [ ] Map: rota yoksa harita + "İlk rotayı oluştur" overlay kartı; hata durumunda retry.
-- [ ] Saved: mevcut boş durum korunur + hata durumu eklenir (şu an catch yutuluyor).
-- [ ] Plan: AI servisi kapalıyken özel mesaj zaten var; timeout mesajı test edilir.
-- [ ] Profile: yolculuk yokken mevcut boş durum yeterli; Supabase sayaç hataları sessiz kalsın (mevcut).
+- [x] Map: rota yoksa harita + "İlk rotayı oluştur" overlay kartı; hata durumunda retry.
+- [x] Saved: mevcut boş durum korunur + hata durumu eklenir (şu an catch yutuluyor).
+- [x] Plan: AI servisi kapalıyken özel mesaj zaten var; timeout mesajı test edilir.
+- [x] Profile: yolculuk yokken mevcut boş durum yeterli; Supabase sayaç hataları sessiz kalsın (mevcut).
 - **Kontrol:** Uçak modu turunda hiçbir ekran "bozuk" görünmüyor.
 
 ---
@@ -197,6 +196,18 @@
 - [ ] Alt bant: "sana ile keşfet" + QR (`react-native-qrcode-svg` yerine önce statik QR png — expo update linkine).
 - [ ] Paylaş menüsünde iki seçenek: "Kart (4:5)" / "Story (9:16)".
 - **Kontrol:** Story Instagram'da tam ekran, kırpılmadan görünüyor.
+
+### ⬜ 3.2a Places API zenginleştirme — kullanıcı rotalarına foto + puan 🤖 ★
+- [ ] ai-service: `places_lookup(name, lat, lng)` — Places (New) Text Search (koordinat bias'lı, tek sonuç)
+  → `place_id`, `rating`, foto adı; foto adından **Photo media** redirect'i sunucuda çözülüp
+  KALICI googleusercontent URL'si alınır (API anahtarı asla DB'ye yazılmaz).
+- [ ] `route_geometry` akışına eklenir (ya da ayrı `/enrich-photos`): her deneyim durağına
+  `photo_urls[0]` + `metadata.rating`; rotaya `cover_photo_url` (ilk durağın fotosu).
+- [ ] Seed rotalarda zaten SerpApi fotoları var — sadece fotosuz duraklara uygula (idempotent).
+- [ ] Backfill script'ine bayrak: `py add_geometry.py --photos`.
+- **Neden:** Kullanıcının oluşturduğu rotalar şu an fotosuz → akışta sönük. Bununla her rota
+  seed kalitesinde görünür; harita marker'ları da fotolu olur. Kota: durak başına 1-2 çağrı, yazım anında.
+- **Kabul:** Yeni oluşturulan rota akışta kapak fotoğraflı + duraklarında puan görünüyor.
 
 ### ⬜ 3.2 Foto yükleme 🤖 (+ 👤 bucket onayı)
 - [ ] Supabase migration `0006_storage.sql`: `photos` bucket + RLS (authenticated insert kendi klasörüne, select public).

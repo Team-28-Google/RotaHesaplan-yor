@@ -27,21 +27,22 @@
 ## FAZ 0 — Temel Sağlamlaştırma (her şeyin üstüne kurulacağı zemin)
 
 ### 0.1 Git düzeni 🤖 — S
-- [ ] Mevcut 4 turluk değişikliği anlamlı commit'lere böl (tema sistemi / sosyal katman / bug fix'ler / harita).
+- [x] Mevcut 4 turluk değişikliği anlamlı commit'lere böl ✅ (3 Tem — 7 tematik commit + GitHub push)
 - **Neden:** Ekip 5 kişi; okunabilir geçmiş = Scrum kanıtı (rubrikte var).
 - **Kabul:** `git log` hikâye anlatıyor; her commit tek konu.
 
-### 0.2 Anahtar güvenliği 👤 — M ⚠️ REPO PUBLIC OLMADAN ÖNCE ŞART
-- [ ] Google Maps key'i **rotate et** + Google Cloud'da **Android app kısıtı** ekle (paket adı `com.mamikaplaan.sana` + SHA-1).
-- [ ] NVIDIA / SerpApi / Supabase **service_role** anahtarlarını rotate et (sohbette düz metin paylaşıldı — PROGRESS §4).
-- [ ] Maps key'i `app.json`'dan `app.config.js` + env değişkenine taşı (EAS secret). 🤖 yapı, 👤 değerler.
-- **Kabul:** Repo'da çalışan gizli anahtar yok; harita yeni key ile çalışıyor.
+### ✅ 0.2 Anahtar güvenliği — TAMAMLANDI (3 Tem)
+- [x] Google Maps key rotate + **4 API kısıtı** (Maps SDK/Weather/Routes/Places; Android+SHA-1 kısıtı store'a çıkarken).
+- [x] NVIDIA rotate + eski revoke; Supabase **yeni nesil sb_ anahtarlara geçiş + legacy disable**
+  (eski anon/service_role 401 — kanıtlı); dev şifresi değişti. SerpApi düşük öncelik (yalnız seed).
+- [x] Maps key `app.config.js` + `app/.env`'e taşındı; **git geçmişi filter-repo ile kazındı** + force-push.
+- **Kabul ✅:** Repo'da ve geçmişte çalışan gizli anahtar yok; her şey canlı testle doğrulandı.
 
 ### 0.3 EAS development build 👤 (build) + 🤖 (config) — M
 - [ ] `eas build --profile development --platform android` → APK'yı telefona kur.
-- **Neden:** Expo Go kısıtları kalkar: **foto marker'lar kusursuz render olur** (çeyrek bug kökten biter),
-  Google Maps key native aktifleşir, push notification/keep-awake gibi her şey açılır.
-- **Kabul:** Dev build'de harita + foto marker'lar + canlı reload çalışıyor.
+- **Neden:** İkon/splash ancak build'de görünür; Google Maps key native aktifleşir; bildirim/keep-awake açılır.
+  (Not: çeyrek-marker bug'ı artık build gerektirmiyor — bitmap çözümüyle Expo Go'da bile çözüldü ✅)
+- **Kabul:** Dev build'de markalı ikon/splash + harita + canlı reload çalışıyor.
 
 ### 0.4 AI servisini buluta taşı 👤 (hesap) + 🤖 (deploy dosyaları) — M
 - [ ] FastAPI'yi Render/Railway/Fly ücretsiz tier'a deploy et (`Dockerfile` veya `render.yaml` hazırlanır).
@@ -49,44 +50,38 @@
 - **Neden:** Şu an Planla ekranı sadece senin Wi-Fi'ında çalışıyor. Testçiler + jüri demo'su için kritik.
 - **Kabul:** Telefon mobil veriyle `/plan-route` çağırabiliyor.
 
-### 0.5 OpenWeather anahtarını doğrula 👤 — S
-- [ ] 401 sorununu test et (PROGRESS §4); gerekirse yeni key. Hava verisi Faz 2.5'in ön koşulu.
+### ✅ 0.5 Hava anahtarı — GEREKSİZLEŞTİ (3 Tem)
+- [x] Hava artık **Google Weather API**'den (canlı: İstanbul 25.3° ✅); OpenWeather sadece yedek yol.
+  Faz 2.5'in ön koşulu hazır.
 
 ---
 
-## FAZ 1 — Premium His (görsel kimlik + mikro-etkileşim)
+## ✅ FAZ 1 — Premium His — TAMAMLANDI (3 Tem)
 
-### 1.1 Uygulama ikonu + splash 🤖 — M
-- [ ] Koyu lacivert zemin + mercan pusula/rota motifli ikon seti (`icon.png`, adaptive icon, splash).
-- **Neden:** Premium algı telefonun ana ekranında başlar; şu an varsayılan Expo görselleri var.
-- **Kabul:** Ana ekranda SANA markalı ikon, açılışta markalı splash.
+### ✅ 1.1 Uygulama ikonu + splash
+- [x] Koyu lacivert + mercan rota motifli ikon seti üretildi (GDI+; icon, adaptive set, monochrome, splash,
+  favicon) + app.json bağlandı. *Görsel doğrulama dev build'de (0.3) — Expo Go ikon göstermez.*
 
-### 1.2 `expo-image`'e geçiş 🤖 — S
-- [ ] Tüm `Image` → `expo-image` (kapaklar, marker foto, arama sonuçları). `placeholder={blurhash}` + `transition`.
-- **Neden:** Disk cache (kapaklar her açılışta yeniden inmez) + yumuşak fade = anında "pahalı app" hissi.
-- **Kabul:** İkinci açılışta kapaklar anında; geçişler yumuşak.
+### ✅ 1.2 `expo-image`'e geçiş
+- [x] Home kapakları + arama thumb'ları expo-image (blurhash placeholder + transition + disk cache).
+  Marker fotoları RN Image'da kaldı (bitmap üretim hattının parçası — bilinçli).
 
-### 1.3 Skeleton loader'lar 🤖 — M
-- [ ] Spinner yerine iskelet kartlar: Home akışı, rota detayı hero + timeline, Saved.
-- **Kabul:** Hiçbir ana ekranda "boş beyaz + spinner" yok.
+### ✅ 1.3 Skeleton loader'lar
+- [x] Home (hero+kartlar), RouteFlood (hero+timeline), Saved — spinner'lar gitti.
 
-### 1.4 Haptics 🤖 — S
-- [ ] `expo-haptics`: favori kalbi (light), yolculukta durağa varış (success), rozet açılışı (heavy), buton press'leri (selection).
-- **Kabul:** Kritik aksiyonlar elde hissediliyor.
+### ✅ 1.4 Haptics
+- [x] Favori, varış, yolculuk başlatma, paylaşım, onboarding seçimleri — `lib/haptics.ts` sarmalayıcı.
 
-### 1.5 Mikro-animasyonlar 🤖 — M
-- [ ] Kalp "pop" animasyonu (scale spring), kart basılınca hafif küçülme, journey bar'ın alttan kayarak gelişi,
-  rozet açılış konfetisi (basit scale+opacity). Önce RN `Animated` ile; yetmezse `react-native-reanimated`.
-- **Kabul:** Favori/varış/rozet anları "ölü" değil.
+### ✅ 1.5 Mikro-animasyonlar
+- [x] Kalp pop, PressableScale kartlar, journey bar slide-in, özet kartı scale-in (çekirdek Animated ile).
+  Rozet konfetisi → Faz 3.3'e taşındı (rozet paylaşımıyla birlikte).
 
-### 1.6 Onboarding akışı 🤖 — M ★ (Faz 2.1'in ön koşulu)
-- [ ] İlk açılışta 3 adım: (1) hoş geldin/değer önerisi, (2) **vibe tercihi seçimi** (sakin/tarih/deniz/kahve… çoklu seçim),
-  (3) bütçe aralığı. AsyncStorage `onboarded` bayrağı.
-- **Neden:** Premium ilk izlenim + tercihler AI hafızasına gidecek (Faz 2.1) → kişiselleştirme gerçek olur.
-- **Kabul:** Temiz kurulumda onboarding görünüyor, tercihler kaydediliyor, ikinci açılışta atlanıyor.
+### ✅ 1.6 Onboarding akışı ★
+- [x] 3 adım (tanıtım + vibe çoklu seçim + bütçe), AsyncStorage kalıcılık, ilk açılış kapısı,
+  Profil → "Tercihlerimi Düzenle". **Faz 2.1 bunun üstüne kurulacak.**
 
-### 1.7 Boş/hata durumları turu 🤖 — S
-- [ ] Her ekranda tutarlı boş durum (ikon + başlık + yönlendirme) ve hata + "Tekrar dene". (Home yapıldı; Map/Plan/Saved/Profile tamamla.)
+### ✅ 1.7 Boş/hata durumları turu
+- [x] Home boş/hata+retry, Map boş kartı+retry, Saved hata durumu. Plan/Profile mevcut durumları yeterli.
 
 ---
 
@@ -197,3 +192,6 @@
 | Tarih | Yapılan | Not |
 |---|---|---|
 | 3 Tem | Yol haritası oluşturuldu | — |
+| 3 Tem | **FAZ 0 büyük ölçüde bitti** | 0.1 git ✅ · 0.2 güvenlik ✅ (tam) · 0.5 hava ✅ (Google Weather). Kalan: 0.3 dev build, 0.4 Render deploy |
+| 3 Tem | **FAZ 1 TAMAMLANDI** | 1.1–1.7 hepsi ✅; cihazda doğrulananlar: tema/animasyon/onboarding. İkon/splash dev build bekliyor |
+| 3 Tem | Plansız bonuslar | Google Routes sokak geometrisi (cihazda ✅) + çeyrek-marker kesin çözümü (cihazda ✅) + Google Weather |
