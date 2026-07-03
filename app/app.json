@@ -5,7 +5,12 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1022"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mamikaplaan.sana",
@@ -16,14 +21,16 @@
     "android": {
       "package": "com.mamikaplaan.sana",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B1022",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "config": {
         "googleMaps": {
@@ -48,13 +55,13 @@
       "policy": "sdkVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/d657a049-d387-4d43-8d8f-ceace124fdfc"
+      "url": "https://u.expo.dev/56ef00aa-02fe-4a2f-89c6-fc8ac4ae31cf"
     },
     "extra": {
       "eas": {
-        "projectId": "d657a049-d387-4d43-8d8f-ceace124fdfc"
+        "projectId": "56ef00aa-02fe-4a2f-89c6-fc8ac4ae31cf"
       }
     },
-    "owner": "mamikaplaan"
+    "owner": "google-team-28"
   }
 }
