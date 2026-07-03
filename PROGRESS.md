@@ -233,3 +233,98 @@ model 20, final AI öğeleri 35) → tasarımımız buna birebir oturuyor. Ekip:
 - AI sunucusu (`npm run ai`) artık **arama için gerekli değil**; sadece `/plan-route` (Planla ekranı) ve
   `/enrich-route` + `/embed-route` (rota kaydı) için gerekli.
 - `OSMMap.tsx` ismi tarihsel (artık OSM değil, Google). Refactor şart değil.
+
+---
+
+## 11. Bu oturum (2026-07-03) — bug taraması + tasarım profesyonelleştirme
+
+Uygulama uçtan uca incelendi; bulunan bug'lar düzeltildi, görsel dil rafine edildi. **tsc + expo export temiz.**
+
+### Düzeltilen bug'lar ✅
+1. **`OSMMap.guideLine` prop'u tanımlıydı ama hiç çizilmiyordu** → implement edildi: yolculukta
+   kullanıcı konumu → hedef durak **kesikli mavi rehber çizgi** (Bölüm 10 açık sorun #1'in "nereden nereye" kısmı).
+2. **`tracksViewChanges` hep açıktı** → foto yüklenince kapanıyor (onLoad + 120ms). Pil/performans + Android
+   kırpık foto-marker bug'ına katkısı azaltıldı (kesin çözüm hâlâ dev build).
+3. **Yolculuk auto-advance "Vardın" ile aynı eşikteydi** → kullanıcı varışı hiç görmüyordu. Şimdi ~30m'de
+   "✓ Vardın" 3.5 sn gösterilip sonra otomatik geçiyor; son durakta "🎉 Rota tamamlandı". Manuel "Sonraki"/"Bitir"
+   zamanlayıcıyı temizler. Yolculukta harita 230→380px büyür; hero'daki buton "⏹ Yolculuğu Bitir"e dönüşür.
+4. **Home/Map verisi bayatlıyordu** (tek useEffect fetch) → `useFocusEffect` ile sekmeye dönüşte sessiz yenileme;
+   Home'a pull-to-refresh + boş durum + hata/tekrar dene eklendi. Yeni oluşturulan rota artık anında görünür.
+5. **Akış en eski rotayı önce gösteriyordu** → `fetchRoutes` artık `created_at DESC` (en yeni önce).
+6. **AI fetch'lerinde timeout yoktu** → `AbortController` ile plan 90s / enrich 60s / arama 12s / embed 20s;
+   zaman aşımında Türkçe net mesaj.
+7. **CreateRoute: kayıt başarılı olunca `busy` sıfırlanmıyordu** (Android'de Alert back ile kapatılırsa buton
+   kilitleniyordu) → düzeltildi. Klavyeden aramada debounce ile çifte istek de giderildi.
+8. **Plan başarısızlığında `result.reason` gösterilmiyordu** → artık gösteriliyor.
+
+### Tasarım ✅
+- **Tab bar:** emoji ikonlar → **Ionicons** vektör ikonlar (`@expo/vector-icons` direkt bağımlılık yapıldı,
+  `npx expo install` ile). Sabit `height: 60` kaldırıldı → gesture-bar'lı cihazlarda safe-area düzgün.
+- **Map ekranı:** kart karüseli ↔ harita **senkron** (kart kaydır → rota vurgulanır + kamera uçar;
+  marker'a dokun → karüsel o karta kayar). Sayfa noktaları taşmaya karşı wrap.
+- Başlıklar sadeleşti ("✨ AI ile Planla"→"AI ile Planla", "❤️ Kaydettiklerim"→"Kaydettiklerim").
+- Hata rengi temaya taşındı (`colors.danger`); OSMMap'teki ölü stiller temizlendi.
+
+### İkinci tur (aynı gün): görsel yenileme + çeyrek-marker fix ✅
+- **Palet teal → indigo-violet:** `theme.ts`'e yeni renkler (`primary #4F46E5`, `primarySoft`, `gradients.brand`).
+  Home'da **gradient marka başlığı** (yuvarlak alt köşe, beyaz ＋Rota pill'i; odaktayken status bar light),
+  Auth logosu gradient, etiketler her ekranda **chip** oldu, tüm sabit teal tonları (`#CCFBF1/#ECFEFF`) palete bağlandı.
+  `ROUTE_COLORS[0]` artık marka indigosu.
+- **Çeyrek foto-marker fix (`OSMMap.MapPin`):** foto `Image.prefetch` ile cache'e iner (o sırada numaralı pin),
+  hazır olunca Marker **`key` değişimiyle remount** (bitmap doğru boyutta yeniden oluşur), `fadeDuration={0}`
+  (Android fade ortasında snapshot alınmasın), tüm varyantlar **sabit 66×66 kutuda**. tsc + export temiz;
+  cihazda doğrulanacak — hâlâ takılırsa kesin çözüm EAS dev build.
+
+### Hâlâ açık
+- Bölüm 10 #1'in cihaz doğrulaması (konum takibi gerçek telefonda test edilmeli).
+- Çeyrek-marker fix'i cihazda doğrula; Expo Go'da nüksederse → EAS dev build.
+- ⚠️ Google Maps key `app.json`'da commit'li → repo public olmadan **rotate + Android app kısıtı** ekle.
+
+---
+
+## 12. Bu oturum (2026-07-03, 3. tur) — KOYU TEMA + Strava-vari sosyal katman
+
+Kullanıcının "Kinetic Horizon" mockup'ı esas alındı. **tsc + expo export temiz.** Cihazda görsel doğrulama bekliyor.
+
+### Koyu tema ✅
+- `theme.ts`: koyu lacivert zemin (`#0B1022`) + **mercan** marka (`#F4503B`); `primaryDark` artık
+  "koyu zeminde vurgu METNİ" (açık mercan `#FF9F8B`), `primarySoft` yarı saydam mercan chip zemini.
+  `ROUTE_COLORS` koyu haritada parlayan tonlara güncellendi.
+- **Koyu Google harita stili** — ve gizli bug: `MAP_STYLE` tanımlıydı ama `customMapStyle` MapView'a
+  hiç verilmemişti; artık bağlı. Callout/recenter/emoji-marker/rehber çizgi koyu temaya uyarlandı.
+- StatusBar global `light`; tüm ekranlardaki açık-tema sabit renkleri (handle, modal, social kutusu,
+  rating, journeyBar...) koyu karşılıklarına geçirildi.
+- **Home mockup uyarlaması:** "Rota Ekle" mercan pill, **"Yeni Rota Oluştur" hero kartı** (→ CreateRoute),
+  "Popüler Rotalar" bölüm başlığı, kapakta vibe rozeti (İLK ETİKET upper), Ionicons'lu meta satırı
+  (süre `4s 20dk` formatı), kart altı "Detayları Gör" butonu. Sekme "Planla" → **"AI Plan"**.
+
+### Strava-vari sosyal katman ✅
+1. **Yolculuk özeti + PAYLAŞIM KARTI** (`RouteFloodScreen`): "Bitir" → modal'da Instagram'lık koyu kart
+   (SANA marka, ROTA TAMAMLANDI, başlık, tarih, durak/km/dk istatistik bloğu, durak listesi).
+   **📤 Paylaş** = `react-native-view-shot` captureRef → `expo-sharing` (iki paket `expo install` ile eklendi).
+   Yolculuk süresi gerçek ölçülüyor (`journeyStart` ref).
+2. **Yorumlar:** `flood_comments` UI'ı — rota detayında liste (@kullanıcı + ★ + zaman) + yorum yazma
+   + opsiyonel 1-5 yıldız. RLS zaten hazırdı (select all / insert own); `profiles(username)` FK join çalışıyor.
+   `api.ts`: `fetchComments/addComment/countMyRoutes/countMyComments`.
+3. **Profil sekmesi (5. tab):** istatistikler (yolculuk/km/durak/rota), **8 rozet** (İlk Adım, Gezgin,
+   Şehir Ustası, 10K, Kaşif, Rota Yazarı, Koleksiyoncu, Sosyal), son yolculuklar listesi.
+   Veri: `lib/journeyLog.ts` (AsyncStorage, MVP için yerel; V2'de Supabase'e taşınabilir).
+
+### Cihazda test edilecek
+- Koyu harita stili Expo Go'da render (customMapStyle Android'de çalışmalı).
+- Paylaşım kartı: capture + paylaşım menüsü.
+- Yorum gönderme (dev hesapla) ve rozet kilidi açılışı.
+
+### Ek (aynı gün): KOYU MOD ARTIK TERCİH ✅
+- **Tema sistemi context'e taşındı:** `lib/themeContext.tsx` (ThemeProvider + `useTheme()`),
+  `theme.ts`'te `darkColors` + `lightColors` (ikisi de mercan marka; `routeColors` da tema başına).
+  Tercih **AsyncStorage'da kalıcı** (`sana_theme_mode`), varsayılan koyu.
+- **Toggle: Profil → "Koyu Mod" switch'i** (ay/güneş ikonu, anında geçiş, restart gerekmez).
+- Tüm ekranlar `makeStyles(colors)` desenine geçti (statik `colors` export'u kasıtlı silindi —
+  tsc kaçak kullanım bırakmadı). Harita stili de moda göre: `DARK_MAP_STYLE` / `LIGHT_MAP_STYLE`.
+- Bilinçli sabitler: paylaşım kartı ve journey bar her iki modda da koyu (marka/kontrast).
+- StatusBar moda göre light/dark. tsc + export temiz.
+
+### Yol haritası 📋
+- **`docs/ROADMAP.md`** — 5 fazlı premium plan (30 gün, 2 Ağu teslimine göre; AI = rubrikte 70 puan).
+- **`docs/TODO.md`** — her maddenin komut/dosya düzeyinde uygulama adımları. Yeni oturumda **önce bunlara bak**.
