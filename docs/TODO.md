@@ -20,13 +20,14 @@
 - [ ] Her commit mesajı: ilk satır Türkçe özet, gövde madde madde.
 - **Kontrol:** `git log --oneline` okununca hikâye anlaşılıyor.
 
-### 🟡 0.2 Anahtar güvenliği 👤+🤖 (yapı ✅ + geçmiş temizliği ✅; kısıt/rotasyon 👤 kaldı)
-**A. Google Maps key koruması 👤 (git geçmişi temizlendiği için aciliyeti düştü; kısıt yine de ŞART)**
-- [ ] Key kısıtı ekle: [console.cloud.google.com](https://console.cloud.google.com) → Credentials →
-  *Application restrictions → Android apps* → paket `com.mamikaplaan.sana` + SHA-1
-  (SHA-1: `eas credentials -p android`; dev build sonrası). Kısıt varken key sızsa bile başkası kullanamaz.
-- [ ] *API restrictions* → yalnızca "Maps SDK for Android".
-- [ ] (Opsiyonel, tam garanti) Regenerate ile yenile → yeni değeri `app/.env`'e yaz.
+### ✅ 0.2 Anahtar güvenliği — TAMAMLANDI (3 Tem; tek kalan: NVIDIA eski key revoke 👤)
+**A. Google Maps key koruması 👤**
+- [x] **Regenerate YAPILDI (3 Tem)** → yeni key `app/.env`'de; `expo config` ile enjeksiyon doğrulandı.
+- [x] **Tek-anahtar kararı (3 Tem):** app yayınlanmayacağı için sana-server ayrımı İPTAL;
+  tek anahtar + *API restrictions* = yalnız Maps SDK for Android + Weather + Routes + Places (New).
+- [x] **API restrictions doğrulandı (3 Tem):** konsolda "4 APIs" — Maps SDK for Android +
+  Weather + Routes + Places (New). İzinli API'ler canlı 200, Time Zone reddediliyor.
+- [ ] (Store'a çıkarken) Android app kısıtı + SHA-1 + ayrı sunucu anahtarı — V2 rafı.
 
 **B. Key'i koddan çıkarma 🤖 (yapı) + 👤 (değer) — ✅ YAPI TAMAM (3 Tem)**
 - [x] `app.config.js` oluşturuldu: `googleMaps.apiKey` artık `process.env.GOOGLE_MAPS_API_KEY`'den
@@ -38,11 +39,15 @@
   olmadan önce **rotasyon şart** (geçmiş temizliği gerekmez, rotasyon yeter).
 
 **C. Diğer anahtarlar 👤 (bunlar repo'da HİÇ olmadı; sohbette paylaşıldıkları için önerilir)**
-- [ ] Supabase Dashboard → Settings → API → **service_role** key'i *Rotate* → `ai-service/.env`.
-- [ ] NVIDIA NIM (build.nvidia.com) → API key yenile → `ai-service/.env` güncelle.
-- [ ] SerpApi → key yenile → `ai-service/.env` güncelle.
-- [ ] Dev hesabı şifresini değiştir (Supabase → Auth → Users → dev@sana.app) → `app/.env` güncelle.
-- [ ] Rotasyon sonrası smoke test: `npm run ai` + Planla ekranı + seed script'leri (`npm run seed` cache'li, kota yakmaz).
+- [x] **NVIDIA yenilendi (3 Tem)** → `ai-service/.env`; canlı `/embed` testi geçti (1024 dim).
+  - [ ] 👤 build.nvidia.com'da ESKİ key'i **Revoke** et (yeni üretmek eskiyi öldürmez!).
+- [x] **Supabase TAMAM (3 Tem):** yeni nesil `sb_publishable_` (app config.ts) + `sb_secret_`
+  (ai-service/.env) anahtarlarına geçildi; canlı testler geçti (RLS bypass/engel + GoTrue giriş);
+  **Legacy JWT-based API keys DISABLE edildi** — eski anon + service_role 401 dönüyor (kanıtlandı).
+- [x] **Dev şifresi değişti (3 Tem):** admin API ile güncellendi → `app/.env`; eski şifre 400,
+  yeni şifre 200 (kanıtlandı).
+- [ ] SerpApi → düşük öncelik (yalnızca seed script'leri kullanıyor, cache mevcut).
+- [x] 👤 NVIDIA eski anahtarı Revoke edildi (3 Tem) — **0.2 GÜVENLİK %100 TAMAM.**
 
 **D. Git geçmişi temizliği 🤖 — ✅ YAPILDI (3 Tem)**
 - [x] `git filter-repo --replace-text` ile Maps key + dev şifresi TÜM geçmişten kazındı
@@ -72,9 +77,9 @@
   planRoute timeout'u zaten 90 sn.
 - **Kontrol:** `npm run ai` olmadan telefon her yerden plan alabiliyor.
 
-### ⬜ 0.5 OpenWeather anahtarı 👤
-- [ ] `curl "https://api.openweathermap.org/data/2.5/weather?q=Istanbul&appid=KEY"` → 200 mü?
-- [ ] 401 sürüyorsa: yeni ücretsiz key al → `ai-service/.env` + Render env → pipeline hava adımını canlı test et.
+### ✅ 0.5 Hava anahtarı — GEREKSİZLEŞTİ (3 Tem)
+- Hava artık **Google Weather API**'den geliyor (canlı test: İstanbul 25.3° ✅); OpenWeather yalnızca
+  yedek yol olarak kodda duruyor, anahtarı çalışmasa da sorun değil.
 
 ---
 
@@ -276,5 +281,8 @@
 | 3 Tem | Yol haritası + TODO oluşturuldu | — |
 | 3 Tem | 0.1 Git düzeni | 7 tematik commit; Claude imzaları filter-branch ile temizlendi; **GitHub'a push edildi** (Team-28-Google/RotaHesaplan-yor, private) |
 | 3 Tem | 0.2-B Key'ler koddan çıktı | app.config.js + app/.env (+dev creds EXPO_PUBLIC_*); expo config ile doğrulandı |
-| 3 Tem | 0.2-D Git geçmişi temizlendi | filter-repo ile Maps key + dev şifresi tüm geçmişten kazındı, force-push. Kalan 👤: Maps key Android kısıtı (şart) + C rotasyonları (önerilir) |
+| 3 Tem | 0.2-D Git geçmişi temizlendi | filter-repo ile Maps key + dev şifresi tüm geçmişten kazındı, force-push |
+| 3 Tem | 0.2 rotasyonlar | Maps ✅ NVIDIA ✅ (canlı test) Supabase ✅ (sb_ anahtarlara geçiş + legacy disable, eski anahtarlar 401). Kalan 👤: dev şifresi, sana-server key, NVIDIA eski revoke, Maps Android kısıtı |
+| 3 Tem | **Google Routes entegrasyonu** | Sokak geometrisi: clients.py (decoder+walk_leg) + pipeline.route_geometry + /route-geometry + migration 0006 + add_geometry.py (7/7 seed OK) + app segment çizimi. Hava: Google Weather API (25.3° canlı test) + OpenWeather yedek. **CİHAZDA DOĞRULANDI** (sokak çizgileri ✅) |
+| 3 Tem | **ÇEYREK-MARKER BUG'I ÇÖZÜLDÜ** 🎉 | Kökten çözüm: Android'de foto marker'lar canlı View değil, ekran dışında view-shot ile üretilen NATIVE BİTMAP (`Marker image` prop). **Cihazda doğrulandı** — Expo Go'da bile tam kare. PROGRESS §10 açık sorun #2 kapandı |
 | 3 Tem | **FAZ 1 tamamlandı (1.1–1.7)** | İkon/splash üretildi (GDI+, mercan rota motifi); expo-image + haptics + skeleton + mikro-animasyonlar + onboarding (3 adım, vibe/bütçe) + boş/hata turu. tsc + export temiz. Cihaz doğrulaması ve ikon beğeni onayı bekliyor. Faz 0 kullanıcı isteğiyle atlandı — anahtar güvenliği (0.2) repo public olmadan önce hâlâ ŞART. |
