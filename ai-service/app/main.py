@@ -18,6 +18,7 @@ from app.clients import load_env, nvidia_embed, serpapi_search
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_route as run_enrich_route
 from app.pipeline import plan_route as run_pipeline
+from app.pipeline import route_geometry as run_route_geometry
 
 app = FastAPI(title="SANA AI Service", version="0.2.0")
 app.add_middleware(
@@ -98,6 +99,15 @@ def embed_route(req: EmbedRouteRequest) -> dict:
         return run_embed_route(req.route_id)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Embed hatası: {e}") from e
+
+
+@app.post("/route-geometry")
+def route_geometry(req: EmbedRouteRequest) -> dict:
+    """Rotanın yürüme bacaklarına gerçek sokak geometrisi yazar (Google Routes)."""
+    try:
+        return run_route_geometry(req.route_id)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Geometri hatası: {e}") from e
 
 
 @app.post("/search-place")

@@ -10,7 +10,10 @@ from __future__ import annotations
 import json
 import sys
 
-from app.clients import get_route, get_weather, load_env, match_routes, nvidia_chat, nvidia_embed, sb_insert
+from app.clients import (
+    get_route, get_weather, google_walk_leg, load_env, match_routes,
+    nvidia_chat, nvidia_embed, sb_insert, sb_patch,
+)
 
 # --------------------------- Prompt'lar ---------------------------
 INTENT_SYS = (
@@ -206,6 +209,68 @@ def embed_route(route_id: str) -> dict:
         "embedding": vec, "metadata": {"city": r.get("city"), "vibe_tags": r.get("vibe_tags")},
     })
     return {"ok": True}
+
+
+# --------------------------- Rota geometrisi (Google Routes) ---------------------------
+# Yürüme bacakları: gerçek sokak geometrisi + gerçek süre (Routes API, yazım anında BİR KEZ).
+# Transit bacaklar (vapur/metro...): düz hat kalır; süre = mesafe/250m-dk + 3 dk bekleme.
+
+def _haversine_m(a_lat, a_lng, b_lat, b_lng) -> int:
+    import math
+    R = 6371000
+    p1, p2 = math.radians(a_lat), math.radians(b_lat)
+    dp, dl = math.radians(b_lat - a_lat), math.radians(b_lng - a_lng)
+    h = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return round(2 * R * math.asin(math.sqrt(h)))
+
+
+_WALKISH = {"walk", "start", "other"}
+
+
+def route_geometry(route_id: str) -> dict:
+    """Rotanın ardışık deneyim durakları arasına gerçek yürüme geometrisi yazar.
+    waypoints.leg_geometry/leg_distance_m/leg_duration_min doldurulur;
+    routes.total_distance_m/total_duration_min gerçek verilerle güncellenir."""
+    env = load_env()
+    r = get_route(env, route_id)
+    if not r:
+        return {"ok": False, "reason": "not_found"}
+    wps = sorted(r.get("waypoints", []), key=lambda w: w.get("seq", 0))
+    exp = [w for w in wps if w.get("kind") == "experience"]
+    if len(exp) < 2:
+        return {"ok": False, "reason": "too_few_stops"}
+
+    legs_updated = 0
+    total_dist = 0
+    total_dur = 0
+    for i in range(1, len(exp)):
+        prev, cur = exp[i - 1], exp[i]
+        mode = (cur.get("transport_mode") or "walk").lower()
+        if mode in _WALKISH:
+            leg = google_walk_leg(env, prev["lat"], prev["lng"], cur["lat"], cur["lng"])
+            if leg and leg["coords"]:
+                sb_patch(env, "waypoints", {"id": f"eq.{cur['id']}"}, {
+                    "leg_geometry": leg["coords"],
+                    "leg_distance_m": leg["distance_m"],
+                    "leg_duration_min": leg["duration_min"],
+                })
+                total_dist += leg["distance_m"]
+                total_dur += leg["duration_min"]
+                legs_updated += 1
+                continue
+        # transit ya da Routes başarısız → düz hat tahmini
+        d = _haversine_m(prev["lat"], prev["lng"], cur["lat"], cur["lng"])
+        total_dist += d
+        total_dur += (round(d / 250) + 3) if mode not in _WALKISH else max(1, round(d / 80))
+
+    # Durak başına ~20 dk deneyim süresi ekle (gezme/oturma), toplamları güncelle
+    total_dur += len(exp) * 20
+    sb_patch(env, "routes", {"id": f"eq.{route_id}"}, {
+        "total_distance_m": total_dist,
+        "total_duration_min": total_dur,
+    })
+    return {"ok": True, "legs_updated": legs_updated,
+            "total_distance_m": total_dist, "total_duration_min": total_dur}
 
 
 if __name__ == "__main__":

@@ -124,6 +124,78 @@ def sb_insert(env: dict, table: str, rows):
     return _req(url, "POST", headers, rows)
 
 
+def sb_patch(env: dict, table: str, filters: dict, patch: dict):
+    """service_role ile satır günceller. filters: {"id": "eq.<uuid>"} biçiminde."""
+    q = urllib.parse.urlencode(filters)
+    url = env["SUPABASE_URL"].rstrip("/") + f"/rest/v1/{table}?{q}"
+    headers = _sb_headers(env)
+    headers["Prefer"] = "return=minimal"
+    return _req(url, "PATCH", headers, patch)
+
+
+# --------------------------- Google Routes API ---------------------------
+def _google_server_key(env: dict) -> str | None:
+    # Tek sunucu anahtarı (sana-server: Weather + Routes + Places) — eski değişken adı yedek
+    return env.get("GOOGLE_SERVER_API_KEY") or env.get("GOOGLE_WEATHER_API_KEY") or None
+
+
+def decode_polyline(encoded: str, precision: int = 5) -> list[dict]:
+    """Google encoded polyline → [{lat, lng}, ...] (stdlib, harici paket yok)."""
+    coords: list[dict] = []
+    index = lat = lng = 0
+    factor = 10 ** precision
+    while index < len(encoded):
+        for is_lng in (False, True):
+            shift = result = 0
+            while True:
+                b = ord(encoded[index]) - 63
+                index += 1
+                result |= (b & 0x1F) << shift
+                shift += 5
+                if b < 0x20:
+                    break
+            delta = ~(result >> 1) if (result & 1) else (result >> 1)
+            if is_lng:
+                lng += delta
+            else:
+                lat += delta
+        coords.append({"lat": lat / factor, "lng": lng / factor})
+    return coords
+
+
+def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float):
+    """İki nokta arası YÜRÜME rotası (Routes API): sokak geometrisi + gerçek mesafe/süre.
+    Anahtar yoksa veya hata olursa None döner (çağıran kuş uçuşuna düşer)."""
+    key = _google_server_key(env)
+    if not key:
+        return None
+    body = {
+        "origin": {"location": {"latLng": {"latitude": a_lat, "longitude": a_lng}}},
+        "destination": {"location": {"latLng": {"latitude": b_lat, "longitude": b_lng}}},
+        "travelMode": "WALK",
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline",
+    }
+    try:
+        r = _req("https://routes.googleapis.com/directions/v2:computeRoutes", "POST", headers, body, timeout=30)
+    except Exception:
+        return None
+    routes = (r or {}).get("routes") or []
+    if not routes:
+        return None
+    rt = routes[0]
+    enc = ((rt.get("polyline") or {}).get("encodedPolyline")) or ""
+    dur_s = int(str(rt.get("duration", "0s")).rstrip("s") or 0)
+    return {
+        "coords": decode_polyline(enc) if enc else [],
+        "distance_m": int(rt.get("distanceMeters") or 0),
+        "duration_min": max(1, round(dur_s / 60)),
+    }
+
+
 # --------------------------- SerpApi mekan arama ---------------------------
 _SEARCH_CACHE: dict = {}
 
@@ -162,8 +234,45 @@ def serpapi_search(env: dict, query: str, ll: str = "@41.0082,28.9784,12z", hl: 
     return out
 
 
-# --------------------------- OpenWeather ---------------------------
-def get_weather(env: dict, city: str = "Istanbul"):
+# --------------------------- Hava durumu ---------------------------
+# Öncelik: Google Weather API (GOOGLE_WEATHER_API_KEY varsa) → OpenWeather (yedek).
+# İkisi de aynı şekle döner: {temp, desc, rainy, bias}.
+
+_CITY_COORDS = {"istanbul": (41.0082, 28.9784)}
+
+
+def _weather_google(env: dict, city: str):
+    key = _google_server_key(env)
+    if not key:
+        return None
+    lat, lng = _CITY_COORDS.get(city.lower(), _CITY_COORDS["istanbul"])
+    q = urllib.parse.urlencode({
+        "key": key,
+        "location.latitude": lat,
+        "location.longitude": lng,
+        "languageCode": "tr",
+        "unitsSystem": "METRIC",
+    })
+    try:
+        r = _req("https://weather.googleapis.com/v1/currentConditions:lookup?" + q, "GET")
+    except Exception:
+        return None
+    cond = r.get("weatherCondition") or {}
+    ctype = (cond.get("type") or "").upper()
+    desc = ((cond.get("description") or {}).get("text") or "").lower()
+    temp = (r.get("temperature") or {}).get("degrees")
+    if temp is None:
+        return None
+    rainy = any(t in ctype for t in ("RAIN", "SNOW", "THUNDER", "DRIZZLE", "SHOWER", "STORM"))
+    return {
+        "temp": round(float(temp), 1),
+        "desc": desc,
+        "rainy": rainy,
+        "bias": "indoor" if rainy else "any",
+    }
+
+
+def _weather_openweather(env: dict, city: str):
     key = env.get("OPENWEATHER_API_KEY")
     if not key:
         return None
@@ -181,3 +290,7 @@ def get_weather(env: dict, city: str = "Istanbul"):
         "rainy": rainy,
         "bias": "indoor" if rainy else "any",
     }
+
+
+def get_weather(env: dict, city: str = "Istanbul"):
+    return _weather_google(env, city) or _weather_openweather(env, city)
