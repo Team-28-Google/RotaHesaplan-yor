@@ -86,12 +86,16 @@ const LIGHT_MAP_STYLE = [
 
 type MapStyles = ReturnType<typeof makeStyles>;
 
-/** Ekran DIŞINDA foto marker'ı çizip bir kez PNG'ye çevirir (Android bitmap yolu). */
-function PhotoIconRenderer({ m, styles, onDone }: {
-  m: OSMMarker; styles: MapStyles; onDone: (id: string, uri: string) => void;
+/** Marker içeriğinin imzası — içerik/tema değişirse bitmap yeniden üretilir. */
+const iconSig = (m: OSMMarker, mode: string) =>
+  `${m.id}|${mode}|${m.photo ?? ""}|${m.emoji ?? ""}|${m.label ?? ""}|${m.variant ?? ""}`;
+
+/** Ekran DIŞINDA marker'ı (foto/numara/emoji) çizip bir kez PNG'ye çevirir (Android bitmap yolu). */
+function MarkerIconRenderer({ m, styles, sig, onDone }: {
+  m: OSMMarker; styles: MapStyles; sig: string; onDone: (sig: string, uri: string) => void;
 }) {
   const ref = useRef<View>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(!m.photo); // fotosuz varyantlar anında hazır
 
   useEffect(() => {
     if (!loaded) return;
@@ -99,24 +103,35 @@ function PhotoIconRenderer({ m, styles, onDone }: {
       try {
         const px = Math.round(PIN * PixelRatio.get()); // cihaz yoğunluğunda keskin bitmap
         const uri = await captureRef(ref, { format: "png", quality: 1, result: "tmpfile", width: px, height: px });
-        onDone(m.id, uri.startsWith("file://") ? uri : `file://${uri}`);
+        onDone(sig, uri.startsWith("file://") ? uri : `file://${uri}`);
       } catch {
-        onDone(m.id, ""); // başarısız → numaralı pin'e düş
+        onDone(sig, ""); // başarısız → canlı View'a düş
       }
-    }, 60);
+    }, m.photo ? 60 : 120); // fotosuzda ilk layout'un oturması için küçük pay
     return () => clearTimeout(t);
-  }, [loaded, m.id, onDone]);
+  }, [loaded, sig, onDone, m.photo]);
 
+  const ring = ringOf(m.variant);
   return (
-    <View ref={ref} collapsable={false} style={[styles.photoSquare, { borderColor: ringOf(m.variant) }]}>
-      <Image
-        source={{ uri: m.photo }}
-        style={styles.photoImg}
-        resizeMode="cover"
-        fadeDuration={0}
-        onLoad={() => setLoaded(true)}
-        onError={() => onDone(m.id, "")}
-      />
+    <View ref={ref} collapsable={false} style={styles.pinBox}>
+      {m.photo ? (
+        <View style={[styles.photoSquare, { borderColor: ring }]} collapsable={false}>
+          <Image
+            source={{ uri: m.photo }}
+            style={styles.photoImg}
+            resizeMode="cover"
+            fadeDuration={0}
+            onLoad={() => setLoaded(true)}
+            onError={() => onDone(sig, "")}
+          />
+        </View>
+      ) : m.emoji ? (
+        <View style={styles.emojiWrap} collapsable={false}><Text style={{ fontSize: 16 }}>{m.emoji}</Text></View>
+      ) : (
+        <View style={[styles.numWrap, { backgroundColor: ring }]} collapsable={false}>
+          <Text style={styles.numText}>{m.label ?? "•"}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -145,8 +160,8 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
     return () => clearTimeout(t);
   }, [tracks]);
 
-  // Android + foto + bitmap hazır → native ikonlu marker (çeyrek bug'ı imkânsız)
-  if (BITMAP_MARKERS && m.photo && iconUri) {
+  // Android + bitmap hazır → native ikonlu marker (çeyrek bug'ı imkânsız; TÜM varyantlar)
+  if (BITMAP_MARKERS && iconUri) {
     return (
       <Marker
         coordinate={{ latitude: m.lat, longitude: m.lng }}
@@ -222,13 +237,13 @@ export default function OSMMap({
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  // Android foto marker'ları için üretilen bitmap ikonlar (id → file uri; "" = üretilemedi)
+  // Android'de TÜM marker'lar için üretilen bitmap ikonlar (imza → file uri; "" = üretilemedi)
   const [iconUris, setIconUris] = useState<Record<string, string>>({});
-  const saveIcon = useCallback((id: string, uri: string) => {
-    setIconUris((prev) => ({ ...prev, [id]: uri }));
+  const saveIcon = useCallback((sig: string, uri: string) => {
+    setIconUris((prev) => ({ ...prev, [sig]: uri }));
   }, []);
   const pendingIcons = BITMAP_MARKERS
-    ? markers.filter((m) => m.photo && iconUris[m.id] === undefined)
+    ? markers.filter((m) => iconUris[iconSig(m, mode)] === undefined)
     : [];
 
   // Tek rota (detay) → her zaman çiz. Çok rota (overview) → sadece seçili (tıklanan) görünür.
@@ -340,7 +355,7 @@ export default function OSMMap({
 
         {markers.map((m) => (
           <MapPin
-            key={m.id} m={m} styles={styles} iconUri={iconUris[m.id]}
+            key={m.id} m={m} styles={styles} iconUri={iconUris[iconSig(m, mode)]}
             onSelect={() => onSelectItem?.(m.id)} onOpen={() => onPressItem?.(m.id)}
           />
         ))}
@@ -358,12 +373,13 @@ export default function OSMMap({
         </TouchableOpacity>
       )}
 
-      {/* Ekran dışı ikon fabrikası: foto marker'ları bir kez bitmap'e çevirir (Android) */}
+      {/* Ekran dışı ikon fabrikası: marker'ları bir kez bitmap'e çevirir (Android — tüm varyantlar) */}
       {pendingIcons.length > 0 && (
         <View style={styles.iconFactory} pointerEvents="none">
-          {pendingIcons.map((m) => (
-            <PhotoIconRenderer key={m.id} m={m} styles={styles} onDone={saveIcon} />
-          ))}
+          {pendingIcons.map((m) => {
+            const sig = iconSig(m, mode);
+            return <MarkerIconRenderer key={sig} m={m} styles={styles} sig={sig} onDone={saveIcon} />;
+          })}
         </View>
       )}
     </View>
