@@ -8,9 +8,10 @@
 
 ## FAZ 0 — TEMEL SAĞLAMLAŞTIRMA
 
-### ⬜ 0.1 Git düzeni 🤖
-- [ ] `git status` ile birikmiş değişiklikleri listele (şu an ~15 dosya, 4 turluk iş).
-- [ ] Mantıksal parçalara böl ve sırayla commit'le:
+### ✅ 0.1 Git düzeni 🤖
+- [x] `git status` ile birikmiş değişiklikleri listele.
+- [x] Mantıksal parçalara böl ve sırayla commit'le (6 commit: chore deps/config →
+  feat tema → feat çekirdek/harita → feat ekranlar → feat marka → docs):
   1. `fix:` bug turu (guideLine, tracksViewChanges, focus-refetch, sıralama, timeout'lar, busy)
   2. `feat:` tab bar Ionicons + navigasyon (Profil sekmesi, AI Plan başlığı)
   3. `feat:` koyu/açık tema sistemi (themeContext, makeStyles refactor, harita stilleri)
@@ -261,4 +262,5 @@
 | Tarih | Madde | Durum / Not |
 |---|---|---|
 | 3 Tem | Yol haritası + TODO oluşturuldu | — |
+| 3 Tem | 0.1 Git düzeni | 6 tematik commit atıldı (61ab621…1e2965f); working tree temiz |
 | 3 Tem | **FAZ 1 tamamlandı (1.1–1.7)** | İkon/splash üretildi (GDI+, mercan rota motifi); expo-image + haptics + skeleton + mikro-animasyonlar + onboarding (3 adım, vibe/bütçe) + boş/hata turu. tsc + export temiz. Cihaz doğrulaması ve ikon beğeni onayı bekliyor. Faz 0 kullanıcı isteğiyle atlandı — anahtar güvenliği (0.2) repo public olmadan önce hâlâ ŞART. |
