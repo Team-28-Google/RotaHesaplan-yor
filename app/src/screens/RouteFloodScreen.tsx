@@ -1,11 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Sharing from "expo-sharing";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator, Animated, Linking, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { captureRef } from "react-native-view-shot";
 
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
-import { fetchRoute, getFavoriteIds, setFavorite } from "../lib/api";
+import Skeleton from "../components/Skeleton";
+import { pop, success, tap } from "../lib/haptics";
+import {
+  addComment, fetchComments, fetchRoute, getFavoriteIds, setFavorite, type FloodComment,
+} from "../lib/api";
+import { addJourney } from "../lib/journeyLog";
 import { useUserLocation } from "../lib/useUserLocation";
-import { colors, font, radius, shadow } from "../lib/theme";
+import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import { budgetLabel, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 import type { RouteFloodScreenProps } from "../navigation";
@@ -27,9 +38,26 @@ function getRating(meta: unknown): number | undefined {
   const r = (meta as { rating?: unknown } | null)?.rating;
   return typeof r === "number" ? r : undefined;
 }
+function timeAgo(iso: string): string {
+  const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (min < 60) return `${min} dk önce`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h} sa önce`;
+  return `${Math.round(h / 24)} gün önce`;
+}
+
+interface JourneySummary {
+  title: string;
+  stops: number;
+  distM: number;
+  durationMin: number;
+  date: Date;
+}
 
 export default function RouteFloodScreen({ route: navRoute, navigation }: RouteFloodScreenProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const userLoc = useUserLocation();
   const { routeId } = navRoute.params;
   const [route, setRoute] = useState<RouteWithWaypoints | null>(null);
@@ -37,17 +65,78 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [fav, setFav] = useState(false);
   const [journey, setJourney] = useState(false);
   const [target, setTarget] = useState(0);
+  const [arrived, setArrived] = useState(false);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const journeyStart = useRef<number | null>(null);
+
+  // Yorumlar
+  const [comments, setComments] = useState<FloodComment[]>([]);
+  const [cBody, setCBody] = useState("");
+  const [cRating, setCRating] = useState<number | null>(null);
+  const [cSending, setCSending] = useState(false);
+  const [cError, setCError] = useState<string | null>(null);
+
+  // Yolculuk özeti + paylaşım kartı
+  const [summary, setSummary] = useState<JourneySummary | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const shareCardRef = useRef<View>(null);
+
+  // Mikro-animasyonlar
+  const heartScale = useRef(new Animated.Value(1)).current;
+  const jBarY = useRef(new Animated.Value(90)).current;      // journey bar alttan kayar
+  const sumScale = useRef(new Animated.Value(0.9)).current;  // özet kartı büyüyerek gelir
+
+  useEffect(() => {
+    if (!journey) return;
+    jBarY.setValue(90);
+    Animated.spring(jBarY, { toValue: 0, speed: 16, bounciness: 7, useNativeDriver: true }).start();
+  }, [journey, jBarY]);
+
+  useEffect(() => {
+    if (!summary) return;
+    sumScale.setValue(0.9);
+    Animated.spring(sumScale, { toValue: 1, speed: 18, bounciness: 8, useNativeDriver: true }).start();
+  }, [summary, sumScale]);
+
+  const clearAdvance = () => {
+    if (advanceTimer.current) { clearTimeout(advanceTimer.current); advanceTimer.current = null; }
+  };
 
   useEffect(() => {
     fetchRoute(routeId)
       .then(setRoute)
       .catch((e) => setError(e.message ?? "Rota yüklenemedi"));
     getFavoriteIds().then((s) => setFav(s.has(routeId))).catch(() => {});
+    fetchComments(routeId).then(setComments).catch(() => {});
   }, [routeId]);
+
+  const sendComment = async () => {
+    const body = cBody.trim();
+    if (!body || cSending) return;
+    setCSending(true);
+    setCError(null);
+    try {
+      await addComment(routeId, body, cRating);
+      setCBody("");
+      setCRating(null);
+      setComments(await fetchComments(routeId));
+    } catch (e) {
+      setCError(e instanceof Error ? e.message : "Yorum gönderilemedi");
+    } finally {
+      setCSending(false);
+    }
+  };
 
   const toggleFav = async () => {
     const next = !fav;
     setFav(next);
+    pop();
+    // Kalp "pop" animasyonu
+    heartScale.setValue(1);
+    Animated.sequence([
+      Animated.spring(heartScale, { toValue: 1.45, speed: 40, bounciness: 0, useNativeDriver: true }),
+      Animated.spring(heartScale, { toValue: 1, speed: 24, bounciness: 12, useNativeDriver: true }),
+    ]).start();
     try {
       await setFavorite(routeId, next);
     } catch {
@@ -61,7 +150,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     () => (exp.length
       ? [{ id: "route", color: colors.primary, coords: exp.map((w) => ({ lat: w.lat, lng: w.lng })), modes: exp.map((w) => w.transport_mode) }]
       : []),
-    [exp],
+    [exp, colors],
   );
   const markers = useMemo<OSMMarker[]>(
     () => [
@@ -72,27 +161,133 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       })),
       ...util.map((w) => ({ id: w.id, lat: w.lat, lng: w.lng, color: colors.utility, emoji: waypointIcon(w) })),
     ],
-    [exp, util],
+    [exp, util, colors],
   );
 
-  // Yolculuk: hedefe ~25m yaklaşınca otomatik sonraki durağa geç
+  // Yolculuk: hedefe ~30m yaklaşınca "Vardın" göster, kısa bir duraklamadan sonra
+  // otomatik olarak sıradaki durağa geç (anında atlarsa kullanıcı varışı hiç göremiyor).
+  const ARRIVE_M = 30;
   useEffect(() => {
     if (!journey || !userLoc) return;
     const t = exp[target];
-    if (t && target < exp.length - 1 && distMeters(userLoc, t) < 25) {
-      setTarget((x) => x + 1);
+    if (!t) return;
+    if (distMeters(userLoc, t) >= ARRIVE_M) {
+      if (arrived && !advanceTimer.current) setArrived(false); // hedeften uzaklaşıldı
+      return;
     }
-  }, [userLoc, journey, target, exp]);
+    if (!arrived) success(); // varış anı — dokunsal kutlama
+    setArrived(true);
+    if (target < exp.length - 1 && !advanceTimer.current) {
+      advanceTimer.current = setTimeout(() => {
+        advanceTimer.current = null;
+        setArrived(false);
+        setTarget((x) => x + 1);
+      }, 3500);
+    }
+  }, [userLoc, journey, target, exp, arrived]);
+
+  // Ekrandan çıkarken bekleyen zamanlayıcıyı temizle
+  useEffect(() => clearAdvance, []);
+
+  const startJourney = () => {
+    tap();
+    clearAdvance();
+    journeyStart.current = Date.now();
+    setJourney(true);
+    setTarget(0);
+    setArrived(false);
+  };
+
+  // Yolculuğu kapat → özet + paylaşım kartı göster, yerel günlüğe yaz (Profil istatistikleri)
+  const finishJourney = () => {
+    clearAdvance();
+    setJourney(false);
+    setArrived(false);
+    setTarget(0);
+    if (!route) return;
+    const durationMin = journeyStart.current
+      ? Math.max(1, Math.round((Date.now() - journeyStart.current) / 60000))
+      : route.total_duration_min ?? 0;
+    journeyStart.current = null;
+    const s: JourneySummary = {
+      title: route.title,
+      stops: exp.length,
+      distM: route.total_distance_m ?? 0,
+      durationMin,
+      date: new Date(),
+    };
+    setSummary(s);
+    addJourney({
+      routeId: route.id, title: route.title, city: route.city,
+      distance_m: s.distM, duration_min: s.durationMin, stops: s.stops,
+      date: s.date.toISOString(),
+    });
+  };
+
+  const shareCard = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const uri = await captureRef(shareCardRef, { format: "png", quality: 1 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri.startsWith("file://") ? uri : `file://${uri}`, {
+          mimeType: "image/png",
+          dialogTitle: "Rotanı paylaş",
+        });
+        success();
+      }
+    } catch { /* kullanıcı iptal etti / paylaşım yok — yoksay */ }
+    finally { setSharing(false); }
+  };
 
   if (error) return <View style={styles.center}><Text style={styles.error}>⚠️ {error}</Text></View>;
-  if (!route) return <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>;
+  if (!route) {
+    return (
+      <View style={styles.container}>
+        <Skeleton style={{ height: 230, borderRadius: 0 }} />
+        <View style={styles.sheet}>
+          <View style={styles.handle} />
+          <View style={{ padding: 20, gap: 14 }}>
+            <Skeleton style={{ height: 26, width: "68%" }} />
+            <Skeleton style={{ height: 15, width: "94%" }} />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <Skeleton style={{ height: 30, width: 74, borderRadius: 999 }} />
+              <Skeleton style={{ height: 30, width: 90, borderRadius: 999 }} />
+              <Skeleton style={{ height: 30, width: 70, borderRadius: 999 }} />
+            </View>
+            <Skeleton style={{ height: 50, borderRadius: 18, marginTop: 8 }} />
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={{ flexDirection: "row", gap: 12, marginTop: 6 }}>
+                <Skeleton style={{ width: 30, height: 30, borderRadius: 15 }} />
+                <Skeleton style={{ flex: 1, height: 76, borderRadius: 14 }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   const km = route.total_distance_m ? (route.total_distance_m / 1000).toFixed(1) : "—";
   const last = exp.length - 1;
 
+  const targetStop = exp[target];
+  const guideLine = journey && userLoc && targetStop
+    ? [userLoc, { lat: targetStop.lat, lng: targetStop.lng }]
+    : null;
+
   return (
     <View style={styles.container}>
-      <OSMMap polylines={polylines} markers={markers} padding={48} style={styles.map} userLocation={userLoc} followLocation={journey ? userLoc : null} showRecenter />
+      <OSMMap
+        polylines={polylines}
+        markers={markers}
+        padding={48}
+        style={[styles.map, journey && styles.mapJourney]}
+        userLocation={userLoc}
+        followLocation={journey ? userLoc : null}
+        guideLine={guideLine}
+        showRecenter
+      />
       <TouchableOpacity style={[styles.backBtn, { top: insets.top + 8 }]} onPress={() => navigation.goBack()} hitSlop={12}>
         <Text style={styles.backIcon}>‹</Text>
       </TouchableOpacity>
@@ -105,7 +300,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             <View style={styles.titleRow}>
               <Text style={[styles.title, { flex: 1 }]}>{route.title}</Text>
               <TouchableOpacity onPress={toggleFav} hitSlop={12} style={styles.heart}>
-                <Text style={styles.heartText}>{fav ? "❤️" : "🤍"}</Text>
+                <Animated.Text style={[styles.heartText, { transform: [{ scale: heartScale }] }]}>
+                  {fav ? "❤️" : "🤍"}
+                </Animated.Text>
               </TouchableOpacity>
             </View>
             {!!route.description && <Text style={styles.desc}>{route.description}</Text>}
@@ -120,9 +317,15 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 <Text key={t} style={styles.tag}>#{t}</Text>
               ))}
             </View>
-            <TouchableOpacity style={styles.startBtn} onPress={() => { setJourney(true); setTarget(0); }} activeOpacity={0.9}>
-              <Text style={styles.startBtnText}>🧭 Yolculuğa Başla</Text>
-            </TouchableOpacity>
+            {journey ? (
+              <TouchableOpacity style={[styles.startBtn, styles.stopBtn]} onPress={finishJourney} activeOpacity={0.9}>
+                <Text style={styles.startBtnText}>⏹ Yolculuğu Bitir</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.startBtn} onPress={startJourney} activeOpacity={0.9}>
+                <Text style={styles.startBtnText}>🧭 Yolculuğa Başla</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Zaman çizelgesi (gezilecek duraklar) */}
@@ -174,53 +377,164 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               ))}
             </View>
           )}
+
+          {/* Yorumlar (flood) */}
+          <View style={styles.commentsWrap}>
+            <Text style={styles.nearbyTitle}>Yorumlar ({comments.length})</Text>
+
+            <View style={styles.commentForm}>
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <TouchableOpacity key={s} onPress={() => setCRating(cRating === s ? null : s)} hitSlop={6}>
+                    <Text style={[styles.star, cRating != null && s <= cRating && styles.starOn]}>★</Text>
+                  </TouchableOpacity>
+                ))}
+                <Text style={styles.starHint}>{cRating ? `${cRating}/5` : "puan (opsiyonel)"}</Text>
+              </View>
+              <View style={styles.commentRow}>
+                <TextInput
+                  style={styles.commentInput}
+                  value={cBody}
+                  onChangeText={setCBody}
+                  placeholder="Bu rota hakkında ne düşünüyorsun?"
+                  placeholderTextColor={colors.textFaint}
+                  multiline
+                />
+                <TouchableOpacity
+                  style={[styles.commentSend, (!cBody.trim() || cSending) && { opacity: 0.45 }]}
+                  onPress={sendComment}
+                  disabled={!cBody.trim() || cSending}
+                >
+                  {cSending ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.commentSendText}>Gönder</Text>}
+                </TouchableOpacity>
+              </View>
+              {!!cError && <Text style={styles.cError}>⚠️ {cError}</Text>}
+            </View>
+
+            {comments.map((c) => (
+              <View key={c.id} style={styles.comment}>
+                <View style={styles.commentHead}>
+                  <Text style={styles.commentUser}>@{c.username}</Text>
+                  {!!c.rating && <Text style={styles.commentRating}>{"★".repeat(c.rating)}</Text>}
+                  <Text style={styles.commentTime}>{timeAgo(c.created_at)}</Text>
+                </View>
+                {!!c.body && <Text style={styles.commentBody}>{c.body}</Text>}
+              </View>
+            ))}
+            {comments.length === 0 && (
+              <Text style={styles.commentEmpty}>İlk yorumu sen yaz — deneyimin başkasının rotası olur.</Text>
+            )}
+          </View>
         </ScrollView>
       </View>
 
       {journey && (
-        <View style={[styles.journeyBar, { paddingBottom: insets.bottom + 10 }]}>
+        <Animated.View style={[styles.journeyBar, { paddingBottom: insets.bottom + 10, transform: [{ translateY: jBarY }] }]}>
           <View style={{ flex: 1 }}>
             <Text style={styles.jLabel}>Durak {target + 1}/{exp.length}</Text>
-            <Text style={styles.jStop} numberOfLines={1}>{exp[target]?.name}</Text>
-            {userLoc && exp[target] ? (
-              distMeters(userLoc, exp[target]) < 25 ? (
-                <Text style={styles.jArrived}>✓ Vardın — keyfini çıkar</Text>
+            <Text style={styles.jStop} numberOfLines={1}>{targetStop?.name}</Text>
+            {userLoc && targetStop ? (
+              arrived ? (
+                target < last ? (
+                  <Text style={styles.jArrived}>✓ Vardın — sıradaki durağa geçiliyor…</Text>
+                ) : (
+                  <Text style={styles.jArrived}>🎉 Rota tamamlandı — keyfini çıkar</Text>
+                )
               ) : (
-                <Text style={styles.jDist}>📍 {distText(distMeters(userLoc, exp[target]))} ileride · seni takip ediyorum</Text>
+                <Text style={styles.jDist}>📍 {distText(distMeters(userLoc, targetStop))} ileride · seni takip ediyorum</Text>
               )
             ) : (
               <Text style={styles.jLabel}>📍 Konum bekleniyor…</Text>
             )}
           </View>
-          {target < exp.length - 1 ? (
-            <TouchableOpacity style={styles.jNext} onPress={() => setTarget(target + 1)}>
+          {target < last ? (
+            <TouchableOpacity style={styles.jNext} onPress={() => { clearAdvance(); setArrived(false); setTarget(target + 1); }}>
               <Text style={styles.jNextText}>Sonraki ›</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.jNext} onPress={() => setJourney(false)}>
+            <TouchableOpacity style={styles.jNext} onPress={finishJourney}>
               <Text style={styles.jNextText}>Bitir</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </Animated.View>
       )}
+
+      {/* Yolculuk özeti + Instagram'lık paylaşım kartı */}
+      <Modal visible={!!summary} transparent animationType="fade" onRequestClose={() => setSummary(null)}>
+        <View style={styles.sumBg}>
+          {summary && (
+            <Animated.View style={{ transform: [{ scale: sumScale }], alignItems: "center" }}>
+              <View ref={shareCardRef} collapsable={false} style={styles.shareCard}>
+                <LinearGradient colors={["#141B33", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.shareInner}>
+                  <View style={styles.shareBrandRow}>
+                    <View style={styles.shareBrandDot} />
+                    <Text style={styles.shareBrand}>SANA</Text>
+                  </View>
+                  <Text style={styles.shareDone}>ROTA TAMAMLANDI</Text>
+                  <Text style={styles.shareTitle}>{summary.title}</Text>
+                  <Text style={styles.shareDate}>
+                    {summary.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} · İstanbul
+                  </Text>
+                  <View style={styles.shareStats}>
+                    <View style={styles.shareStat}>
+                      <Text style={styles.shareStatVal}>{summary.stops}</Text>
+                      <Text style={styles.shareStatLabel}>durak</Text>
+                    </View>
+                    <View style={styles.shareDivider} />
+                    <View style={styles.shareStat}>
+                      <Text style={styles.shareStatVal}>{(summary.distM / 1000).toFixed(1)}</Text>
+                      <Text style={styles.shareStatLabel}>km</Text>
+                    </View>
+                    <View style={styles.shareDivider} />
+                    <View style={styles.shareStat}>
+                      <Text style={styles.shareStatVal}>{summary.durationMin}</Text>
+                      <Text style={styles.shareStatLabel}>dk</Text>
+                    </View>
+                  </View>
+                  <View style={styles.shareStops}>
+                    {exp.slice(0, 5).map((w, i) => (
+                      <Text key={w.id} style={styles.shareStop} numberOfLines={1}>
+                        {i + 1}. {waypointIcon(w)} {w.name}
+                      </Text>
+                    ))}
+                    {exp.length > 5 && <Text style={styles.shareStop}>+{exp.length - 5} durak daha…</Text>}
+                  </View>
+                  <Text style={styles.shareFooter}>sana ile keşfedildi 🧭</Text>
+                </LinearGradient>
+              </View>
+
+              <View style={styles.sumBtns}>
+                <TouchableOpacity style={styles.sumGhost} onPress={() => setSummary(null)}>
+                  <Text style={styles.sumGhostText}>Kapat</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.sumShare, sharing && { opacity: 0.6 }]} onPress={shareCard} disabled={sharing}>
+                  {sharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.sumShareText}>📤 Paylaş</Text>}
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
 
 function Pill({ icon, text }: { icon: string; text: string }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.pill}>
-      <Text style={styles.pillText}>{icon} {text}</Text>
+    <View style={{ backgroundColor: colors.surfaceAlt, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill }}>
+      <Text style={{ fontSize: 13, color: colors.text, fontFamily: font.bold }}>{icon} {text}</Text>
     </View>
   );
 }
 
 const NODE = 30;
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
-  error: { color: "#b91c1c", paddingHorizontal: 24, textAlign: "center" },
+  error: { color: colors.danger, paddingHorizontal: 24, textAlign: "center", fontFamily: font.medium },
   map: { height: 230, width: "100%" },
+  mapJourney: { height: 380 }, // yolculukta harita büyür: takip + rehber çizgi net görünsün
   backBtn: {
     position: "absolute", left: 14, width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", ...shadow(8),
@@ -232,7 +546,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, overflow: "hidden",
   },
   handle: {
-    width: 42, height: 5, borderRadius: 3, backgroundColor: "#CBD5E1",
+    width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border,
     alignSelf: "center", marginTop: 9, marginBottom: 2,
   },
 
@@ -245,8 +559,12 @@ const styles = StyleSheet.create({
   pills: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 },
   pill: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
   pillText: { fontSize: 13, color: colors.text, fontFamily: font.bold },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
-  tag: { color: colors.primaryDark, fontSize: 13, fontFamily: font.bold },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  tag: {
+    color: colors.primaryDark, fontSize: 12.5, fontFamily: font.bold,
+    backgroundColor: colors.primarySoft, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: radius.pill, overflow: "hidden",
+  },
 
   timeline: { paddingHorizontal: 16, paddingTop: 8 },
   row: { flexDirection: "row" },
@@ -259,21 +577,15 @@ const styles = StyleSheet.create({
   nodeText: { color: "#fff", fontFamily: font.extra, fontSize: 13 },
 
   card: {
-    flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: 14,
+    flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: 14,
     marginBottom: 14, marginLeft: 6, borderWidth: 1, borderColor: colors.border,
   },
-  cardUtility: { backgroundColor: colors.bg, borderStyle: "dashed", borderColor: "#CBD5E1" },
   legPill: {
-    alignSelf: "flex-start", backgroundColor: "#ECFEFF", borderRadius: radius.pill,
+    alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: radius.pill,
     paddingHorizontal: 10, paddingVertical: 4, marginBottom: 8,
   },
   legText: { fontSize: 12, color: colors.primaryDark, fontFamily: font.bold },
   stopName: { fontSize: 16, fontFamily: font.extra, color: colors.text },
-  stopNameUtility: { fontFamily: font.bold, color: colors.textMuted },
-  utilityTag: {
-    alignSelf: "flex-start", marginTop: 5, fontSize: 11, color: colors.textMuted, fontFamily: font.semibold,
-    backgroundColor: colors.surfaceAlt, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, overflow: "hidden",
-  },
   note: { marginTop: 7, color: colors.textMuted, lineHeight: 20, fontSize: 14, fontFamily: font.regular },
 
   nearby: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
@@ -286,24 +598,79 @@ const styles = StyleSheet.create({
   amenityName: { fontSize: 14, color: colors.text, fontFamily: font.bold },
   amenityNote: { fontSize: 12.5, color: colors.textMuted, marginTop: 2, fontFamily: font.regular },
   amenityBadge: {
-    fontSize: 11, color: colors.primaryDark, fontFamily: font.bold, backgroundColor: "#CCFBF1",
+    fontSize: 11, color: colors.primaryDark, fontFamily: font.bold, backgroundColor: colors.primarySoft,
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, overflow: "hidden",
   },
 
   startBtn: { marginTop: 16, backgroundColor: colors.primary, borderRadius: radius.lg, paddingVertical: 14, alignItems: "center", ...shadow(6) },
+  stopBtn: { backgroundColor: "#2A3354" },
   startBtnText: { color: "#fff", fontFamily: font.extra, fontSize: 16 },
   stopFoot: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 10 },
-  rating: { fontSize: 12.5, color: "#B45309", fontFamily: font.bold },
-  dirText: { fontSize: 12.5, color: colors.primary, fontFamily: font.bold },
+  rating: { fontSize: 12.5, color: "#FBBF24", fontFamily: font.bold },
+  dirText: { fontSize: 12.5, color: colors.primaryDark, fontFamily: font.bold },
+  // Journey bar her iki temada da koyu kalır (harita üstü kontrast) → metinleri sabit açık
   journeyBar: {
     position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: colors.text, paddingHorizontal: 16, paddingTop: 12,
+    backgroundColor: "#10162C", paddingHorizontal: 16, paddingTop: 12,
     borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg,
+    borderTopWidth: 1, borderTopColor: "#263052",
   },
-  jLabel: { color: "#94A3B8", fontFamily: font.semibold, fontSize: 12 },
-  jStop: { color: "#fff", fontFamily: font.extra, fontSize: 16, marginTop: 1 },
-  jDist: { color: "#5EEAD4", fontFamily: font.semibold, fontSize: 12.5, marginTop: 2 },
-  jArrived: { color: "#86EFAC", fontFamily: font.extra, fontSize: 12.5, marginTop: 2 },
+  jLabel: { color: "#8A93B8", fontFamily: font.semibold, fontSize: 12 },
+  jStop: { color: "#F2F4FC", fontFamily: font.extra, fontSize: 16, marginTop: 1 },
+  jDist: { color: "#FFB4A5", fontFamily: font.semibold, fontSize: 12.5, marginTop: 2 },
+  jArrived: { color: "#4ADE80", fontFamily: font.extra, fontSize: 12.5, marginTop: 2 },
   jNext: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
   jNextText: { color: "#fff", fontFamily: font.extra, fontSize: 13 },
+
+  // Yorumlar
+  commentsWrap: { paddingHorizontal: 20, paddingTop: 10 },
+  commentForm: { marginBottom: 14 },
+  starsRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  star: { fontSize: 22, color: colors.border },
+  starOn: { color: "#FBBF24" },
+  starHint: { marginLeft: 6, fontSize: 12, color: colors.textFaint, fontFamily: font.medium },
+  commentRow: { flexDirection: "row", gap: 8, alignItems: "flex-end" },
+  commentInput: {
+    flex: 1, minHeight: 44, maxHeight: 110, backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10,
+    color: colors.text, fontFamily: font.regular, fontSize: 14,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  commentSend: { backgroundColor: colors.primary, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12 },
+  commentSendText: { color: "#fff", fontFamily: font.extra, fontSize: 13 },
+  cError: { color: colors.danger, fontFamily: font.medium, fontSize: 12.5, marginTop: 6 },
+  comment: { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: 12, marginBottom: 8 },
+  commentHead: { flexDirection: "row", alignItems: "center", gap: 8 },
+  commentUser: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 13 },
+  commentRating: { color: "#FBBF24", fontSize: 12 },
+  commentTime: { marginLeft: "auto", color: colors.textFaint, fontSize: 11.5, fontFamily: font.medium },
+  commentBody: { color: colors.text, fontFamily: font.regular, fontSize: 13.5, lineHeight: 19, marginTop: 5 },
+  commentEmpty: { color: colors.textFaint, fontFamily: font.regular, fontSize: 13, marginTop: 2 },
+
+  // Yolculuk özeti + paylaşım kartı
+  sumBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", alignItems: "center", justifyContent: "center", padding: 24 },
+  shareCard: { width: 320, borderRadius: radius.xl, overflow: "hidden", ...shadow(14) },
+  shareInner: { padding: 24 },
+  shareBrandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  shareBrandDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#F4503B" },
+  shareBrand: { color: "#F2F4FC", fontFamily: font.black, fontSize: 16, letterSpacing: 2 },
+  shareDone: { marginTop: 18, color: "#FF9F8B", fontFamily: font.bold, fontSize: 11, letterSpacing: 2.5 },
+  shareTitle: { marginTop: 6, color: "#F2F4FC", fontFamily: font.black, fontSize: 24, lineHeight: 30 },
+  shareDate: { marginTop: 4, color: "#8A93B8", fontFamily: font.medium, fontSize: 12.5 },
+  shareStats: {
+    flexDirection: "row", alignItems: "center", marginTop: 18,
+    backgroundColor: "rgba(255,255,255,0.06)", borderRadius: radius.lg, paddingVertical: 14,
+  },
+  shareStat: { flex: 1, alignItems: "center" },
+  shareStatVal: { color: "#F2F4FC", fontFamily: font.black, fontSize: 22 },
+  shareStatLabel: { color: "#8A93B8", fontFamily: font.semibold, fontSize: 11.5, marginTop: 2 },
+  shareDivider: { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
+  shareStops: { marginTop: 16, gap: 6 },
+  shareStop: { color: "#C6CCE4", fontFamily: font.medium, fontSize: 13 },
+  shareFooter: { marginTop: 18, color: "#FF9F8B", fontFamily: font.bold, fontSize: 12.5, textAlign: "center" },
+  sumBtns: { flexDirection: "row", gap: 10, marginTop: 16, width: 320 },
+  sumGhost: { flex: 1, paddingVertical: 14, alignItems: "center", borderRadius: radius.lg, backgroundColor: "rgba(255,255,255,0.12)" },
+  sumGhostText: { color: "#F2F4FC", fontFamily: font.bold },
+  sumShare: { flex: 1.4, paddingVertical: 14, alignItems: "center", borderRadius: radius.lg, backgroundColor: colors.primary },
+  sumShareText: { color: "#fff", fontFamily: font.extra, fontSize: 15 },
 });

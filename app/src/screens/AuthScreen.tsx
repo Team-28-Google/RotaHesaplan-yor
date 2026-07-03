@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -6,10 +7,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { signIn, signUp } from "../lib/auth";
-import { colors, font, radius, shadow } from "../lib/theme";
+import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -44,7 +48,9 @@ export default function AuthScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.inner}>
-        <View style={styles.logo}><Text style={styles.logoText}>SANA</Text></View>
+        <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logo}>
+          <Text style={styles.logoText}>SANA</Text>
+        </LinearGradient>
         <Text style={styles.tagline}>Şehirde yalnız değilsin.</Text>
         <Text style={styles.h2}>{mode === "login" ? "Tekrar hoş geldin" : "Aramıza katıl"}</Text>
 
@@ -94,11 +100,11 @@ export default function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   inner: { flex: 1, justifyContent: "center", paddingHorizontal: 28 },
   logo: {
-    alignSelf: "center", backgroundColor: colors.primary, width: 76, height: 76,
+    alignSelf: "center", width: 76, height: 76,
     borderRadius: 22, alignItems: "center", justifyContent: "center", ...shadow(10),
   },
   logoText: { color: "#fff", fontFamily: font.black, fontSize: 22, letterSpacing: 1 },
@@ -108,7 +114,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface, borderRadius: radius.lg, paddingHorizontal: 16, paddingVertical: 14,
     fontSize: 16, color: colors.text, fontFamily: font.regular, borderWidth: 1, borderColor: colors.border, marginBottom: 12,
   },
-  error: { color: "#b91c1c", fontFamily: font.medium, marginBottom: 6 },
+  error: { color: colors.danger, fontFamily: font.medium, marginBottom: 6 },
   info: { color: colors.primaryDark, fontFamily: font.medium, marginBottom: 6 },
   btn: {
     backgroundColor: colors.primary, borderRadius: radius.lg, paddingVertical: 16,

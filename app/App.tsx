@@ -2,38 +2,46 @@ import {
   Inter_400Regular, Inter_500Medium, Inter_600SemiBold,
   Inter_700Bold, Inter_800ExtraBold, Inter_900Black, useFonts,
 } from "@expo-google-fonts/inter";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { Session } from "@supabase/supabase-js";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AUTH_ENABLED, DEV_EMAIL, DEV_PASSWORD } from "./src/lib/config";
 import { ensureProfile, signIn } from "./src/lib/auth";
+import { getOnboarding } from "./src/lib/onboarding";
 import { supabase } from "./src/lib/supabase";
-import { colors, font } from "./src/lib/theme";
+import { font } from "./src/lib/theme";
+import { ThemeProvider, useTheme } from "./src/lib/themeContext";
 import type { RootStackParamList, TabParamList } from "./src/navigation";
 import AuthScreen from "./src/screens/AuthScreen";
 import CreateRouteScreen from "./src/screens/CreateRouteScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import MapScreen from "./src/screens/MapScreen";
+import OnboardingScreen, { OnboardingFlow } from "./src/screens/OnboardingScreen";
 import PlanScreen from "./src/screens/PlanScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
 import RouteFloodScreen from "./src/screens/RouteFloodScreen";
 import SavedScreen from "./src/screens/SavedScreen";
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function tabIcon(emoji: string) {
-  return ({ focused }: { focused: boolean }) => (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>{emoji}</Text>
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function tabIcon(outline: IconName, filled: IconName) {
+  return ({ focused, color }: { focused: boolean; color: string }) => (
+    <Ionicons name={focused ? filled : outline} size={22} color={color} />
   );
 }
 
 function Tabs() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -41,18 +49,20 @@ function Tabs() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textFaint,
         tabBarLabelStyle: { fontFamily: font.semibold, fontSize: 11 },
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 60, paddingBottom: 8, paddingTop: 6 },
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Akış", tabBarIcon: tabIcon("🏠") }} />
-      <Tab.Screen name="Map" component={MapScreen} options={{ title: "Harita", tabBarIcon: tabIcon("🗺️") }} />
-      <Tab.Screen name="Plan" component={PlanScreen} options={{ title: "Planla", tabBarIcon: tabIcon("✨") }} />
-      <Tab.Screen name="Saved" component={SavedScreen} options={{ title: "Kayıtlı", tabBarIcon: tabIcon("❤️") }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Akış", tabBarIcon: tabIcon("home-outline", "home") }} />
+      <Tab.Screen name="Map" component={MapScreen} options={{ title: "Harita", tabBarIcon: tabIcon("map-outline", "map") }} />
+      <Tab.Screen name="Plan" component={PlanScreen} options={{ title: "AI Plan", tabBarIcon: tabIcon("sparkles-outline", "sparkles") }} />
+      <Tab.Screen name="Saved" component={SavedScreen} options={{ title: "Kayıtlı", tabBarIcon: tabIcon("heart-outline", "heart") }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Profil", tabBarIcon: tabIcon("person-outline", "person") }} />
     </Tab.Navigator>
   );
 }
 
 function Loader() {
+  const { colors } = useTheme();
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg }}>
       <ActivityIndicator size="large" color={colors.primary} />
@@ -60,13 +70,19 @@ function Loader() {
   );
 }
 
-export default function App() {
+function Root() {
+  const { colors, mode } = useTheme();
   const [fontsLoaded] = useFonts({
     Inter_400Regular, Inter_500Medium, Inter_600SemiBold,
     Inter_700Bold, Inter_800ExtraBold, Inter_900Black,
   });
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getOnboarding().then((p) => setOnboarded(!!p?.done));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -85,22 +101,35 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  if (!fontsLoaded || !authReady) return <Loader />;
+  if (!fontsLoaded || !authReady || onboarded === null) return <Loader />;
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
+    <>
+      <StatusBar style={mode === "dark" ? "light" : "dark"} />
       {!session && AUTH_ENABLED ? (
         <AuthScreen />
+      ) : !onboarded ? (
+        <OnboardingFlow onDone={() => setOnboarded(true)} />
       ) : (
         <NavigationContainer>
           <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="Tabs" component={Tabs} />
             <Stack.Screen name="RouteFlood" component={RouteFloodScreen} />
             <Stack.Screen name="CreateRoute" component={CreateRouteScreen} />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       )}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <Root />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

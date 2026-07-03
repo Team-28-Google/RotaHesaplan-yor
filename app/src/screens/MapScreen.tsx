@@ -1,5 +1,6 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator, Alert, Dimensions, FlatList, type NativeScrollEvent,
   type NativeSyntheticEvent, StyleSheet, Text, TouchableOpacity, View,
@@ -7,11 +8,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
+import PressableScale from "../components/PressableScale";
 import { fetchRoutes } from "../lib/api";
 import { signOut } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/config";
 import { useUserLocation } from "../lib/useUserLocation";
-import { colors, font, radius, shadow } from "../lib/theme";
+import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import { budgetLabel, routeColor, waypointIcon } from "../lib/ui";
 import type { MapScreenProps } from "../navigation";
@@ -23,35 +26,41 @@ const SNAP = CARD_W + GAP;
 
 export default function MapScreen({ navigation }: MapScreenProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const userLoc = useUserLocation();
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const listRef = useRef<FlatList<RouteWithWaypoints>>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetchRoutes()
-      .then(setRoutes)
-      .catch((e) => setError(e.message ?? "Rotalar yüklenemedi"))
+      .then((r) => { setRoutes(r); setError(null); })
+      .catch((e) => setError(e instanceof Error ? e.message : "Rotalar yüklenemedi"))
       .finally(() => setLoading(false));
   }, []);
 
+  // Sekmeye her dönüşte sessiz yenile (yeni oluşturulan rota haritada görünsün)
+  useFocusEffect(load);
+
   const polylines = useMemo<OSMPolyline[]>(
     () => routes.map((r, i) => ({
-      id: r.id, color: routeColor(i),
+      id: r.id, color: routeColor(i, colors.routeColors),
       coords: r.waypoints.filter((w) => w.kind === "experience").map((w) => ({ lat: w.lat, lng: w.lng })),
     })),
-    [routes],
+    [routes, colors],
   );
   const markers = useMemo<OSMMarker[]>(
     () => routes.flatMap((r, i) => {
       const exp = r.waypoints.filter((w) => w.kind === "experience");
       return exp[0]
-        ? [{ id: r.id, lat: exp[0].lat, lng: exp[0].lng, color: routeColor(i), popup: r.title, photo: r.cover_photo_url ?? exp[0].photo_urls?.[0] ?? undefined }]
+        ? [{ id: r.id, lat: exp[0].lat, lng: exp[0].lng, color: routeColor(i, colors.routeColors), popup: r.title, photo: r.cover_photo_url ?? exp[0].photo_urls?.[0] ?? undefined }]
         : [];
     }),
-    [routes],
+    [routes, colors],
   );
 
   const open = (r: RouteWithWaypoints) => navigation.navigate("RouteFlood", { routeId: r.id, title: r.title });
@@ -59,16 +68,34 @@ export default function MapScreen({ navigation }: MapScreenProps) {
     const r = routes.find((x) => x.id === id);
     if (r) open(r);
   };
+  // Kart kaydırılınca → o rota haritada vurgulanır ve kamera rotaya uçar
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.max(0, Math.min(Math.round(e.nativeEvent.contentOffset.x / SNAP), routes.length - 1));
     setActive(idx);
+    if (routes[idx]) setSelectedId(routes[idx].id);
+  };
+  // Marker'a dokununca → karüsel o rotanın kartına kayar
+  const selectOnMap = (id: string) => {
+    setSelectedId(id);
+    const idx = routes.findIndex((r) => r.id === id);
+    if (idx >= 0) {
+      setActive(idx);
+      listRef.current?.scrollToOffset({ offset: idx * SNAP, animated: true });
+    }
   };
 
   if (loading) {
     return <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /><Text style={styles.muted}>Rotalar yükleniyor…</Text></View>;
   }
   if (error) {
-    return <View style={styles.center}><Text style={styles.error}>⚠️ {error}</Text></View>;
+    return (
+      <View style={styles.center}>
+        <Text style={styles.error}>⚠️ {error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }} activeOpacity={0.85}>
+          <Text style={styles.retryText}>Tekrar dene</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
@@ -77,7 +104,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         polylines={polylines}
         markers={markers}
         onPressItem={openById}
-        onSelectItem={setSelectedId}
+        onSelectItem={selectOnMap}
         onMapPress={() => setSelectedId(null)}
         focusId={selectedId}
         userLocation={userLoc}
@@ -104,6 +131,17 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         </View>
       </TouchableOpacity>
 
+      {/* Rota yoksa: davet kartı */}
+      {routes.length === 0 && (
+        <View style={[styles.emptyCard, { bottom: insets.bottom + 24 }]}>
+          <Text style={styles.emptyTitle}>Haritada henüz rota yok</Text>
+          <Text style={styles.emptyText}>İlk rotayı sen çiz — durakları ekle, AI gerisini yazsın.</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.navigate("CreateRoute")} activeOpacity={0.9}>
+            <Text style={styles.retryText}>＋ Rota Oluştur</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Alt: sayfa noktaları + kart karüseli */}
       <View style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}>
         <View style={styles.dots}>
@@ -112,6 +150,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
           ))}
         </View>
         <FlatList
+          ref={listRef}
           data={routes}
           keyExtractor={(r) => r.id}
           horizontal
@@ -121,19 +160,18 @@ export default function MapScreen({ navigation }: MapScreenProps) {
           onMomentumScrollEnd={onScrollEnd}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           renderItem={({ item, index }) => {
-            const color = routeColor(index);
+            const color = routeColor(index, colors.routeColors);
             const km = item.total_distance_m ? (item.total_distance_m / 1000).toFixed(1) : "—";
             const expStops = item.waypoints.filter((w) => w.kind === "experience");
             const icons = expStops.slice(0, 4).map(waypointIcon);
             const isActive = index === active;
             return (
-              <TouchableOpacity
-                activeOpacity={0.92}
+              <PressableScale
                 style={[styles.card, { width: CARD_W }, isActive ? { borderColor: color, ...shadow(12) } : null]}
                 onPress={() => open(item)}
               >
                 <LinearGradient
-                  colors={[color, "rgba(15,23,42,0.55)"]}
+                  colors={[color, "rgba(11,16,34,0.85)"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.cover}
@@ -154,7 +192,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
                     <Text style={styles.go}>Keşfet →</Text>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
             );
           }}
         />
@@ -163,11 +201,20 @@ export default function MapScreen({ navigation }: MapScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.bg },
   muted: { color: colors.textMuted, fontFamily: font.medium },
-  error: { color: "#b91c1c", paddingHorizontal: 24, textAlign: "center", fontFamily: font.medium },
+  error: { color: colors.danger, paddingHorizontal: 24, textAlign: "center", fontFamily: font.medium },
+  retryBtn: { marginTop: 10, backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: 20, paddingVertical: 10 },
+  retryText: { color: "#fff", fontFamily: font.bold, fontSize: 14 },
+  emptyCard: {
+    position: "absolute", left: 20, right: 20, alignItems: "center",
+    backgroundColor: colors.surface, borderRadius: radius.xl, padding: 20,
+    borderWidth: 1, borderColor: colors.border, ...shadow(10),
+  },
+  emptyTitle: { color: colors.text, fontFamily: font.extra, fontSize: 16 },
+  emptyText: { color: colors.textMuted, fontFamily: font.regular, fontSize: 13.5, textAlign: "center", marginTop: 6, lineHeight: 19 },
 
   header: {
     position: "absolute", left: 16, flexDirection: "row", alignItems: "center", gap: 10,
@@ -190,8 +237,8 @@ const styles = StyleSheet.create({
   brandSub: { fontSize: 12, color: colors.textMuted, marginTop: 1, fontFamily: font.medium },
 
   bottom: { position: "absolute", left: 0, right: 0, bottom: 0 },
-  dots: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, marginBottom: 10 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "rgba(15,23,42,0.22)" },
+  dots: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 6, marginBottom: 10, paddingHorizontal: 24 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textFaint, opacity: 0.55 },
   dotActive: { width: 20, backgroundColor: colors.primary },
 
   card: {
@@ -204,7 +251,11 @@ const styles = StyleSheet.create({
   cardBody: { padding: 14 },
   cardTitle: { fontSize: 16, fontFamily: font.extra, color: colors.text },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
-  tag: { fontSize: 12, color: colors.primaryDark, fontFamily: font.semibold },
+  tag: {
+    fontSize: 11.5, color: colors.primaryDark, fontFamily: font.semibold,
+    backgroundColor: colors.primarySoft, paddingHorizontal: 9, paddingVertical: 3,
+    borderRadius: radius.pill, overflow: "hidden",
+  },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10 },
   meta: { fontSize: 13, color: colors.textMuted, fontFamily: font.semibold },
   go: { marginLeft: "auto", color: colors.primary, fontFamily: font.extra },

@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import { planRoute } from "../lib/api";
-import { colors, font, radius, shadow } from "../lib/theme";
+import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 import type { PlanResponse } from "../lib/types";
 import { budgetLabel, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 
@@ -20,6 +21,8 @@ const SUGGESTIONS = [
 
 export default function PlanScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +50,7 @@ export default function PlanScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
-        <Text style={styles.topbarTitle}>✨ AI ile Planla</Text>
+        <Text style={styles.topbarTitle}>AI ile Planla</Text>
       </View>
       {result ? (
         <PlanResult result={result} onReset={reset} />
@@ -100,6 +103,8 @@ export default function PlanScreen() {
 }
 
 function PlanResult({ result, onReset }: { result: PlanResponse; onReset: () => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const route = result.route;
   const ai = result.ai ?? {};
   const exp = useMemo(() => (route?.waypoints ?? []).filter((w) => w.kind === "experience"), [route]);
@@ -128,6 +133,7 @@ function PlanResult({ result, onReset }: { result: PlanResponse; onReset: () => 
       <View style={styles.center}>
         <Text style={styles.h1}>Uygun rota bulamadım 😔</Text>
         <Text style={styles.h2}>Farklı bir ifadeyle tekrar dener misin?</Text>
+        {!!result.reason && <Text style={styles.reason}>{result.reason}</Text>}
         <TouchableOpacity style={styles.btn} onPress={onReset}><Text style={styles.btnText}>← Yeni plan</Text></TouchableOpacity>
       </View>
     );
@@ -209,7 +215,7 @@ function PlanResult({ result, onReset }: { result: PlanResponse; onReset: () => 
 }
 
 const NODE = 30;
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   screen: { flex: 1, backgroundColor: colors.bg },
   topbar: {
@@ -230,9 +236,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { backgroundColor: colors.surfaceAlt, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
+  chip: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
   chipText: { fontSize: 13, color: colors.primaryDark, fontFamily: font.semibold },
-  error: { color: "#b91c1c", fontFamily: font.medium },
+  error: { color: colors.danger, fontFamily: font.medium },
+  reason: { color: colors.textFaint, fontFamily: font.regular, fontSize: 13, textAlign: "center" },
   btn: {
     backgroundColor: colors.primary, borderRadius: radius.lg, paddingVertical: 16,
     alignItems: "center", justifyContent: "center", ...shadow(6),
@@ -246,9 +253,9 @@ const styles = StyleSheet.create({
     flex: 1, marginTop: -24, backgroundColor: colors.surface,
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, overflow: "hidden",
   },
-  handle: { width: 42, height: 5, borderRadius: 3, backgroundColor: "#CBD5E1", alignSelf: "center", marginTop: 9, marginBottom: 2 },
+  handle: { width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, alignSelf: "center", marginTop: 9, marginBottom: 2 },
   hero: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  aiTag: { alignSelf: "flex-start", color: colors.primaryDark, fontFamily: font.bold, fontSize: 12, backgroundColor: "#CCFBF1", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: "hidden", marginBottom: 8 },
+  aiTag: { alignSelf: "flex-start", color: colors.primaryDark, fontFamily: font.bold, fontSize: 12, backgroundColor: colors.primarySoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: "hidden", marginBottom: 8 },
   title: { fontSize: 22, fontFamily: font.black, color: colors.text },
   summary: { marginTop: 8, color: colors.textMuted, lineHeight: 21, fontSize: 14.5, fontFamily: font.regular },
   pills: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 },
@@ -261,8 +268,8 @@ const styles = StyleSheet.create({
   line: { width: 2, flex: 1 },
   node: { width: NODE, height: NODE, borderRadius: NODE / 2, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: colors.surface, ...shadow(3) },
   nodeText: { color: "#fff", fontFamily: font.extra, fontSize: 13 },
-  card: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: 14, marginBottom: 14, marginLeft: 6, borderWidth: 1, borderColor: colors.border },
-  legPill: { alignSelf: "flex-start", backgroundColor: "#ECFEFF", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 8 },
+  card: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: 14, marginBottom: 14, marginLeft: 6, borderWidth: 1, borderColor: colors.border },
+  legPill: { alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 8 },
   legText: { fontSize: 12, color: colors.primaryDark, fontFamily: font.bold },
   stopName: { fontSize: 16, fontFamily: font.extra, color: colors.text },
   stopNote: { marginTop: 7, color: colors.textMuted, lineHeight: 20, fontSize: 14, fontFamily: font.regular },
@@ -271,10 +278,10 @@ const styles = StyleSheet.create({
   nearbyTitle: { fontSize: 13, color: colors.textFaint, fontFamily: font.bold, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 },
   amenity: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: 12, marginBottom: 8 },
   amenityName: { flex: 1, fontSize: 14, color: colors.text, fontFamily: font.bold },
-  amenityBadge: { fontSize: 11, color: colors.primaryDark, fontFamily: font.bold, backgroundColor: "#CCFBF1", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, overflow: "hidden" },
+  amenityBadge: { fontSize: 11, color: colors.primaryDark, fontFamily: font.bold, backgroundColor: colors.primarySoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, overflow: "hidden" },
 
-  social: { marginHorizontal: 20, marginTop: 8, backgroundColor: "#FFF7ED", borderRadius: radius.md, padding: 14, borderWidth: 1, borderColor: "#FED7AA" },
-  socialText: { color: "#9A3412", fontFamily: font.semibold, fontSize: 13.5, lineHeight: 19 },
+  social: { marginHorizontal: 20, marginTop: 8, backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: 14, borderWidth: 1, borderColor: colors.border },
+  socialText: { color: colors.accent, fontFamily: font.semibold, fontSize: 13.5, lineHeight: 19 },
 
   resetBtn: { marginHorizontal: 20, marginTop: 18 },
 });

@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { Image } from "expo-image";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import { createRoute, enrichRoute, searchPlaces } from "../lib/api";
-import { colors, font, radius, shadow } from "../lib/theme";
+import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/themeContext";
 import type { CreateStop, EnrichResult, PlaceResult } from "../lib/types";
 import type { CreateRouteScreenProps } from "../navigation";
 
@@ -30,6 +32,8 @@ function placeIcon(type?: string): string {
 
 export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [stops, setStops] = useState<CreateStop[]>([]);
   const [pending, setPending] = useState<{ lat: number; lng: number } | null>(null);
   const [mName, setMName] = useState("");
@@ -46,6 +50,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
 
   const runSearch = async (q: string) => {
     if (!q) return;
+    if (timer.current) clearTimeout(timer.current); // bekleyen debounce ile çifte istek atma
     const id = ++reqId.current;
     setSearching(true);
     setError(null);
@@ -128,6 +133,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
           narrative: enriched.stops[i]?.narrative ?? s.note ?? "",
         })),
       });
+      setBusy(false); // Alert geri tuşuyla kapatılırsa buton spinner'da kalmasın
       Alert.alert("🎉 Rotan paylaşıldı!", "Artık haritada ve akışta görünüyor.", [
         { text: "Rotaya git", onPress: () => navigation.replace("RouteFlood", { routeId, title: title.trim() || enriched.title }) },
       ]);
@@ -223,7 +229,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
               {results.map((p, i) => (
                 <TouchableOpacity key={i} style={styles.resultRow} onPress={() => addFromResult(p)} activeOpacity={0.85}>
                   {p.thumbnail ? (
-                    <Image source={{ uri: p.thumbnail }} style={styles.resultThumb} />
+                    <Image source={{ uri: p.thumbnail }} style={styles.resultThumb} transition={150} contentFit="cover" />
                   ) : (
                     <View style={styles.resultIcon}><Text style={{ fontSize: 20 }}>{placeIcon(p.type)}</Text></View>
                   )}
@@ -282,7 +288,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   topbar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
@@ -312,7 +318,7 @@ const styles = StyleSheet.create({
   resultName: { fontFamily: font.bold, fontSize: 14.5, color: colors.text },
   resultAddr: { fontFamily: font.regular, fontSize: 12, color: colors.textMuted, marginTop: 2 },
   resultAddBtn: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: "#CCFBF1",
+    width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primarySoft,
     alignItems: "center", justifyContent: "center",
   },
   resultAddText: { fontSize: 18, color: colors.primaryDark, fontFamily: font.extra, marginTop: -1 },
@@ -324,9 +330,9 @@ const styles = StyleSheet.create({
   num: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
   numText: { color: "#fff", fontFamily: font.extra, fontSize: 13 },
   stopRowName: { flex: 1, fontFamily: font.semibold, color: colors.text, fontSize: 15 },
-  remove: { color: "#b91c1c", fontSize: 16, fontFamily: font.bold },
+  remove: { color: colors.danger, fontSize: 16, fontFamily: font.bold },
 
-  error: { color: "#b91c1c", fontFamily: font.medium, marginVertical: 6 },
+  error: { color: colors.danger, fontFamily: font.medium, marginVertical: 6 },
   cta: { backgroundColor: colors.primary, borderRadius: radius.lg, paddingVertical: 15, alignItems: "center", justifyContent: "center", marginTop: 10, ...shadow(6) },
   ctaOff: { opacity: 0.45 },
   ctaText: { color: "#fff", fontFamily: font.extra, fontSize: 16 },
@@ -335,13 +341,17 @@ const styles = StyleSheet.create({
 
   label: { fontFamily: font.bold, fontSize: 13, color: colors.textFaint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
   titleInput: { backgroundColor: colors.surface, borderRadius: radius.md, padding: 14, fontSize: 18, fontFamily: font.extra, color: colors.text, borderWidth: 1, borderColor: colors.border },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
-  tag: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 13 },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  tag: {
+    color: colors.primaryDark, fontFamily: font.bold, fontSize: 12.5,
+    backgroundColor: colors.primarySoft, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: radius.pill, overflow: "hidden",
+  },
   reviewStop: { flexDirection: "row", gap: 12, alignItems: "flex-start", marginTop: 12 },
   stopName: { fontFamily: font.extra, fontSize: 15, color: colors.text },
   stopNarr: { fontFamily: font.regular, fontSize: 13.5, color: colors.textMuted, marginTop: 3, lineHeight: 19 },
 
-  modalBg: { flex: 1, backgroundColor: "rgba(15,23,42,0.5)", justifyContent: "center", padding: 28 },
+  modalBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "center", padding: 28 },
   modalCard: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 20, ...shadow(12) },
   modalTitle: { fontFamily: font.extra, fontSize: 18, color: colors.text, marginBottom: 14 },
   input: { backgroundColor: colors.bg, borderRadius: radius.md, padding: 13, fontSize: 15, fontFamily: font.regular, color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 10 },

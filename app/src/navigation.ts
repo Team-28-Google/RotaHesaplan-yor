@@ -7,12 +7,14 @@ export type TabParamList = {
   Map: undefined;
   Plan: undefined;
   Saved: undefined;
+  Profile: undefined;
 };
 
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
   RouteFlood: { routeId: string; title: string };
   CreateRoute: undefined;
+  Onboarding: undefined;
 };
 
 // Sekme ekranları hem sekmeler arası hem de kök stack'e (RouteFlood) gidebilir.
@@ -25,5 +27,7 @@ export type HomeScreenProps = TabProps<"Home">;
 export type MapScreenProps = TabProps<"Map">;
 export type PlanScreenProps = TabProps<"Plan">;
 export type SavedScreenProps = TabProps<"Saved">;
+export type ProfileScreenProps = TabProps<"Profile">;
 export type RouteFloodScreenProps = NativeStackScreenProps<RootStackParamList, "RouteFlood">;
 export type CreateRouteScreenProps = NativeStackScreenProps<RootStackParamList, "CreateRoute">;
+export type OnboardingScreenProps = NativeStackScreenProps<RootStackParamList, "Onboarding">;
