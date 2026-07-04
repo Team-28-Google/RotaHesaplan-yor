@@ -102,4 +102,10 @@ export interface PlanResponse {
   route_id?: string;
   route?: RouteWithWaypoints;
   ai?: PlanAI;
+  /** Kullanıcı hafızasıyla kişiselleştirildi mi (2.1) */
+  personalized?: boolean;
+  /** Kullanılan profil cümlesi (örn. "sakin, deniz kenarı ... seven bir gezgin") */
+  profile?: string | null;
+  /** Agent pipeline adımları: gerçek süre + tek satır özet (2.6) */
+  steps?: { name: string; ms: number; note?: string }[];
 }

@@ -143,14 +143,16 @@ export async function countMyComments(): Promise<number> {
   return count ?? 0;
 }
 
-/** AI servisine doğal dil niyeti gönderir → kişiselleştirilmiş rota + flood anlatısı. */
+/** AI servisine doğal dil niyeti gönderir → kişiselleştirilmiş rota + flood anlatısı.
+ *  Giriş yapılmışsa user_id eklenir → plan kullanıcının hafızasıyla kişiselleşir (2.1). */
 export async function planRoute(text: string): Promise<PlanResponse> {
+  const uid = await currentUserId();
   let res: Response;
   try {
     res = await fetchWithTimeout(`${AI_SERVICE_URL}/plan-route`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, user_id: uid ?? undefined }),
     }, 90_000);
   } catch (e) {
     if (isAbort(e)) throw new Error("AI servisi yanıt vermedi (zaman aşımı). Sunucu meşgul olabilir, tekrar dene.");
@@ -162,6 +164,51 @@ export async function planRoute(text: string): Promise<PlanResponse> {
     data.route.waypoints = (data.route.waypoints ?? []).slice().sort(bySeq);
   }
   return data;
+}
+
+// --------------------------- Canlı navigasyon (journey) ---------------------------
+export interface WalkLeg {
+  coords: { lat: number; lng: number }[];
+  distance_m: number;
+  duration_min: number;
+}
+
+/** Kullanıcı konumu → hedef durak GERÇEK yürüme rotası (Google Maps hissi).
+ *  Servis kapalıysa null döner → harita düz kesikli çizgiye düşer. */
+export async function fetchWalkRoute(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+): Promise<WalkLeg | null> {
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/walk-route`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng }),
+    }, 12_000);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.ok && Array.isArray(data.coords) && data.coords.length >= 2 ? (data as WalkLeg) : null;
+  } catch {
+    return null;
+  }
+}
+
+// --------------------------- AI hafıza (onboarding) ---------------------------
+/** Onboarding tercihlerini AI hafızasına yazar (kişiselleştirilmiş plan için).
+ *  Başarısızsa sessizce false döner — app akışını asla bloklamaz; sonraki açılışta tekrar denenir. */
+export async function syncOnboardingMemory(vibes: string[], budget: number): Promise<boolean> {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return false;
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/memory/onboarding`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: uid, vibes, budget }),
+    }, 20_000);
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 // --------------------------- Rota oluşturma ---------------------------

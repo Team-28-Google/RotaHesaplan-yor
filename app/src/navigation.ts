@@ -12,7 +12,7 @@ export type TabParamList = {
 
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
-  RouteFlood: { routeId: string; title: string };
+  RouteFlood: { routeId: string; title: string; autoStart?: boolean };
   CreateRoute: undefined;
   Onboarding: undefined;
 };

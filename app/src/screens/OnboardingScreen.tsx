@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { syncOnboardingMemory } from "../lib/api";
 import { tap, success } from "../lib/haptics";
-import { getOnboarding, saveOnboarding } from "../lib/onboarding";
+import { getOnboarding, markOnboardingSynced, saveOnboarding } from "../lib/onboarding";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { OnboardingScreenProps } from "../navigation";
@@ -49,8 +50,10 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
 
   const finish = async () => {
     success();
-    await saveOnboarding({ vibes, budget, done: true });
+    await saveOnboarding({ vibes, budget, done: true, synced: false });
     onDone();
+    // AI hafızasına arka planda yaz — başarısızsa açılışta tekrar denenir (App.tsx)
+    syncOnboardingMemory(vibes, budget).then((ok) => { if (ok) markOnboardingSynced(); });
   };
 
   const next = () => { tap(); setStep((s) => s + 1); };

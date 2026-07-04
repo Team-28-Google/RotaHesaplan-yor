@@ -12,9 +12,10 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { syncOnboardingMemory } from "./src/lib/api";
 import { AUTH_ENABLED, DEV_EMAIL, DEV_PASSWORD } from "./src/lib/config";
 import { ensureProfile, signIn } from "./src/lib/auth";
-import { getOnboarding } from "./src/lib/onboarding";
+import { getOnboarding, markOnboardingSynced } from "./src/lib/onboarding";
 import { supabase } from "./src/lib/supabase";
 import { font } from "./src/lib/theme";
 import { ThemeProvider, useTheme } from "./src/lib/themeContext";
@@ -83,6 +84,16 @@ function Root() {
   useEffect(() => {
     getOnboarding().then((p) => setOnboarded(!!p?.done));
   }, []);
+
+  // Tercihler AI hafızasına yazılamamışsa (servis kapalıydı vb.) açılışta tekrar dene
+  useEffect(() => {
+    if (!authReady) return;
+    getOnboarding().then((p) => {
+      if (p?.done && !p.synced) {
+        syncOnboardingMemory(p.vibes, p.budget).then((ok) => { if (ok) markOnboardingSynced(); });
+      }
+    });
+  }, [authReady]);
 
   useEffect(() => {
     (async () => {

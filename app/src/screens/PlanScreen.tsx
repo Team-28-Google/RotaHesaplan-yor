@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -6,11 +6,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
-import { planRoute } from "../lib/api";
+import { planRoute, setFavorite } from "../lib/api";
+import { pop, tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { PlanResponse } from "../lib/types";
 import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
+import type { PlanScreenProps } from "../navigation";
 
 const SUGGESTIONS = [
   "Kafa dinlemek istiyorum, bütçem az",
@@ -19,7 +21,51 @@ const SUGGESTIONS = [
   "Müze ve kapalı mekanlar, bütçe orta",
 ];
 
-export default function PlanScreen() {
+// Pipeline'ın GERÇEK aşamaları (servis bunları aynı sırayla yürütür; bekleme ekranı akışı)
+const AGENT_STEPS = [
+  { icon: "🧠", label: "Niyet çözümleniyor" },
+  { icon: "💾", label: "Hafızan taranıyor" },
+  { icon: "🌤️", label: "Hava kontrol ediliyor" },
+  { icon: "🗺️", label: "Rotalar eşleştiriliyor" },
+  { icon: "✍️", label: "Anlatı yazılıyor" },
+];
+
+/** Plan beklerken agent adımlarını akıtan gösterge — orkestrasyonu görünür kılar (2.6). */
+function AgentProgress() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => Math.min(i + 1, AGENT_STEPS.length - 1)), 1800);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <View style={styles.agentBox}>
+      {AGENT_STEPS.map((s, i) => (
+        <View key={s.label} style={styles.agentRow}>
+          {i < idx ? (
+            <Text style={styles.agentDone}>✓</Text>
+          ) : i === idx ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ width: 18 }} />
+          ) : (
+            <Text style={styles.agentPending}>○</Text>
+          )}
+          <Text style={[
+            styles.agentLabel,
+            i < idx && styles.agentLabelDone,
+            i > idx && styles.agentLabelPending,
+          ]}>
+            {s.icon} {s.label}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export default function PlanScreen({ navigation }: PlanScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -53,7 +99,11 @@ export default function PlanScreen() {
         <Text style={styles.topbarTitle}>AI ile Planla</Text>
       </View>
       {result ? (
-        <PlanResult result={result} onReset={reset} />
+        <PlanResult
+          result={result}
+          onReset={reset}
+          onOpenRoute={(id, title) => navigation.navigate("RouteFlood", { routeId: id, title, autoStart: true })}
+        />
       ) : (
         <KeyboardAvoidingView
           style={styles.container}
@@ -94,7 +144,7 @@ export default function PlanScreen() {
             <Text style={styles.btnText}>✨ Planla</Text>
           )}
         </TouchableOpacity>
-            {loading && <Text style={styles.loadingNote}>AI senin için planlıyor…</Text>}
+            {loading && <AgentProgress />}
           </ScrollView>
         </KeyboardAvoidingView>
       )}
@@ -102,11 +152,21 @@ export default function PlanScreen() {
   );
 }
 
-function PlanResult({ result, onReset }: { result: PlanResponse; onReset: () => void }) {
+function PlanResult({ result, onReset, onOpenRoute }: {
+  result: PlanResponse; onReset: () => void; onOpenRoute: (id: string, title: string) => void;
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [saved, setSaved] = useState(false);
   const route = result.route;
   const ai = result.ai ?? {};
+
+  const savePlan = async () => {
+    if (!route || saved) return;
+    pop();
+    setSaved(true);
+    try { await setFavorite(route.id, true); } catch { setSaved(false); }
+  };
   const exp = useMemo(() => (route?.waypoints ?? []).filter((w) => w.kind === "experience"), [route]);
   const util = useMemo(() => (route?.waypoints ?? []).filter((w) => w.kind === "utility"), [route]);
 
@@ -147,9 +207,24 @@ function PlanResult({ result, onReset }: { result: PlanResponse; onReset: () => 
         <View style={styles.handle} />
         <ScrollView contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
-            <Text style={styles.aiTag}>✨ Sana özel</Text>
+            <Text style={styles.aiTag}>{result.personalized ? "🧠 Sana özel · hafızandan" : "✨ Sana özel"}</Text>
             <Text style={styles.title}>{ai.title ?? route.title}</Text>
             {!!ai.summary && <Text style={styles.summary}>{ai.summary}</Text>}
+            {!!result.profile && (
+              <Text style={styles.profileNote} numberOfLines={2}>
+                Hafızadaki profilin: {result.profile.replace("Kullanıcı profili: ", "")}
+              </Text>
+            )}
+            {!!result.steps?.length && (
+              <View style={styles.stepsBox}>
+                <Text style={styles.stepsTitle}>⚙️ AGENT ADIMLARI</Text>
+                {result.steps.map((s) => (
+                  <Text key={s.name} style={styles.stepLine}>
+                    ✓ {s.name} · {(s.ms / 1000).toFixed(1)}sn{s.note ? ` · ${s.note}` : ""}
+                  </Text>
+                ))}
+              </View>
+            )}
             <View style={styles.pills}>
               <Text style={styles.pill}>💰 {budgetLabel(route.budget_level)}</Text>
               <Text style={styles.pill}>📍 {exp.length} durak</Text>
@@ -204,6 +279,27 @@ function PlanResult({ result, onReset }: { result: PlanResponse; onReset: () => 
             </View>
           )}
 
+          {/* Plan aksiyonları: döngüyü kapat (planla → kaydet → yürü) */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.saveBtn, saved && styles.saveBtnDone]}
+              onPress={savePlan}
+              disabled={saved}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.saveBtnText, saved && { color: colors.primaryDark }]}>
+                {saved ? "✓ Kaydedildi" : "🤍 Kaydet"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.goBtn}
+              onPress={() => { tap(); onOpenRoute(route.id, ai.title ?? route.title); }}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.goBtnText}>🧭 Yolculuğa Başla</Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity style={[styles.btn, styles.resetBtn]} onPress={onReset}>
             <Text style={styles.btnText}>← Yeni plan</Text>
           </TouchableOpacity>
@@ -245,7 +341,26 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   btnDisabled: { opacity: 0.5 },
   btnText: { color: "#fff", fontFamily: font.extra, fontSize: 16 },
-  loadingNote: { textAlign: "center", color: colors.textMuted, fontFamily: font.medium },
+
+  // Agent bekleme göstergesi (2.6)
+  agentBox: {
+    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, gap: 10,
+    borderWidth: 1, borderColor: colors.border, marginTop: 4,
+  },
+  agentRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  agentDone: { width: 18, textAlign: "center", color: "#4ADE80", fontFamily: font.extra, fontSize: 14 },
+  agentPending: { width: 18, textAlign: "center", color: colors.textFaint, fontSize: 13 },
+  agentLabel: { color: colors.text, fontFamily: font.semibold, fontSize: 14 },
+  agentLabelDone: { color: colors.textMuted },
+  agentLabelPending: { color: colors.textFaint },
+
+  // Sonuçtaki gerçek adım dökümü (2.6)
+  stepsBox: {
+    marginTop: 12, backgroundColor: colors.surfaceAlt, borderRadius: radius.md,
+    padding: 12, gap: 5, borderWidth: 1, borderColor: colors.border,
+  },
+  stepsTitle: { color: colors.textFaint, fontFamily: font.bold, fontSize: 10.5, letterSpacing: 1.2, marginBottom: 2 },
+  stepLine: { color: colors.textMuted, fontFamily: font.medium, fontSize: 12 },
 
   map: { height: 220, width: "100%" },
   sheet: {
@@ -282,5 +397,19 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   social: { marginHorizontal: 20, marginTop: 8, backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: 14, borderWidth: 1, borderColor: colors.border },
   socialText: { color: colors.accent, fontFamily: font.semibold, fontSize: 13.5, lineHeight: 19 },
 
-  resetBtn: { marginHorizontal: 20, marginTop: 18 },
+  profileNote: { marginTop: 8, color: colors.textFaint, fontFamily: font.medium, fontSize: 12.5, fontStyle: "italic" },
+  actionRow: { flexDirection: "row", gap: 10, marginHorizontal: 20, marginTop: 16 },
+  saveBtn: {
+    flex: 1, paddingVertical: 14, alignItems: "center", borderRadius: radius.lg,
+    backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
+  },
+  saveBtnDone: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  saveBtnText: { color: colors.text, fontFamily: font.bold, fontSize: 14.5 },
+  goBtn: {
+    flex: 1.4, paddingVertical: 14, alignItems: "center", borderRadius: radius.lg,
+    backgroundColor: colors.primary, ...shadow(6),
+  },
+  goBtnText: { color: "#fff", fontFamily: font.extra, fontSize: 14.5 },
+
+  resetBtn: { marginHorizontal: 20, marginTop: 12 },
 });
