@@ -14,11 +14,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import load_env, nvidia_embed, serpapi_search
+from app.clients import google_walk_leg, load_env, nvidia_embed, serpapi_search
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_route as run_enrich_route
 from app.pipeline import plan_route as run_pipeline
 from app.pipeline import route_geometry as run_route_geometry
+from app.pipeline import save_onboarding_memory
 
 app = FastAPI(title="SANA AI Service", version="0.2.0")
 app.add_middleware(
@@ -34,6 +35,20 @@ class EmbedRequest(BaseModel):
 
 class PlanRouteRequest(BaseModel):
     text: str = Field(..., min_length=1, examples=["Bugün İstanbul'da yalnızım, kafa dinlemek istiyorum, bütçem az"])
+    user_id: str | None = None  # verilirse plan kullanıcının hafızasıyla kişiselleştirilir
+
+
+class OnboardingMemoryRequest(BaseModel):
+    user_id: str = Field(..., min_length=10)
+    vibes: list[str] = []
+    budget: int = Field(2, ge=1, le=3)
+
+
+class WalkRouteRequest(BaseModel):
+    from_lat: float
+    from_lng: float
+    to_lat: float
+    to_lng: float
 
 
 class EnrichStop(BaseModel):
@@ -76,11 +91,20 @@ def embed(req: EmbedRequest) -> dict:
 
 @app.post("/plan-route")
 def plan_route(req: PlanRouteRequest) -> dict:
-    """Deterministik AI pipeline: niyet → hafızadan rota → AI flood anlatısı."""
+    """Deterministik AI pipeline: niyet (+kullanıcı hafızası) → rota → AI flood anlatısı."""
     try:
-        return run_pipeline(req.text)
+        return run_pipeline(req.text, req.user_id)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
+
+
+@app.post("/memory/onboarding")
+def memory_onboarding(req: OnboardingMemoryRequest) -> dict:
+    """Onboarding tercihlerini kullanıcı profili olarak AI hafızasına yazar."""
+    try:
+        return save_onboarding_memory(req.user_id, req.vibes, req.budget)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Hafıza hatası: {e}") from e
 
 
 @app.post("/enrich-route")
@@ -99,6 +123,13 @@ def embed_route(req: EmbedRouteRequest) -> dict:
         return run_embed_route(req.route_id)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Embed hatası: {e}") from e
+
+
+@app.post("/walk-route")
+def walk_route(req: WalkRouteRequest) -> dict:
+    """Canlı navigasyon: kullanıcı konumu → hedef durak yürüme rotası (journey modu)."""
+    leg = google_walk_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng)
+    return {"ok": bool(leg), **(leg or {})}
 
 
 @app.post("/route-geometry")

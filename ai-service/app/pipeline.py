@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 
 from app.clients import (
     get_route, get_weather, google_walk_leg, load_env, match_routes,
-    nvidia_chat, nvidia_embed, sb_insert, sb_patch,
+    nvidia_chat, nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select,
 )
 
 # --------------------------- Prompt'lar ---------------------------
@@ -27,8 +28,10 @@ INTENT_SYS = (
 )
 
 COMPOSER_SYS = (
-    "Sen SANA'nın 'Flood Bestecisi'sin. Sana niyet, hava ve SEÇİLMİŞ gerçek bir rota "
+    "Sen SANA'nın 'Flood Bestecisi'sin. Sana niyet, kullanıcı profili, hava ve SEÇİLMİŞ gerçek bir rota "
     "(sıralı duraklar) verilir. Görevin bu rotayı sıcak, samimi bir günlük anlatısına çevirmek.\n"
+    "'kullanici_profili' verildiyse anlatının tonunu ve vurgularını ona göre kişiselleştir "
+    "(örn. kahve seven birine kahve duraklarını öne çıkar) ama ASLA yeni mekan uydurma.\n"
     "Kurallar:\n"
     "1. Durakların SIRASINI değiştirme, yeni mekan UYDURMA. Sadece verilen durakları kullan.\n"
     "2. Her durak için TEK cümlelik sıcak bir anlatı yaz (kısa tut); yazarın notunu zenginleştir.\n"
@@ -42,6 +45,42 @@ COMPOSER_SYS = (
 
 
 BUDGET_LABELS = {1: "çok uygun (₺)", 2: "uygun (₺₺)", 3: "orta (₺₺₺)", 4: "lüks (₺₺₺₺)"}
+
+# --------------------------- Kullanıcı hafızası (onboarding) ---------------------------
+# Onboarding tercihleri doğal dil cümlesine çevrilip embed'lenir; plan_route bu profili
+# hem rota eşleştirmesine (embedding) hem anlatı tonuna (composer) harmanlar.
+
+_VIBE_TR = {
+    "sakin": "sakin", "tarih": "tarih ve kültür", "deniz": "deniz kenarı",
+    "kahve": "kahve mekânları", "sanat": "sanat ve galeriler", "gece": "gece hayatı",
+    "yesil": "yeşil alanlar ve doğa", "yuruyus": "uzun yürüyüşler",
+}
+_BUDGET_TR = {1: "düşük bütçeli", 2: "orta bütçeli", 3: "keyfine düşkün"}
+
+
+def save_onboarding_memory(user_id: str, vibes: list, budget: int) -> dict:
+    """Onboarding tercihlerini kullanıcı profili olarak hafızaya yazar (upsert)."""
+    env = load_env()
+    names = [_VIBE_TR.get(v, v) for v in (vibes or [])]
+    likes = ", ".join(names) if names else "genel keşif"
+    btxt = _BUDGET_TR.get(int(budget or 2), "orta bütçeli")
+    content = f"Kullanıcı profili: {likes} temalı günleri seven, {btxt} bir İstanbul gezgini."
+    vec = nvidia_embed(env, content, input_type="passage")
+    sb_delete(env, "ai_memory_embeddings",
+              {"owner_id": f"eq.{user_id}", "source_type": "eq.onboarding"})
+    sb_insert(env, "ai_memory_embeddings", {
+        "owner_id": user_id, "source_type": "onboarding", "content": content,
+        "embedding": vec, "metadata": {"vibes": vibes, "budget": budget},
+    })
+    return {"ok": True, "profile": content}
+
+
+def _load_profile(env: dict, user_id: str) -> dict | None:
+    rows = sb_select(
+        env, "ai_memory_embeddings",
+        f"owner_id=eq.{user_id}&source_type=eq.onboarding&select=content,metadata&limit=1",
+    )
+    return rows[0] if rows else None
 
 
 def fallback_ai(route: dict, exp: list, weather: dict) -> dict:
@@ -74,26 +113,56 @@ def parse_intent(env: dict, text: str) -> dict:
     return d
 
 
-def plan_route(text: str) -> dict:
+def plan_route(text: str, user_id: str | None = None) -> dict:
     env = load_env()
+
+    # Agent adımları: her aşamanın süresi + tek satır özeti (app bekleme ekranı + jüri için)
+    steps: list[dict] = []
+    _t = [time.perf_counter()]
+
+    def _mark(name: str, note: str = "") -> None:
+        now = time.perf_counter()
+        steps.append({"name": name, "ms": int((now - _t[0]) * 1000), "note": note})
+        _t[0] = now
 
     # [1] Intent
     intent = parse_intent(env, text)
+    _mark("Niyet çözümlendi", f"{intent.get('mood') or 'genel'} · bütçe {intent.get('budget_max')}")
     city = intent.get("city") or "Istanbul"
+    # LLM bazen "İstanbul" (Türkçe İ) döndürür; DB "Istanbul" (ASCII) tutar → normalize et
+    if "stanbul" in city.casefold():
+        city = "Istanbul"
     try:
         budget_max = int(intent.get("budget_max") or 4)
     except (TypeError, ValueError):
         budget_max = 4
 
+    # [1b] Kullanıcı hafızası: onboarding profili (varsa) plana harmanlanır
+    profile = None
+    if user_id:
+        try:
+            profile = _load_profile(env, user_id)
+        except Exception:  # noqa: BLE001 — hafıza okunamazsa kişiselleştirmesiz devam
+            profile = None
+    profile_text = (profile or {}).get("content") or ""
+    prof_budget = ((profile or {}).get("metadata") or {}).get("budget")
+    # Kullanıcı cümlede bütçe belirtmediyse (varsayılan 4) profil bütçesini uygula
+    if profile and budget_max >= 4 and prof_budget:
+        budget_max = {1: 2, 2: 3, 3: 4}.get(int(prof_budget), 4)
+    _mark("Hafıza tarandı", "profil bulundu" if profile else "profil yok")
+
     # [2] Data: hava
     weather = get_weather(env, city) or {"bias": "any", "desc": "", "temp": None, "rainy": False}
+    _mark("Hava kontrol edildi",
+          f"{weather.get('temp')}° {weather.get('desc', '')}".strip() if weather.get("temp") is not None else "veri yok")
 
-    # [3] Social Memory: niyeti embedle → match_routes
-    qtext = f"{intent.get('mood','')} {' '.join(intent.get('vibe_tags', []))} {text}".strip()
+    # [3] Social Memory: niyet + profil birlikte embed'lenir → match_routes
+    qtext = f"{intent.get('mood','')} {' '.join(intent.get('vibe_tags', []))} {text} {profile_text}".strip()
     emb = nvidia_embed(env, qtext, input_type="query")
     candidates = match_routes(env, emb, match_count=5, filter_city=city, max_budget=budget_max)
+    _mark("Rotalar eşleştirildi", f"{len(candidates)} aday")
     if not candidates:
-        return {"ok": False, "reason": "no_match", "intent": intent, "weather": weather}
+        return {"ok": False, "reason": "no_match", "intent": intent, "weather": weather, "steps": steps}
 
     # [4] Budget/Logistics: hava biası ile en uygun adayı seç
     bias = weather.get("bias", "any")
@@ -117,10 +186,12 @@ def plan_route(text: str) -> dict:
 
     wps = sorted(chosen.get("waypoints", []), key=lambda w: w.get("seq", 0))
     exp = [w for w in wps if w.get("kind") == "experience"]
+    _mark("Rota seçildi", chosen.get("title") or "")
 
     # [5] Flood Composer
     composer_input = {
         "niyet": intent,
+        "kullanici_profili": profile_text or "bilinmiyor",
         "hava": weather,
         "rota": {
             "title": chosen.get("title"),
@@ -137,6 +208,7 @@ def plan_route(text: str) -> dict:
             ai = fallback_ai(chosen, exp, weather)
     except Exception:  # noqa: BLE001 — composer takılırsa rota yine dönsün
         ai = fallback_ai(chosen, exp, weather)
+    _mark("Anlatı yazıldı", "yedek anlatı" if ai.get("_fallback") else f"{len(ai.get('stops', []))} durak")
 
     return {
         "ok": True,
@@ -145,6 +217,9 @@ def plan_route(text: str) -> dict:
         "route_id": chosen.get("id"),
         "route": chosen,
         "ai": ai,
+        "personalized": bool(profile),
+        "profile": profile_text or None,
+        "steps": steps,
     }
 
 

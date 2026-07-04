@@ -133,6 +133,21 @@ def sb_patch(env: dict, table: str, filters: dict, patch: dict):
     return _req(url, "PATCH", headers, patch)
 
 
+def sb_select(env: dict, table: str, query: str):
+    """service_role ile serbest sorgu (PostgREST query string)."""
+    url = env["SUPABASE_URL"].rstrip("/") + f"/rest/v1/{table}?{query}"
+    return _req(url, "GET", _sb_headers(env)) or []
+
+
+def sb_delete(env: dict, table: str, filters: dict):
+    """service_role ile satır siler. filters: {"owner_id": "eq.<uuid>"} biçiminde."""
+    q = urllib.parse.urlencode(filters)
+    url = env["SUPABASE_URL"].rstrip("/") + f"/rest/v1/{table}?{q}"
+    headers = _sb_headers(env)
+    headers["Prefer"] = "return=minimal"
+    return _req(url, "DELETE", headers)
+
+
 # --------------------------- Google Routes API ---------------------------
 def _google_server_key(env: dict) -> str | None:
     # Tek sunucu anahtarı (sana-server: Weather + Routes + Places) — eski değişken adı yedek
