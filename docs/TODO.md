@@ -141,17 +141,18 @@
 
 ## FAZ 2 — AI FARKLILAŞTIRICILAR ★ NOTUN KALBİ
 
-### ⬜ 2.1 Onboarding → AI hafıza 🤖
-**ai-service tarafı:**
-- [ ] `POST /memory/onboarding` endpoint'i: `{ user_id, vibes, budget }` → doğal dil cümlesine çevir
-  ("Kullanıcı sakin, deniz kenarı ve kahve odaklı günler seviyor; bütçesi düşük.") → NVIDIA embed →
-  `ai_memory_embeddings` (source_type=`onboarding`, owner_id=user_id) upsert (eskisini sil-yaz).
-- [ ] `plan_route(text, user_id?)`: user_id geldiyse onboarding hafızasını çek, intent'e "kullanıcı profili" olarak harmanla
-  (match_routes sorgu embedding'i = intent + profil karışımı ya da LLM prompt'una profil cümlesi eklenir — basit olan ikincisi).
-**app tarafı:**
-- [ ] Onboarding bitişinde `/memory/onboarding` çağrısı (sessiz, başarısızsa yut).
-- [ ] `api.planRoute(text)` → `planRoute(text, userId)`.
-- **Demo kontrolü:** İki farklı test hesabı, aynı cümle → farklı öneriler. Ekran kaydı al (video için).
+### ✅ 2.1 Onboarding → AI hafıza — TAMAMLANDI (4 Tem)
+**ai-service:**
+- [x] `POST /memory/onboarding`: tercihler doğal dil profiline çevrilir → NVIDIA embed →
+  `ai_memory_embeddings` upsert (sil-yaz). `sb_select/sb_delete` yardımcıları eklendi.
+- [x] `plan_route(text, user_id?)`: profil hem eşleştirme embedding'ine hem composer'a harmanlanır;
+  cümlede bütçe yoksa profil bütçesi uygulanır. Yanıt: `personalized` + `profile`.
+- [x] **Bonus bug fix:** LLM "İstanbul" (Türkçe İ) döndürünce şehir filtresi boş dönüyordu → normalize.
+**app:**
+- [x] Onboarding bitişinde sessiz sync + `synced` bayrağı (başarısızsa App açılışında otomatik tekrar).
+- [x] `planRoute` user_id gönderir; Plan ekranında "🧠 Sana özel · hafızandan" + profil satırı.
+- **Demo KANITLANDI:** Aynı cümle ("dışarı çıkıp güzel vakit geçirmek istiyorum") →
+  profil sakin+deniz+kahve = **Kadıköy Sakin Gün**; profil tarih+sanat = **Sultanahmet Tarih Yürüyüşü**.
 
 ### ⬜ 2.2 Davranış hafızası 🤖
 - [ ] ai-service: `POST /memory/event` `{ user_id, kind: favorite|journey|comment, route_id }` →
@@ -160,10 +161,9 @@
 - [ ] `plan_route`: son N preference_update'i profil cümlesine ekle.
 - **Kontrol:** 2-3 favori sonrası planlar o yöne kayıyor.
 
-### ⬜ 2.3 Plan sonucunu kaydet/başlat 🤖
-- [ ] PlanResult alt aksiyon çubuğu: "❤️ Kaydet" (`setFavorite(route_id, true)`) + "🧭 Yolculuğa Başla"
-  (`navigation.navigate("RouteFlood", { routeId })` — PlanScreen tab'ine navigation prop'u `PlanScreenProps`'tan gelir).
-- **Kontrol:** Plan → tek dokunuşla rota detayı + yolculuk.
+### ✅ 2.3 Plan sonucunu kaydet/başlat — TAMAMLANDI (4 Tem)
+- [x] PlanResult aksiyon çubuğu: "🤍 Kaydet" (→ ✓ Kaydedildi, favorilere ekler) +
+  "🧭 Yolculuğa Başla" (RouteFlood'a gider). Döngü kapandı: planla → kaydet → yürü → paylaş.
 
 ### ⬜ 2.4 AI yorum özeti 🤖
 - [ ] ai-service: `POST /summarize-comments` `{ route_id }` → yorumları Supabase'ten çek → LLM'e
@@ -177,13 +177,12 @@
 - [ ] ai-service: `plan_route`'a opsiyonel `force_weather_fit` parametresi.
 - **Kontrol:** Yağmurlu günde (veya mock'la) alternatif akışı çalışıyor.
 
-### ⬜ 2.6 Agent orkestrasyon görünürlüğü 🤖 ★ video için
-- [ ] ai-service: `/plan-route` yanıtına `steps: [{ name, ms, note }]` dizisi ekle (pipeline zaten deterministik —
-  her adımın süresini ve tek satır çıktısını topla).
-- [ ] app: Plan yüklenirken sahte-olmayan adım listesi göstermek için: istek atılınca adım adım "tahmini" ilerleme
-  (Niyet → Hafıza → Hava → Bütçe → Rota → Anlatı) animasyonu; yanıt gelince `steps` ile gerçek süreleri göster
-  ("Hafıza taraması 0.4sn · 3 eşleşme" gibi).
-- **Kontrol:** Bekleme ekranı bilgilendirici + jüriye orkestrasyonu anlatıyor.
+### ✅ 2.6 Agent orkestrasyon görünürlüğü — TAMAMLANDI (4 Tem) ★ video için
+- [x] ai-service: `steps: [{name, ms, note}]` — 6 gerçek adım, canlı test:
+  "Niyet 0.9s · Hafıza 0.7s (profil bulundu) · Hava 0.9s (26.4°) · Eşleştirme 0.6s (5 aday) · Anlatı 2.6s".
+- [x] app: bekleme ekranında adım adım akan AgentProgress (✓/spinner/○); sonuç hero'sunda
+  "⚙️ AGENT ADIMLARI" kutusu gerçek süre+notlarla.
+- [x] **2.3 polish:** Plan'dan "Yolculuğa Başla" artık rota detayında yolculuğu OTOMATİK başlatır.
 
 ---
 
@@ -295,5 +294,8 @@
 | 3 Tem | 0.2-D Git geçmişi temizlendi | filter-repo ile Maps key + dev şifresi tüm geçmişten kazındı, force-push |
 | 3 Tem | 0.2 rotasyonlar | Maps ✅ NVIDIA ✅ (canlı test) Supabase ✅ (sb_ anahtarlara geçiş + legacy disable, eski anahtarlar 401). Kalan 👤: dev şifresi, sana-server key, NVIDIA eski revoke, Maps Android kısıtı |
 | 3 Tem | **Google Routes entegrasyonu** | Sokak geometrisi: clients.py (decoder+walk_leg) + pipeline.route_geometry + /route-geometry + migration 0006 + add_geometry.py (7/7 seed OK) + app segment çizimi. Hava: Google Weather API (25.3° canlı test) + OpenWeather yedek. **CİHAZDA DOĞRULANDI** (sokak çizgileri ✅) |
+| 4 Tem | **CANLI NAVİGASYON (GMaps hissi)** | Journey modunda konum→durak GERÇEK yürüme rotası (`/walk-route`, ~40m sapınca yeniden hesap), GMaps mavisi dolgun çizgi, navigasyon kamerası (zoom 17 + yöne dönme), bar'da "🚶 550m · ~7dk". Servis yoksa düz kesikli yedek. Canlı test: 662m/9dk/18 nokta ✅ |
+| 4 Tem | **2.6 TAMAMLANDI + harita senkron fix** | Agent adımları canlı (6 adım, gerçek süre+not); bekleme animasyonu + sonuç dökümü. Harita: viewability tabanlı kart senkronu + overlay padding + odaklı rotanın durak marker'ları (fotolu) |
+| 4 Tem | **FAZ 2.1 + 2.3 TAMAMLANDI** | AI hafıza canlı kanıtlandı: aynı cümle, farklı profil → farklı rota (Kadıköy vs Sultanahmet). Plan aksiyonları eklendi. Şehir-normalize bug fix. tsc + import temiz |
 | 3 Tem | **ÇEYREK-MARKER BUG'I ÇÖZÜLDÜ** 🎉 | Kökten çözüm: Android'de foto marker'lar canlı View değil, ekran dışında view-shot ile üretilen NATIVE BİTMAP (`Marker image` prop). **Cihazda doğrulandı** — Expo Go'da bile tam kare. PROGRESS §10 açık sorun #2 kapandı |
 | 3 Tem | **FAZ 1 tamamlandı (1.1–1.7)** | İkon/splash üretildi (GDI+, mercan rota motifi); expo-image + haptics + skeleton + mikro-animasyonlar + onboarding (3 adım, vibe/bütçe) + boş/hata turu. tsc + export temiz. Cihaz doğrulaması ve ikon beğeni onayı bekliyor. Faz 0 kullanıcı isteğiyle atlandı — anahtar güvenliği (0.2) repo public olmadan önce hâlâ ŞART. |
