@@ -1,9 +1,9 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Dimensions, FlatList, type NativeScrollEvent,
-  type NativeSyntheticEvent, StyleSheet, Text, TouchableOpacity, View,
+  ActivityIndicator, Alert, Dimensions, FlatList, StyleSheet, Text,
+  TouchableOpacity, View, type ViewToken,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -57,29 +57,54 @@ export default function MapScreen({ navigation }: MapScreenProps) {
     }),
     [routes, colors],
   );
-  const markers = useMemo<OSMMarker[]>(
-    () => routes.flatMap((r, i) => {
+  const markers = useMemo<OSMMarker[]>(() => {
+    // Rota başına tekil marker (genel bakış). Seçili rotanınki yerine DURAK marker'ları gelir:
+    // odaktayken durakların fotoğrafları görünür, odak değişince sadece onlar kaybolur.
+    const base = routes.flatMap((r, i) => {
+      if (r.id === selectedId) return [];
       const exp = r.waypoints.filter((w) => w.kind === "experience");
       return exp[0]
         ? [{ id: r.id, lat: exp[0].lat, lng: exp[0].lng, color: routeColor(i, colors.routeColors), popup: r.title, photo: r.cover_photo_url ?? exp[0].photo_urls?.[0] ?? undefined }]
         : [];
-    }),
-    [routes, colors],
-  );
+    });
+    const sel = routes.find((r) => r.id === selectedId);
+    if (sel) {
+      const exp = sel.waypoints.filter((w) => w.kind === "experience");
+      base.push(...exp.map((w, i) => ({
+        id: `stop-${w.id}`, lat: w.lat, lng: w.lng,
+        color: colors.primary, label: String(i + 1),
+        photo: w.photo_urls?.[0], popup: w.name,
+        variant: (i === 0 ? "start" : i === exp.length - 1 ? "end" : "stop") as "start" | "end" | "stop",
+      })));
+    }
+    return base;
+  }, [routes, selectedId, colors]);
 
   const open = (r: RouteWithWaypoints) => navigation.navigate("RouteFlood", { routeId: r.id, title: r.title });
   const openById = (id: string) => {
-    const r = routes.find((x) => x.id === id);
+    // Durak marker'ının callout'u → ait olduğu (seçili) rotanın detayına git
+    const r = id.startsWith("stop-")
+      ? routes.find((x) => x.id === selectedId)
+      : routes.find((x) => x.id === id);
     if (r) open(r);
   };
-  // Kart kaydırılınca → o rota haritada vurgulanır ve kamera rotaya uçar
-  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const idx = Math.max(0, Math.min(Math.round(e.nativeEvent.contentOffset.x / SNAP), routes.length - 1));
-    setActive(idx);
-    if (routes[idx]) setSelectedId(routes[idx].id);
-  };
-  // Marker'a dokununca → karüsel o rotanın kartına kayar
+  // Kart kaydırılınca → o rota haritada vurgulanır ve kamera rotaya uçar.
+  // onViewableItemsChanged kullanıyoruz: onMomentumScrollEnd yavaş sürüklemede ateşlenmiyordu (bug).
+  const routesRef = useRef<RouteWithWaypoints[]>([]);
+  useEffect(() => { routesRef.current = routes; }, [routes]);
+  const didInitView = useRef(false);
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+  const onViewableItemsChanged = useRef((info: { viewableItems: ViewToken[] }) => {
+    const v = info.viewableItems.find((t) => t.isViewable && t.index != null);
+    if (!v || v.index == null) return;
+    if (!didInitView.current) { didInitView.current = true; return; } // açılışta genel bakış korunur
+    setActive(v.index);
+    const r = routesRef.current[v.index];
+    if (r) setSelectedId(r.id);
+  }).current;
+  // Marker'a dokununca → karüsel o rotanın kartına kayar (durak marker'ları seçimi değiştirmez)
   const selectOnMap = (id: string) => {
+    if (id.startsWith("stop-")) return; // durak pini: sadece callout açılır
     setSelectedId(id);
     const idx = routes.findIndex((r) => r.id === id);
     if (idx >= 0) {
@@ -113,6 +138,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         focusId={selectedId}
         userLocation={userLoc}
         padding={64}
+        overlayInsetBottom={225 + insets.bottom}
         style={StyleSheet.absoluteFill}
       />
 
@@ -161,7 +187,8 @@ export default function MapScreen({ navigation }: MapScreenProps) {
           showsHorizontalScrollIndicator={false}
           snapToInterval={SNAP}
           decelerationRate="fast"
-          onMomentumScrollEnd={onScrollEnd}
+          viewabilityConfig={viewabilityConfig}
+          onViewableItemsChanged={onViewableItemsChanged}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           renderItem={({ item, index }) => {
             const color = routeColor(index, colors.routeColors);

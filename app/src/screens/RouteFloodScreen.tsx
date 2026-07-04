@@ -11,7 +11,8 @@ import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import Skeleton from "../components/Skeleton";
 import { pop, success, tap } from "../lib/haptics";
 import {
-  addComment, fetchComments, fetchRoute, getFavoriteIds, setFavorite, type FloodComment,
+  addComment, fetchComments, fetchRoute, fetchWalkRoute, getFavoriteIds, setFavorite,
+  type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { addJourney } from "../lib/journeyLog";
 import { useUserLocation } from "../lib/useUserLocation";
@@ -197,6 +198,37 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     setArrived(false);
   };
 
+  // Plan ekranından "Yolculuğa Başla" ile gelindiyse yolculuğu otomatik başlat (2.3 polish)
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!route || !navRoute.params.autoStart || autoStarted.current || !exp.length) return;
+    autoStarted.current = true;
+    startJourney();
+  }, [route, exp]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // CANLI NAVİGASYON (GMaps hissi): konum → sıradaki durak GERÇEK yürüme rotası.
+  // Hedef değişince ya da hesaplanan noktadan ~40m uzaklaşınca yeniden çekilir.
+  const [liveLeg, setLiveLeg] = useState<WalkLeg | null>(null);
+  const legOrigin = useRef<{ lat: number; lng: number } | null>(null);
+  const legBusy = useRef(false);
+
+  useEffect(() => { setLiveLeg(null); legOrigin.current = null; }, [target, journey]);
+
+  useEffect(() => {
+    const t = exp[target];
+    if (!journey || !userLoc || !t) return;
+    const stale = !legOrigin.current || distMeters(userLoc, legOrigin.current) > 40;
+    if (!stale || legBusy.current) return;
+    legBusy.current = true;
+    const origin = { lat: userLoc.lat, lng: userLoc.lng };
+    fetchWalkRoute(origin, { lat: t.lat, lng: t.lng })
+      .then((leg) => {
+        if (leg) { setLiveLeg(leg); legOrigin.current = origin; }
+        else { legOrigin.current = origin; } // servis yok → düz çizgi yedeği; sürekli deneme yapma
+      })
+      .finally(() => { legBusy.current = false; });
+  }, [journey, userLoc, target, exp]);
+
   // Yolculuğu kapat → özet + paylaşım kartı göster, yerel günlüğe yaz (Profil istatistikleri)
   const finishJourney = () => {
     clearAdvance();
@@ -271,8 +303,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const last = exp.length - 1;
 
   const targetStop = exp[target];
+  // Gerçek sokak rotası varsa onu, yoksa düz kesikli yedeği çiz
   const guideLine = journey && userLoc && targetStop
-    ? [userLoc, { lat: targetStop.lat, lng: targetStop.lng }]
+    ? (liveLeg?.coords ?? [{ lat: userLoc.lat, lng: userLoc.lng }, { lat: targetStop.lat, lng: targetStop.lng }])
     : null;
 
   return (
@@ -284,6 +317,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         style={[styles.map, journey && styles.mapJourney]}
         userLocation={userLoc}
         followLocation={journey ? userLoc : null}
+        followHeading={journey ? userLoc?.heading ?? null : null}
         guideLine={guideLine}
         showRecenter
       />
@@ -440,6 +474,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 ) : (
                   <Text style={styles.jArrived}>🎉 Rota tamamlandı — keyfini çıkar</Text>
                 )
+              ) : liveLeg ? (
+                <Text style={styles.jDist}>🚶 {distText(liveLeg.distance_m)} · ~{liveLeg.duration_min} dk · rotayı izle</Text>
               ) : (
                 <Text style={styles.jDist}>📍 {distText(distMeters(userLoc, targetStop))} ileride · seni takip ediyorum</Text>
               )

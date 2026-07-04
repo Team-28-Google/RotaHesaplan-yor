@@ -46,9 +46,12 @@ type Props = {
   focusId?: string | null;
   userLocation?: LatLng | null;
   followLocation?: LatLng | null;   // verilirse kamera bu konumu takip eder (yolculuk modu)
-  guideLine?: LatLng[] | null;      // konum → hedef durak kesikli rehber çizgisi (yolculuk)
+  followHeading?: number | null;    // hareket yönü (derece) — harita yürüdüğün yöne döner
+  guideLine?: LatLng[] | null;      // konum → hedef durak rotası (2 nokta = düz kesikli; >2 = gerçek sokak rotası)
   showRecenter?: boolean;
   padding?: number;
+  /** Haritanın altını kaplayan overlay yüksekliği (px) — fit hesapları rotayı bunun ÜSTÜNE sığdırır */
+  overlayInsetBottom?: number;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -230,7 +233,8 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
 
 export default function OSMMap({
   markers = [], polylines = [], transitLines = [], onPressItem, onSelectItem, onMapPress,
-  focusId, userLocation, followLocation, guideLine, showRecenter, padding = 40, style,
+  focusId, userLocation, followLocation, followHeading, guideLine, showRecenter, padding = 40,
+  overlayInsetBottom = 0, style,
 }: Props) {
   const ref = useRef<MapView>(null);
   const [ready, setReady] = useState(false);
@@ -261,30 +265,47 @@ export default function OSMMap({
 
   const fitAll = () => {
     if (allCoords.length >= 2) {
-      ref.current?.fitToCoordinates(allCoords, { edgePadding: { top: padding, right: padding, bottom: padding, left: padding }, animated: true });
+      ref.current?.fitToCoordinates(allCoords, {
+        edgePadding: { top: padding, right: padding, bottom: padding + overlayInsetBottom, left: padding },
+        animated: true,
+      });
     } else if (allCoords.length === 1) {
       ref.current?.animateToRegion({ ...allCoords[0], latitudeDelta: 0.02, longitudeDelta: 0.02 }, 300);
     }
   };
 
-  useEffect(() => { if (ready) fitAll(); /* eslint-disable-next-line */ }, [ready, markers.length]);
+  // Marker sayısı değişince genel bakışa sığdır — ama bir rota ODAKTAYKEN karışma
+  // (odaklı rotanın durak marker'ları eklenince kamera genel bakışa kaçmasın)
+  useEffect(() => { if (ready && !focusId) fitAll(); /* eslint-disable-next-line */ }, [ready, markers.length]);
 
+  // Odak değişimi: seçili rotaya uç (alt overlay'in ÜSTÜNE sığdır); seçim kalkınca genel bakışa dön
+  const prevFocus = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     if (!ready) return;
     const p = polylines.find((x) => x.id === focusId);
     if (p && p.coords.length) {
-      ref.current?.fitToCoordinates(p.coords.map(ll), { edgePadding: { top: 60, right: 60, bottom: 60, left: 60 }, animated: true });
+      ref.current?.fitToCoordinates(p.coords.map(ll), {
+        edgePadding: { top: 70, right: 60, bottom: 70 + overlayInsetBottom, left: 60 },
+        animated: true,
+      });
+    } else if (!focusId && prevFocus.current) {
+      fitAll(); // seçim temizlendi → tüm rotalara genel bakış
     }
+    prevFocus.current = focusId;
   }, [focusId, ready]); // eslint-disable-line
 
-  // Yolculuk modu: kamera canlı konumu takip eder
+  // Yolculuk modu: navigasyon kamerası — konumu takip eder, hareket yönüne döner (GMaps hissi)
   useEffect(() => {
     if (!ready || !followLocation) return;
     ref.current?.animateCamera(
-      { center: { latitude: followLocation.lat, longitude: followLocation.lng }, zoom: 16.5 },
+      {
+        center: { latitude: followLocation.lat, longitude: followLocation.lng },
+        zoom: 17,
+        ...(followHeading != null && followHeading >= 0 ? { heading: followHeading } : {}),
+      },
       { duration: 600 },
     );
-  }, [followLocation, ready]); // eslint-disable-line
+  }, [followLocation, followHeading, ready]); // eslint-disable-line
 
   return (
     <View style={[styles.container, style]}>
@@ -341,8 +362,17 @@ export default function OSMMap({
           return out;
         })}
 
-        {/* Yolculuk rehber çizgisi: kullanıcı konumu → hedef durak (kesikli mavi) */}
-        {guideLine && guideLine.length >= 2 && (
+        {/* Yolculuk rehber çizgisi: >2 nokta = gerçek sokak rotası (GMaps mavisi, dolgun);
+            2 nokta = servis yoksa düz kesikli yedek */}
+        {guideLine && guideLine.length > 2 && (
+          <>
+            <Polyline coordinates={guideLine.map(ll)} strokeColor="rgba(255,255,255,0.9)"
+              strokeWidth={9} lineCap="round" lineJoin="round" zIndex={4} />
+            <Polyline coordinates={guideLine.map(ll)} strokeColor="#2E86FF"
+              strokeWidth={6} lineCap="round" lineJoin="round" zIndex={5} />
+          </>
+        )}
+        {guideLine && guideLine.length === 2 && (
           <Polyline
             coordinates={guideLine.map(ll)}
             strokeColor="#60A5FA"
