@@ -186,12 +186,14 @@
 
 ## FAZ 3 — SOSYAL & VİRAL
 
-### ⬜ 3.0b TASARIM REVİZYONU: Ana sayfa + Paylaşım menüsü ★ KULLANICI İSTEĞİ (4 Tem)
-- [ ] **Ana sayfa (Home) tasarımı elden geçirilecek** — yön/istekler kullanıcıdan gelecek
-  (mevcut: hero kart + Popüler Rotalar listesi; neyin değişeceği birlikte netleştirilecek).
-- [ ] **Paylaşım menüsü/modalı yeniden tasarlanacak** — yolculuk özeti modalı (Kapat/Paylaş)
-  ve paylaşım akışı; 3.1'deki kart v2 (story formatı, harita izi) ile birlikte ele alınabilir.
-- **Not:** Detay belirtilmedi; başlamadan önce kullanıcıyla istekleri netleştir.
+### 🟡 3.0b TASARIM REVİZYONU: Ana sayfa + Paylaşım menüsü ★ KULLANICI İSTEĞİ (4 Tem)
+- [x] **Yön netleşti (6 Tem, kullanıcı seçimi):** Home = "ikisinin karması" — üstte kompakt AI giriş
+  kutusu + altta görsel ağırlıklı keşif akışı; paylaşım menüsü **3.1'e ertelendi** (kart v2 ile tek seferde).
+- [x] 🤖 Home yeniden yazıldı: hero kart yerine AI prompt kartı ("Bugün ne yapmak istersin?" → Plan
+  sekmesi); "Rota Ekle" header'da [+] butonuna dönüştü; **"Sana özel"** yatay şeridi (onboarding
+  vibe'ları ↔ rota etiketleri eşanlam haritasıyla skorlanır, eşleşme yoksa gizlenir); **Popüler**
+  kartlar tam-foto immersive (başlık+meta alt gradyan üzerinde), beğeniye göre sıralı. tsc temiz.
+- [ ] 👤 Cihazda beğeni turu: AI kartı, şerit, immersive kartlar (koyu+açık tema) — geri bildirimle ince ayar.
 
 ### ⬜ 3.1 Paylaşım kartı v2 🤖
 - [ ] Story varyantı: 1080×1920 oranlı (9:16) tam boy kart — mevcut kartın büyüğü + arka planda harita.
@@ -309,6 +311,8 @@
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 6 Tem | 3.0b Home redesign (karma) | AI prompt kartı + "Sana özel" vibe şeridi + immersive Popüler kartlar; paylaşım 3.1'e ertelendi. Cihaz beğeni turu bekliyor |
+| 6 Tem | Public repo ön-tarama | Key taraması temiz (kod+geçmiş+render.yaml); public öncesi kalan: README+LICENSE (5.3) |
 | 3 Tem | Yol haritası + TODO oluşturuldu | — |
 | 3 Tem | 0.1 Git düzeni | 7 tematik commit; Claude imzaları filter-branch ile temizlendi; **GitHub'a push edildi** (Team-28-Google/RotaHesaplan-yor, private) |
 | 3 Tem | 0.2-B Key'ler koddan çıktı | app.config.js + app/.env (+dev creds EXPO_PUBLIC_*); expo config ile doğrulandı |
