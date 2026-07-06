@@ -186,6 +186,18 @@
   "⚙️ AGENT ADIMLARI" kutusu gerçek süre+notlarla.
 - [x] **2.3 polish:** Plan'dan "Yolculuğa Başla" artık rota detayında yolculuğu OTOMATİK başlatır.
 
+### ⬜ 2.7 AI ROTA ÜRETİCİ ★ KULLANICI İSTEĞİ (7 Tem) — BEKLEMEDE
+> **Sorun:** plan_route eşleştirici, üretici değil — hep kayıtlı havuzdan (7 seed) döner,
+> "yeni bir şey önermiyor". **Çözüm:** LLM gerçek mekânlardan yepyeni rota kursun.
+- [ ] Aday havuzu: niyet kategorilerine göre Google Places Text Search (semt bias'lı,
+  eldeki GOOGLE_SERVER_API_KEY); mekân uydurma imkânsız — LLM yalnız adaylardan seçer.
+- [ ] Composer: adaylardan yürünebilir sırada 4-6 durak + başlık/anlatı/etiket/bütçe (JSON mode).
+- [ ] Kalıcılık: routes+waypoints insert → mevcut zincir otomatik (route_geometry +
+  enrich_photos + embed_route) → akışta seed kalitesinde görünür.
+- [ ] Tetik (karar bekliyor): akıllı tetik (zayıf eşleşmede otomatik + "🎲 yeni rota üret" butonu) /
+  sadece buton / hep üret. Süre beklentisi ~10-20 sn (AgentProgress'e "Mekânlar aranıyor" adımı).
+- **Kabul:** "Bana yeni bir şey öner" → daha önce DB'de olmayan, gerçek mekânlı rota geliyor.
+
 ---
 
 ## FAZ 3 — SOSYAL & VİRAL
