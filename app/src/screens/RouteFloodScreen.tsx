@@ -79,27 +79,21 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [cError, setCError] = useState<string | null>(null);
   const [communitySummary, setCommunitySummary] = useState<CommentSummary | null>(null);
 
-  // Yolculuk özeti + paylaşım kartı
+  // Yolculuk özeti + paylaşım kartı (3.1: iki format — Kart 4:5 / Story 9:16)
   const [summary, setSummary] = useState<JourneySummary | null>(null);
+  const [cardFormat, setCardFormat] = useState<"card" | "story">("card");
   const [sharing, setSharing] = useState(false);
   const shareCardRef = useRef<View>(null);
 
   // Mikro-animasyonlar
   const heartScale = useRef(new Animated.Value(1)).current;
   const jBarY = useRef(new Animated.Value(90)).current;      // journey bar alttan kayar
-  const sumScale = useRef(new Animated.Value(0.9)).current;  // özet kartı büyüyerek gelir
 
   useEffect(() => {
     if (!journey) return;
     jBarY.setValue(90);
     Animated.spring(jBarY, { toValue: 0, speed: 16, bounciness: 7, useNativeDriver: true }).start();
   }, [journey, jBarY]);
-
-  useEffect(() => {
-    if (!summary) return;
-    sumScale.setValue(0.9);
-    Animated.spring(sumScale, { toValue: 1, speed: 18, bounciness: 8, useNativeDriver: true }).start();
-  }, [summary, sumScale]);
 
   const clearAdvance = () => {
     if (advanceTimer.current) { clearTimeout(advanceTimer.current); advanceTimer.current = null; }
@@ -522,48 +516,85 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         </Animated.View>
       )}
 
-      {/* Yolculuk özeti + Instagram'lık paylaşım kartı */}
-      <Modal visible={!!summary} transparent animationType="fade" onRequestClose={() => setSummary(null)}>
+      {/* Yolculuk özeti — bottom sheet + iki paylaşım formatı (3.1) */}
+      <Modal visible={!!summary} transparent animationType="slide" onRequestClose={() => setSummary(null)}>
         <View style={styles.sumBg}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setSummary(null)} />
           {summary && (
-            <Animated.View style={{ transform: [{ scale: sumScale }], alignItems: "center" }}>
-              <View ref={shareCardRef} collapsable={false} style={styles.shareCard}>
-                <LinearGradient colors={["#141B33", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.shareInner}>
-                  <View style={styles.shareBrandRow}>
-                    <View style={styles.shareBrandDot} />
-                    <Text style={styles.shareBrand}>SANA</Text>
-                  </View>
-                  <Text style={styles.shareDone}>ROTA TAMAMLANDI</Text>
-                  <Text style={styles.shareTitle}>{summary.title}</Text>
-                  <Text style={styles.shareDate}>
-                    {summary.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} · İstanbul
-                  </Text>
-                  <View style={styles.shareStats}>
-                    <View style={styles.shareStat}>
-                      <Text style={styles.shareStatVal}>{summary.stops}</Text>
-                      <Text style={styles.shareStatLabel}>durak</Text>
+            <View style={styles.sumSheet}>
+              <View style={styles.sumHandle} />
+              <Text style={styles.sumTitle}>🎉 Rota tamamlandı</Text>
+
+              {/* Format seçimi */}
+              <View style={styles.fmtRow}>
+                {([["card", "Kart · 4:5"], ["story", "Story · 9:16"]] as const).map(([f, label]) => (
+                  <TouchableOpacity
+                    key={f}
+                    style={[styles.fmtChip, cardFormat === f && styles.fmtChipOn]}
+                    onPress={() => { tap(); setCardFormat(f); }}
+                  >
+                    <Text style={[styles.fmtChipText, cardFormat === f && styles.fmtChipTextOn]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Önizleme — kart gerçek boyutta yerleşir, scale ile sığdırılır
+                  (view-shot layout boyutunu yakalar; transform çıktıyı etkilemez) */}
+              <View style={styles.previewBox}>
+                {cardFormat === "card" ? (
+                  <View style={{ transform: [{ scale: 0.72 }] }}>
+                    <View ref={shareCardRef} collapsable={false} style={styles.shareCard}>
+                      <LinearGradient colors={["#141B33", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.shareInner}>
+                        <View style={styles.shareBrandRow}>
+                          <View style={styles.shareBrandDot} />
+                          <Text style={styles.shareBrand}>SANA</Text>
+                        </View>
+                        <Text style={styles.shareDone}>ROTA TAMAMLANDI</Text>
+                        <Text style={styles.shareTitle}>{summary.title}</Text>
+                        <Text style={styles.shareDate}>
+                          {summary.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} · {route.city}
+                        </Text>
+                        <ShareStats stops={summary.stops} distM={summary.distM} durationMin={summary.durationMin} />
+                        <View style={styles.shareStops}>
+                          {exp.slice(0, 5).map((w, i) => (
+                            <Text key={w.id} style={styles.shareStop} numberOfLines={1}>
+                              {i + 1}. {waypointIcon(w)} {w.name}
+                            </Text>
+                          ))}
+                          {exp.length > 5 && <Text style={styles.shareStop}>+{exp.length - 5} durak daha…</Text>}
+                        </View>
+                        <Text style={styles.shareFooter}>sana ile keşfedildi 🧭</Text>
+                      </LinearGradient>
                     </View>
-                    <View style={styles.shareDivider} />
-                    <View style={styles.shareStat}>
-                      <Text style={styles.shareStatVal}>{(summary.distM / 1000).toFixed(1)}</Text>
-                      <Text style={styles.shareStatLabel}>km</Text>
-                    </View>
-                    <View style={styles.shareDivider} />
-                    <View style={styles.shareStat}>
-                      <Text style={styles.shareStatVal}>{summary.durationMin}</Text>
-                      <Text style={styles.shareStatLabel}>dk</Text>
+                  </View>
+                ) : (
+                  <View style={{ transform: [{ scale: 0.5 }] }}>
+                    <View ref={shareCardRef} collapsable={false} style={styles.storyCard}>
+                      <LinearGradient colors={["#1B2447", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.storyInner}>
+                        <View style={styles.shareBrandRow}>
+                          <View style={styles.shareBrandDot} />
+                          <Text style={styles.shareBrand}>SANA</Text>
+                        </View>
+                        <Text style={styles.shareDone}>ROTA TAMAMLANDI</Text>
+                        <Text style={styles.storyTitle}>{summary.title}</Text>
+                        <Text style={styles.shareDate}>
+                          {summary.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} · {route.city}
+                        </Text>
+                        <RouteTrace stops={exp} />
+                        <ShareStats stops={summary.stops} distM={summary.distM} durationMin={summary.durationMin} />
+                        <View style={styles.shareStops}>
+                          {exp.slice(0, 6).map((w, i) => (
+                            <Text key={w.id} style={styles.storyStop} numberOfLines={1}>
+                              {i + 1}. {waypointIcon(w)} {w.name}
+                            </Text>
+                          ))}
+                          {exp.length > 6 && <Text style={styles.storyStop}>+{exp.length - 6} durak daha…</Text>}
+                        </View>
+                        <Text style={styles.shareFooter}>sana ile keşfedildi 🧭</Text>
+                      </LinearGradient>
                     </View>
                   </View>
-                  <View style={styles.shareStops}>
-                    {exp.slice(0, 5).map((w, i) => (
-                      <Text key={w.id} style={styles.shareStop} numberOfLines={1}>
-                        {i + 1}. {waypointIcon(w)} {w.name}
-                      </Text>
-                    ))}
-                    {exp.length > 5 && <Text style={styles.shareStop}>+{exp.length - 5} durak daha…</Text>}
-                  </View>
-                  <Text style={styles.shareFooter}>sana ile keşfedildi 🧭</Text>
-                </LinearGradient>
+                )}
               </View>
 
               <View style={styles.sumBtns}>
@@ -574,10 +605,80 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   {sharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.sumShareText}>📤 Paylaş</Text>}
                 </TouchableOpacity>
               </View>
-            </Animated.View>
+            </View>
           )}
         </View>
       </Modal>
+    </View>
+  );
+}
+
+/** Paylaşım kartı istatistik satırı (durak · km · dk) — kart içi, tema-bağımsız koyu. */
+function ShareStats({ stops, distM, durationMin }: { stops: number; distM: number; durationMin: number }) {
+  const box = {
+    flexDirection: "row" as const, alignItems: "center" as const, marginTop: 18,
+    backgroundColor: "rgba(255,255,255,0.06)", borderRadius: radius.lg, paddingVertical: 14,
+  };
+  const cell = { flex: 1, alignItems: "center" as const };
+  const val = { color: "#F2F4FC", fontFamily: font.black, fontSize: 22 };
+  const lbl = { color: "#8A93B8", fontFamily: font.semibold, fontSize: 11.5, marginTop: 2 };
+  const div = { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" };
+  return (
+    <View style={box}>
+      <View style={cell}><Text style={val}>{stops}</Text><Text style={lbl}>durak</Text></View>
+      <View style={div} />
+      <View style={cell}><Text style={val}>{(distM / 1000).toFixed(1)}</Text><Text style={lbl}>km</Text></View>
+      <View style={div} />
+      <View style={cell}><Text style={val}>{durationMin}</Text><Text style={lbl}>dk</Text></View>
+    </View>
+  );
+}
+
+/** Story kartındaki stilize rota izi: duraklar nokta, aralar düz çizgi (SVG'siz —
+    çizgiler orta noktasından döndürülmüş ince View'lar; view-shot ile sorunsuz). */
+function RouteTrace({ stops }: { stops: { lat: number; lng: number }[] }) {
+  const W = 304, H = 150, PAD = 14, DOT = 10;
+  if (stops.length < 2) return null;
+  const lats = stops.map((s) => s.lat), lngs = stops.map((s) => s.lng);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const spanLat = Math.max(maxLat - minLat, 1e-6), spanLng = Math.max(maxLng - minLng, 1e-6);
+  const pts = stops.map((s) => ({
+    x: PAD + ((s.lng - minLng) / spanLng) * (W - PAD * 2),
+    y: PAD + ((maxLat - s.lat) / spanLat) * (H - PAD * 2), // kuzey yukarı
+  }));
+  return (
+    <View style={{
+      width: W, height: H, marginTop: 18, borderRadius: radius.lg,
+      backgroundColor: "rgba(255,255,255,0.05)", overflow: "hidden",
+    }}>
+      {pts.slice(1).map((p, i) => {
+        const a = pts[i];
+        const len = Math.hypot(p.x - a.x, p.y - a.y);
+        const deg = (Math.atan2(p.y - a.y, p.x - a.x) * 180) / Math.PI;
+        return (
+          <View
+            key={`l${i}`}
+            style={{
+              position: "absolute", width: len, height: 3, borderRadius: 2,
+              backgroundColor: "rgba(244,80,59,0.85)",
+              left: (a.x + p.x) / 2 - len / 2, top: (a.y + p.y) / 2 - 1.5,
+              transform: [{ rotate: `${deg}deg` }],
+            }}
+          />
+        );
+      })}
+      {pts.map((p, i) => (
+        <View
+          key={`d${i}`}
+          style={{
+            position: "absolute", width: DOT, height: DOT, borderRadius: DOT / 2,
+            left: p.x - DOT / 2, top: p.y - DOT / 2,
+            backgroundColor: i === 0 ? "#34D399" : i === pts.length - 1 ? "#F4503B" : "#F2F4FC",
+            borderWidth: 1.5, borderColor: "#0B1022",
+          }}
+        />
+      ))}
     </View>
   );
 }
@@ -724,28 +825,41 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   commentBody: { color: colors.text, fontFamily: font.regular, fontSize: 13.5, lineHeight: 19, marginTop: 5 },
   commentEmpty: { color: colors.textFaint, fontFamily: font.regular, fontSize: 13, marginTop: 2 },
 
-  // Yolculuk özeti + paylaşım kartı
-  sumBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", alignItems: "center", justifyContent: "center", padding: 24 },
-  shareCard: { width: 320, borderRadius: radius.xl, overflow: "hidden", ...shadow(14) },
-  shareInner: { padding: 24 },
+  // Yolculuk özeti — bottom sheet (3.1)
+  sumBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
+  sumSheet: {
+    backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28, alignItems: "center",
+  },
+  sumHandle: { width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 12 },
+  sumTitle: { fontSize: 18, fontFamily: font.extra, color: colors.text },
+  fmtRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  fmtChip: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
+  },
+  fmtChipOn: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  fmtChipText: { fontSize: 13, fontFamily: font.bold, color: colors.textMuted },
+  fmtChipTextOn: { color: colors.primaryDark },
+  previewBox: { height: 340, alignItems: "center", justifyContent: "center", marginTop: 4 },
+
+  shareCard: { width: 320, height: 400, borderRadius: radius.xl, overflow: "hidden", ...shadow(14) },
+  shareInner: { padding: 24, flex: 1 },
+  // Story (9:16) — 360×640 dp yerleşim; pixelRatio ile ~1080×1920 px yakalanır
+  storyCard: { width: 360, height: 640, borderRadius: radius.xl, overflow: "hidden", ...shadow(14) },
+  storyInner: { padding: 28, flex: 1 },
+  storyTitle: { marginTop: 8, color: "#F2F4FC", fontFamily: font.black, fontSize: 30, lineHeight: 37 },
+  storyStop: { color: "#C6CCE4", fontFamily: font.medium, fontSize: 14.5 },
   shareBrandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   shareBrandDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#F4503B" },
   shareBrand: { color: "#F2F4FC", fontFamily: font.black, fontSize: 16, letterSpacing: 2 },
   shareDone: { marginTop: 18, color: "#FF9F8B", fontFamily: font.bold, fontSize: 11, letterSpacing: 2.5 },
   shareTitle: { marginTop: 6, color: "#F2F4FC", fontFamily: font.black, fontSize: 24, lineHeight: 30 },
   shareDate: { marginTop: 4, color: "#8A93B8", fontFamily: font.medium, fontSize: 12.5 },
-  shareStats: {
-    flexDirection: "row", alignItems: "center", marginTop: 18,
-    backgroundColor: "rgba(255,255,255,0.06)", borderRadius: radius.lg, paddingVertical: 14,
-  },
-  shareStat: { flex: 1, alignItems: "center" },
-  shareStatVal: { color: "#F2F4FC", fontFamily: font.black, fontSize: 22 },
-  shareStatLabel: { color: "#8A93B8", fontFamily: font.semibold, fontSize: 11.5, marginTop: 2 },
-  shareDivider: { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
   shareStops: { marginTop: 16, gap: 6 },
   shareStop: { color: "#C6CCE4", fontFamily: font.medium, fontSize: 13 },
   shareFooter: { marginTop: 18, color: "#FF9F8B", fontFamily: font.bold, fontSize: 12.5, textAlign: "center" },
-  sumBtns: { flexDirection: "row", gap: 10, marginTop: 16, width: 320 },
+  sumBtns: { flexDirection: "row", gap: 10, marginTop: 14, width: "100%" },
   sumGhost: { flex: 1, paddingVertical: 14, alignItems: "center", borderRadius: radius.lg, backgroundColor: "rgba(255,255,255,0.12)" },
   sumGhostText: { color: "#F2F4FC", fontFamily: font.bold },
   sumShare: { flex: 1.4, paddingVertical: 14, alignItems: "center", borderRadius: radius.lg, backgroundColor: colors.primary },
