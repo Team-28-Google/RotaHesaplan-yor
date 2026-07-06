@@ -83,6 +83,36 @@ def _load_profile(env: dict, user_id: str) -> dict | None:
     return rows[0] if rows else None
 
 
+def _load_pref_events(env: dict, user_id: str, limit: int = 3) -> list[str]:
+    """Son davranış hafızaları (favori/yolculuk/yorum) — 2.2."""
+    q = (f"owner_id=eq.{user_id}&source_type=eq.preference_update"
+         f"&select=content&order=created_at.desc&limit={limit}")
+    try:
+        rows = sb_select(env, "ai_memory_embeddings", q)
+    except Exception:  # created_at yoksa sırasız al
+        rows = sb_select(env, "ai_memory_embeddings", q.replace("&order=created_at.desc", ""))
+    return [r.get("content") or "" for r in rows if r.get("content")]
+
+
+_KIND_TR = {"favorite": "favorilerine ekledi", "journey": "yürüyüp tamamladı", "comment": "yorumladı"}
+
+
+def save_memory_event(user_id: str, kind: str, route_id: str) -> dict:
+    """Davranış hafızası (2.2): favori/yolculuk/yorum → preference_update embed'i."""
+    env = load_env()
+    r = get_route(env, route_id)
+    if not r:
+        return {"ok": False, "reason": "not_found"}
+    tags = ", ".join(r.get("vibe_tags") or [])
+    content = f"Kullanıcı '{r.get('title')}' rotasını {_KIND_TR.get(kind, kind)} (etiketler: {tags})."
+    vec = nvidia_embed(env, content, input_type="passage")
+    sb_insert(env, "ai_memory_embeddings", {
+        "owner_id": user_id, "route_id": route_id, "source_type": "preference_update",
+        "content": content, "embedding": vec, "metadata": {"kind": kind},
+    })
+    return {"ok": True, "content": content}
+
+
 def fallback_ai(route: dict, exp: list, weather: dict) -> dict:
     """Composer (LLM) takılırsa: rotayı yine de mekan notlarıyla döndür."""
     temp = weather.get("temp")
@@ -113,7 +143,7 @@ def parse_intent(env: dict, text: str) -> dict:
     return d
 
 
-def plan_route(text: str, user_id: str | None = None) -> dict:
+def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None) -> dict:
     env = load_env()
 
     # Agent adımları: her aşamanın süresi + tek satır özeti (app bekleme ekranı + jüri için)
@@ -137,19 +167,30 @@ def plan_route(text: str, user_id: str | None = None) -> dict:
     except (TypeError, ValueError):
         budget_max = 4
 
-    # [1b] Kullanıcı hafızası: onboarding profili (varsa) plana harmanlanır
+    # [1b] Kullanıcı hafızası: onboarding profili + son davranışlar (2.1 + 2.2)
     profile = None
+    pref_notes: list[str] = []
     if user_id:
         try:
             profile = _load_profile(env, user_id)
+            pref_notes = _load_pref_events(env, user_id)
         except Exception:  # noqa: BLE001 — hafıza okunamazsa kişiselleştirmesiz devam
-            profile = None
+            profile, pref_notes = None, []
     profile_text = (profile or {}).get("content") or ""
+    if pref_notes:
+        profile_text = (profile_text + " Son davranışları: " + " ".join(pref_notes)).strip()
     prof_budget = ((profile or {}).get("metadata") or {}).get("budget")
     # Kullanıcı cümlede bütçe belirtmediyse (varsayılan 4) profil bütçesini uygula
     if profile and budget_max >= 4 and prof_budget:
         budget_max = {1: 2, 2: 3, 3: 4}.get(int(prof_budget), 4)
-    _mark("Hafıza tarandı", "profil bulundu" if profile else "profil yok")
+    _note = "profil yok"
+    if profile and pref_notes:
+        _note = f"profil + {len(pref_notes)} davranış"
+    elif profile:
+        _note = "profil bulundu"
+    elif pref_notes:
+        _note = f"{len(pref_notes)} davranış"
+    _mark("Hafıza tarandı", _note)
 
     # [2] Data: hava
     weather = get_weather(env, city) or {"bias": "any", "desc": "", "temp": None, "rainy": False}
@@ -164,29 +205,39 @@ def plan_route(text: str, user_id: str | None = None) -> dict:
     if not candidates:
         return {"ok": False, "reason": "no_match", "intent": intent, "weather": weather, "steps": steps}
 
-    # [4] Budget/Logistics: hava biası ile en uygun adayı seç
+    # [4] Budget/Logistics: hava biası (+ kullanıcı "kapalı alternatif" istediyse ZORLAMALI filtre)
     bias = weather.get("bias", "any")
-    pref = intent.get("indoor_outdoor_pref", "any")
-    chosen = None
-    for c in candidates:
-        r = get_route(env, c["route_id"])
-        if not r:
-            continue
-        fit = r.get("weather_fit", "any")
-        if bias == "indoor" and fit == "outdoor":
-            continue
-        if pref == "indoor" and fit == "outdoor":
-            continue
-        chosen = r
-        chosen["_similarity"] = c.get("similarity")
-        break
+    pref = force_weather_fit or intent.get("indoor_outdoor_pref", "any")
+
+    def _pick(allowed_fits: set | None):
+        for c in candidates:
+            r = get_route(env, c["route_id"])
+            if not r:
+                continue
+            fit = r.get("weather_fit", "any")
+            if allowed_fits is not None and fit not in allowed_fits:
+                continue
+            if allowed_fits is None:
+                if bias == "indoor" and fit == "outdoor":
+                    continue
+                if pref == "indoor" and fit == "outdoor":
+                    continue
+            r["_similarity"] = c.get("similarity")
+            return r
+        return None
+
+    if force_weather_fit == "indoor":
+        chosen = _pick({"indoor"}) or _pick({"indoor", "any"})  # önce tam kapalı, sonra "any"
+    else:
+        chosen = _pick(None)
     if chosen is None:
         chosen = get_route(env, candidates[0]["route_id"])
         chosen["_similarity"] = candidates[0].get("similarity")
 
     wps = sorted(chosen.get("waypoints", []), key=lambda w: w.get("seq", 0))
     exp = [w for w in wps if w.get("kind") == "experience"]
-    _mark("Rota seçildi", chosen.get("title") or "")
+    _mark("Rota seçildi", f"{chosen.get('title') or ''} · {chosen.get('weather_fit', 'any')}"
+          + (" · kapalı zorlandı" if force_weather_fit else ""))
 
     # [5] Flood Composer
     composer_input = {
@@ -217,8 +268,9 @@ def plan_route(text: str, user_id: str | None = None) -> dict:
         "route_id": chosen.get("id"),
         "route": chosen,
         "ai": ai,
-        "personalized": bool(profile),
+        "personalized": bool(profile or pref_notes),
         "profile": profile_text or None,
+        "forced_fit": force_weather_fit,
         "steps": steps,
     }
 
@@ -265,6 +317,44 @@ def enrich_route(stops: list[dict]) -> dict:
         })
     data["stops"] = out_stops
     return {"ok": True, **data}
+
+
+# --------------------------- Topluluk yorum özeti (2.4) ---------------------------
+SUMMARY_SYS = (
+    "Sen SANA'nın topluluk özetleyicisisin. Sana bir rotanın kullanıcı yorumları verilir. "
+    "SADECE şu JSON'u döndür, başka metin yazma:\n"
+    '{"summary": string (Türkçe, en fazla 2 sıcak cümle, yorumların ortak hissini ver), '
+    '"tags": string[] (tam 3 kısa Türkçe etiket, örn. "manzara", "kalabalık", "uygun fiyat")}'
+)
+
+_SUMMARY_CACHE: dict = {}  # route_id → (timestamp, sonuç); TTL 1 saat
+
+
+def summarize_comments(route_id: str) -> dict:
+    now = time.time()
+    hit = _SUMMARY_CACHE.get(route_id)
+    if hit and now - hit[0] < 3600:
+        return hit[1]
+    env = load_env()
+    rows = sb_select(env, "flood_comments",
+                     f"route_id=eq.{route_id}&select=body,rating&order=created_at.desc&limit=20")
+    bodies = [r for r in rows if (r.get("body") or "").strip()]
+    if len(bodies) < 3:
+        res = {"ok": False, "reason": "not_enough_comments", "count": len(bodies)}
+    else:
+        text = "\n".join(
+            f"- {r['body']}" + (f" (puan: {r['rating']}/5)" if r.get("rating") else "")
+            for r in bodies
+        )
+        try:
+            raw = nvidia_chat(env, SUMMARY_SYS, text, json_mode=True, temperature=0.4, max_tokens=200)
+            d = json.loads(raw)
+            res = {"ok": True, "summary": d.get("summary", ""), "tags": (d.get("tags") or [])[:3],
+                   "count": len(bodies)}
+        except Exception:  # noqa: BLE001
+            res = {"ok": False, "reason": "llm_error"}
+    _SUMMARY_CACHE[route_id] = (now, res)
+    return res
 
 
 def embed_route(route_id: str) -> dict:

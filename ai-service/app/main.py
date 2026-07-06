@@ -19,7 +19,7 @@ from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_route as run_enrich_route
 from app.pipeline import plan_route as run_pipeline
 from app.pipeline import route_geometry as run_route_geometry
-from app.pipeline import save_onboarding_memory
+from app.pipeline import save_memory_event, save_onboarding_memory, summarize_comments
 
 app = FastAPI(title="SANA AI Service", version="0.2.0")
 app.add_middleware(
@@ -36,6 +36,7 @@ class EmbedRequest(BaseModel):
 class PlanRouteRequest(BaseModel):
     text: str = Field(..., min_length=1, examples=["Bugün İstanbul'da yalnızım, kafa dinlemek istiyorum, bütçem az"])
     user_id: str | None = None  # verilirse plan kullanıcının hafızasıyla kişiselleştirilir
+    force_weather_fit: str | None = Field(None, pattern="^(indoor|outdoor|any)$")  # ☔ kapalı alternatif
 
 
 class OnboardingMemoryRequest(BaseModel):
@@ -49,6 +50,12 @@ class WalkRouteRequest(BaseModel):
     from_lng: float
     to_lat: float
     to_lng: float
+
+
+class MemoryEventRequest(BaseModel):
+    user_id: str = Field(..., min_length=10)
+    kind: str = Field(..., pattern="^(favorite|journey|comment)$")
+    route_id: str = Field(..., min_length=10)
 
 
 class EnrichStop(BaseModel):
@@ -93,7 +100,7 @@ def embed(req: EmbedRequest) -> dict:
 def plan_route(req: PlanRouteRequest) -> dict:
     """Deterministik AI pipeline: niyet (+kullanıcı hafızası) → rota → AI flood anlatısı."""
     try:
-        return run_pipeline(req.text, req.user_id)
+        return run_pipeline(req.text, req.user_id, req.force_weather_fit)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
 
@@ -105,6 +112,24 @@ def memory_onboarding(req: OnboardingMemoryRequest) -> dict:
         return save_onboarding_memory(req.user_id, req.vibes, req.budget)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Hafıza hatası: {e}") from e
+
+
+@app.post("/memory/event")
+def memory_event(req: MemoryEventRequest) -> dict:
+    """Davranış hafızası (2.2): favori/yolculuk/yorum → preference_update embed'i."""
+    try:
+        return save_memory_event(req.user_id, req.kind, req.route_id)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Hafıza hatası: {e}") from e
+
+
+@app.post("/summarize-comments")
+def summarize(req: EmbedRouteRequest) -> dict:
+    """Topluluk yorum özeti (2.4): ≥3 yorumu 2 cümle + 3 etikete indirger (1 saat cache)."""
+    try:
+        return summarize_comments(req.route_id)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Özet hatası: {e}") from e
 
 
 @app.post("/enrich-route")
