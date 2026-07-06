@@ -64,7 +64,11 @@
 - [ ] Doğrula: foto marker'lar tam görünüyor mu (çeyrek bug bitti mi), koyu harita, konum izni.
 - **Kontrol:** Günlük geliştirme artık dev build üzerinden; Expo Go sadece hızlı bakış için.
 
-### 🟡 0.4 AI servisini buluta taşı 👤+🤖 (🤖 hazırlık TAMAM — 4 Tem)
+### ⏸️ 0.4 AI servisini buluta taşı — YAYIN ANINA ERTELENDİ (kullanıcı kararı, 6 Tem)
+> **Karar:** Dışarıda/sokakta test yapılmayacak; demo hep aynı Wi-Fi'da (LAN IP yeterli).
+> **Gerçekten yayınlanacağı zaman yapılacak** — FAZ 5'te preview APK testçilere dağıtılmadan
+> önce (5.2'nin ön koşulu sayılır); hazırlık (render.yaml + load_env fix) repo'da hazır bekliyor.
+> **Etkisi:** o zamana dek 4.0 navigasyon LAN'da test edilir; testçiler AI özelliklerini kullanamaz.
 - [x] 🤖 `render.yaml` blueprint hazır (repo kökü): rootDir ai-service, health check, tüm env'ler sync:false.
 - [x] 🤖 Kritik fix: `load_env()` artık `.env` dosyası olmayan ortamda os.environ'dan okuyor
   (bu olmadan Render'da TÜM anahtarlar boş kalırdı).
@@ -194,6 +198,9 @@
   vibe'ları ↔ rota etiketleri eşanlam haritasıyla skorlanır, eşleşme yoksa gizlenir); **Popüler**
   kartlar tam-foto immersive (başlık+meta alt gradyan üzerinde), beğeniye göre sıralı. tsc temiz.
 - [ ] 👤 Cihazda beğeni turu: AI kartı, şerit, immersive kartlar (koyu+açık tema) — geri bildirimle ince ayar.
+- [ ] 🤖 **Geri bildirim (6 Tem):** "Rota oluştur" daha belirgin bir yere taşınsın — header'daki [+]
+  yeterince görünür değil (seçenekler: AI kartının altına ikinci satır aksiyon, akış sonunda kart,
+  ya da kalıcı FAB; kullanıcıyla netleştir).
 
 ### ⬜ 3.1 Paylaşım kartı v2 🤖
 - [ ] Story varyantı: 1080×1920 oranlı (9:16) tam boy kart — mevcut kartın büyüğü + arka planda harita.
@@ -259,7 +266,8 @@
   TRANSIT yanıtındaki `transitDetails`'ten; journey bar'da "🚌 15A · Kadıköy İskele'den bin".
 - [ ] Rota detayındaki bacaklarda (durak arası) da mod bazlı gerçek süre alternatifi göster.
 - [ ] (Araştır) DRIVE modunda trafik-duyarlı süre Essentials'a girer mi, kota etkisi ne?
-- **Ön koşul:** 0.4 Render deploy (canlı navigasyon sokakta ancak bulut servisle çalışır).
+- ~~Ön koşul: 0.4 Render deploy~~ → 0.4 rafa kalktı (6 Tem); test LAN'da (ev Wi-Fi) yapılır,
+  4.1 saha testi de buna göre ev çevresi/aynı ağ senaryosuna daralır.
 - **Kabul:** Yolculukta mod değiştirince çizgi + süre + talimat o moda göre güncelleniyor.
 
 ### ⬜ 4.1 Saha testi 👤 (kritik — kod değil, yürüyüş)
@@ -289,6 +297,8 @@
 - [ ] Auth ekranından tam tur: kayıt → onboarding → plan → favori.
 
 ### ⬜ 5.2 Preview APK 👤
+- [ ] **ÖNCE 0.4 Render deploy** (6 Tem kararı: yayın anına ertelendi — testçi telefonları LAN'daki
+  AI servisine erişemez; APK dağıtmadan önce servis buluta alınıp `config.ts` URL'i güncellenir).
 - [ ] `eas build --profile preview --platform android` → APK linki testçilere (WhatsApp/Drive).
 - [ ] `eas update --channel preview` akışı çalışıyor (script'ler geçmişte vardı, geri getir).
 
@@ -311,6 +321,7 @@
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 6 Tem | 0.4 Render RAFA | Kullanıcı kararı: dışarıda test yok, LAN yeterli; render.yaml hazırlık olarak repo'da kalıyor |
 | 6 Tem | 3.0b Home redesign (karma) | AI prompt kartı + "Sana özel" vibe şeridi + immersive Popüler kartlar; paylaşım 3.1'e ertelendi. Cihaz beğeni turu bekliyor |
 | 6 Tem | Public repo ön-tarama | Key taraması temiz (kod+geçmiş+render.yaml); public öncesi kalan: README+LICENSE (5.3) |
 | 3 Tem | Yol haritası + TODO oluşturuldu | — |
