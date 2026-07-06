@@ -197,6 +197,9 @@
   sekmesi); "Rota Ekle" header'da [+] butonuna dönüştü; **"Sana özel"** yatay şeridi (onboarding
   vibe'ları ↔ rota etiketleri eşanlam haritasıyla skorlanır, eşleşme yoksa gizlenir); **Popüler**
   kartlar tam-foto immersive (başlık+meta alt gradyan üzerinde), beğeniye göre sıralı. tsc temiz.
+- [x] **Profil tasarımı elden geçirildi (7 Tem, kullanıcı isteği — beğenildi ✓):** kimlik + istatistikler +
+  rozet ilerleme çubuğu tek "gezgin kartı"nda (koyu hero, paylaşım kartlarıyla aynı dil); ayarlar
+  (koyu mod / tercihler / davet) ayraçlı tek kartta.
 - [ ] 👤 Cihazda beğeni turu: AI kartı, şerit, immersive kartlar (koyu+açık tema) — geri bildirimle ince ayar.
 - [ ] 🤖 **Geri bildirim (6 Tem):** "Rota oluştur" daha belirgin bir yere taşınsın — header'daki [+]
   yeterince görünür değil (seçenekler: AI kartının altına ikinci satır aksiyon, akış sonunda kart,
@@ -246,6 +249,8 @@
 - [x] Migration `0008_storage.sql` yazıldı: photos bucket + RLS (kendi uid/ klasörüne insert, public select).
 - [x] `expo-image-picker` kuruldu; yorum formunda 📷 → önizleme/kaldır → `uploadPhoto`
   (ArrayBuffer, başarısızsa yorum fotosuz gider) → yorumda thumbnail.
+- [x] **Kamera seçeneği (7 Tem, kullanıcı isteği):** 📷 butonu "Fotoğraf çek / Galeriden seç" soruyor;
+  kamera izni akışı + app.json'a expo-image-picker plugin'i (izin metinleri).
 - [x] 👤 `0008_storage.sql` SQL Editor'de çalıştırıldı (7 Tem) — photos bucket canlı doğrulandı (public=true).
 - [ ] CreateRoute durak modalına opsiyonel foto — 3.2a Places fotoğrafı zaten dolduruyor; düşük öncelik.
 - **Kontrol 👤:** Foto'lu yorum atılıyor ve görünüyor.
