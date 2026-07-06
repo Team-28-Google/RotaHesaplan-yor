@@ -216,6 +216,55 @@ def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: 
     }
 
 
+# --------------------------- Google Places (New) — foto + puan (3.2a) ---------------------------
+def google_place_lookup(env: dict, name: str, lat: float, lng: float):
+    """Text Search (koordinat bias'lı, tek sonuç): place_id + puan + foto adı.
+    Anahtar yoksa/hata olursa None döner (çağıran fotosuz devam eder)."""
+    key = _google_server_key(env)
+    if not key or not name:
+        return None
+    body = {
+        "textQuery": name,
+        "pageSize": 1,
+        "languageCode": "tr",
+        "locationBias": {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": 2000.0}},
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "places.id,places.rating,places.photos",
+    }
+    try:
+        r = _req("https://places.googleapis.com/v1/places:searchText", "POST", headers, body, timeout=20)
+    except Exception:
+        return None
+    places = (r or {}).get("places") or []
+    if not places:
+        return None
+    p = places[0]
+    photos = p.get("photos") or []
+    return {
+        "place_id": p.get("id"),
+        "rating": p.get("rating"),
+        "photo_name": photos[0].get("name") if photos else None,
+    }
+
+
+def google_photo_url(env: dict, photo_name: str | None, max_w: int = 1000):
+    """Photo media redirect'i SUNUCUDA çözülür → kalıcı googleusercontent URL'si.
+    API anahtarı asla DB'ye/istemciye sızmaz (skipHttpRedirect + header ile)."""
+    key = _google_server_key(env)
+    if not key or not photo_name:
+        return None
+    url = (f"https://places.googleapis.com/v1/{photo_name}/media"
+           f"?maxWidthPx={max_w}&skipHttpRedirect=true")
+    try:
+        r = _req(url, "GET", {"X-Goog-Api-Key": key})
+    except Exception:
+        return None
+    return (r or {}).get("photoUri")
+
+
 # --------------------------- SerpApi mekan arama ---------------------------
 _SEARCH_CACHE: dict = {}
 

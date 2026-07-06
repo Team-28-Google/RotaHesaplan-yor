@@ -375,5 +375,14 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
     }, 45_000);
   } catch { /* yoksay */ }
 
+  // durak fotoğrafları + puan (Places) — rota seed kalitesinde görünsün (3.2a)
+  try {
+    await fetchWithTimeout(`${AI_SERVICE_URL}/enrich-photos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ route_id: routeId }),
+    }, 45_000);
+  } catch { /* yoksay */ }
+
   return routeId;
 }

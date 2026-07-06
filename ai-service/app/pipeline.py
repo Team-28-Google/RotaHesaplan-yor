@@ -12,8 +12,9 @@ import sys
 import time
 
 from app.clients import (
-    get_route, get_weather, google_walk_leg, load_env, match_routes,
-    nvidia_chat, nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select,
+    get_route, get_weather, google_photo_url, google_place_lookup, google_walk_leg,
+    load_env, match_routes, nvidia_chat, nvidia_embed, sb_delete, sb_insert,
+    sb_patch, sb_select,
 )
 
 # --------------------------- Prompt'lar ---------------------------
@@ -374,6 +375,46 @@ def embed_route(route_id: str) -> dict:
         "embedding": vec, "metadata": {"city": r.get("city"), "vibe_tags": r.get("vibe_tags")},
     })
     return {"ok": True}
+
+
+# --------------------------- Foto zenginleştirme (3.2a) ---------------------------
+def enrich_photos(route_id: str) -> dict:
+    """Fotosuz deneyim duraklarına Places (New) fotoğrafı + puanı yazar (idempotent:
+    fotolu duraklar atlanır). Rota kapağı boşsa ilk bulunan fotoğraf kapak yapılır."""
+    env = load_env()
+    r = get_route(env, route_id)
+    if not r:
+        return {"ok": False, "reason": "not_found"}
+    wps = sorted(r.get("waypoints", []), key=lambda w: w.get("seq", 0))
+    exp = [w for w in wps if w.get("kind") == "experience"]
+    updated = 0
+    cover = r.get("cover_photo_url")
+    for w in exp:
+        if w.get("photo_urls"):
+            cover = cover or w["photo_urls"][0]
+            continue
+        info = google_place_lookup(env, w.get("name") or "", w["lat"], w["lng"])
+        if not info:
+            continue
+        photo = google_photo_url(env, info.get("photo_name"))
+        patch: dict = {}
+        if photo:
+            patch["photo_urls"] = [photo]
+        if info.get("place_id") and not w.get("place_id"):
+            patch["place_id"] = info["place_id"]
+        if info.get("rating") is not None:
+            md = dict(w.get("metadata") or {})
+            md["rating"] = info["rating"]
+            patch["metadata"] = md  # RouteFlood ⭐ bunu okur (getRating)
+        if not patch:
+            continue
+        sb_patch(env, "waypoints", {"id": f"eq.{w['id']}"}, patch)
+        updated += 1
+        cover = cover or photo
+    cover_set = bool(cover and not r.get("cover_photo_url"))
+    if cover_set:
+        sb_patch(env, "routes", {"id": f"eq.{route_id}"}, {"cover_photo_url": cover})
+    return {"ok": True, "updated": updated, "cover_set": cover_set}
 
 
 # --------------------------- Rota geometrisi (Google Routes) ---------------------------

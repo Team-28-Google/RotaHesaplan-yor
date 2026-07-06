@@ -232,17 +232,15 @@
 - [ ] Paylaş menüsünde iki seçenek: "Kart (4:5)" / "Story (9:16)".
 - **Kontrol:** Story Instagram'da tam ekran, kırpılmadan görünüyor.
 
-### ⬜ 3.2a Places API zenginleştirme — kullanıcı rotalarına foto + puan 🤖 ★
-- [ ] ai-service: `places_lookup(name, lat, lng)` — Places (New) Text Search (koordinat bias'lı, tek sonuç)
-  → `place_id`, `rating`, foto adı; foto adından **Photo media** redirect'i sunucuda çözülüp
-  KALICI googleusercontent URL'si alınır (API anahtarı asla DB'ye yazılmaz).
-- [ ] `route_geometry` akışına eklenir (ya da ayrı `/enrich-photos`): her deneyim durağına
-  `photo_urls[0]` + `metadata.rating`; rotaya `cover_photo_url` (ilk durağın fotosu).
-- [ ] Seed rotalarda zaten SerpApi fotoları var — sadece fotosuz duraklara uygula (idempotent).
-- [ ] Backfill script'ine bayrak: `py add_geometry.py --photos`.
-- **Neden:** Kullanıcının oluşturduğu rotalar şu an fotosuz → akışta sönük. Bununla her rota
-  seed kalitesinde görünür; harita marker'ları da fotolu olur. Kota: durak başına 1-2 çağrı, yazım anında.
-- **Kabul:** Yeni oluşturulan rota akışta kapak fotoğraflı + duraklarında puan görünüyor.
+### ✅ 3.2a Places API zenginleştirme — TAMAMLANDI (6 Tem)
+- [x] `google_place_lookup` (Text Search, koordinat bias, tek sonuç) + `google_photo_url`
+  (Photo media redirect'i sunucuda çözülür → kalıcı googleusercontent URL; key DB'ye sızmaz).
+- [x] `enrich_photos(route_id)` + `POST /enrich-photos`: fotosuz deneyim duraklarına
+  `photo_urls[0]` + `metadata.rating` (RouteFlood ⭐ zaten okuyordu) + `place_id`; kapak boşsa atanır.
+- [x] app `createRoute`: üçüncü fire-and-forget çağrı; idempotent (fotolu durak atlanır).
+- [x] Backfill: `py add_geometry.py --photos` / `--photos-only`.
+- [x] Bonus: main.py'de mükerrer `SearchRequest` tanımı temizlendi.
+- **CANLI TEST:** geçici rota → Ayasofya foto+⭐4.8, Galata Kulesi foto+⭐4.6, kapak otomatik; rota silindi.
 
 ### ⬜ 3.2 Foto yükleme 🤖 (+ 👤 bucket onayı)
 - [ ] Supabase migration `0006_storage.sql`: `photos` bucket + RLS (authenticated insert kendi klasörüne, select public).

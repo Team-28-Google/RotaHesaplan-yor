@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from app.clients import google_walk_leg, load_env, nvidia_embed, serpapi_search
 from app.pipeline import embed_route as run_embed_route
+from app.pipeline import enrich_photos as run_enrich_photos
 from app.pipeline import enrich_route as run_enrich_route
 from app.pipeline import plan_route as run_pipeline
 from app.pipeline import route_geometry as run_route_geometry
@@ -71,10 +72,6 @@ class EnrichRequest(BaseModel):
 
 class EmbedRouteRequest(BaseModel):
     route_id: str
-
-
-class SearchRequest(BaseModel):
-    q: str = Field(..., min_length=1)
 
 
 class SearchRequest(BaseModel):
@@ -155,6 +152,15 @@ def walk_route(req: WalkRouteRequest) -> dict:
     """Canlı navigasyon: kullanıcı konumu → hedef durak yürüme rotası (journey modu)."""
     leg = google_walk_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng)
     return {"ok": bool(leg), **(leg or {})}
+
+
+@app.post("/enrich-photos")
+def enrich_photos(req: EmbedRouteRequest) -> dict:
+    """Fotosuz duraklara Places foto+puan yazar (3.2a) — rota yazımı sonrası fire-and-forget."""
+    try:
+        return run_enrich_photos(req.route_id)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Foto hatası: {e}") from e
 
 
 @app.post("/route-geometry")
