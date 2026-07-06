@@ -108,4 +108,6 @@ export interface PlanResponse {
   profile?: string | null;
   /** Agent pipeline adımları: gerçek süre + tek satır özet (2.6) */
   steps?: { name: string; ms: number; note?: string }[];
+  /** ☔ Kapalı alternatif istendiyse hangi fit zorlandı (2.5) */
+  forced_fit?: string | null;
 }

@@ -11,8 +11,9 @@ import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import Skeleton from "../components/Skeleton";
 import { pop, success, tap } from "../lib/haptics";
 import {
-  addComment, fetchComments, fetchRoute, fetchWalkRoute, getFavoriteIds, setFavorite,
-  type FloodComment, type WalkLeg,
+  addComment, fetchComments, fetchCommentSummary, fetchRoute, fetchWalkRoute,
+  getFavoriteIds, sendMemoryEvent, setFavorite,
+  type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { addJourney } from "../lib/journeyLog";
 import { useUserLocation } from "../lib/useUserLocation";
@@ -76,6 +77,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [cRating, setCRating] = useState<number | null>(null);
   const [cSending, setCSending] = useState(false);
   const [cError, setCError] = useState<string | null>(null);
+  const [communitySummary, setCommunitySummary] = useState<CommentSummary | null>(null);
 
   // Yolculuk özeti + paylaşım kartı
   const [summary, setSummary] = useState<JourneySummary | null>(null);
@@ -121,12 +123,19 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       setCBody("");
       setCRating(null);
       setComments(await fetchComments(routeId));
+      sendMemoryEvent("comment", routeId); // davranış hafızası (2.2)
     } catch (e) {
       setCError(e instanceof Error ? e.message : "Yorum gönderilemedi");
     } finally {
       setCSending(false);
     }
   };
+
+  // Topluluk özeti (2.4): ≥3 yorum varsa AI'dan iki cümlelik özet çek
+  useEffect(() => {
+    if (comments.length < 3 || communitySummary) return;
+    fetchCommentSummary(routeId).then((s) => { if (s?.ok) setCommunitySummary(s); });
+  }, [comments.length, communitySummary, routeId]);
 
   const toggleFav = async () => {
     const next = !fav;
@@ -140,6 +149,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     ]).start();
     try {
       await setFavorite(routeId, next);
+      if (next) sendMemoryEvent("favorite", routeId); // davranış hafızası (2.2)
     } catch {
       setFav(!next); // geri al
     }
@@ -253,6 +263,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       distance_m: s.distM, duration_min: s.durationMin, stops: s.stops,
       date: s.date.toISOString(),
     });
+    sendMemoryEvent("journey", route.id); // davranış hafızası (2.2)
   };
 
   const shareCard = async () => {
@@ -350,6 +361,22 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 <Text key={t} style={styles.tag}>#{t}</Text>
               ))}
             </View>
+
+            {/* ✨ Topluluk ne diyor — AI yorum özeti (2.4) */}
+            {communitySummary?.ok && (
+              <View style={styles.community}>
+                <Text style={styles.communityTitle}>✨ TOPLULUK NE DİYOR · {communitySummary.count} yorum</Text>
+                <Text style={styles.communityText}>{communitySummary.summary}</Text>
+                {!!communitySummary.tags?.length && (
+                  <View style={styles.communityTags}>
+                    {communitySummary.tags.map((t) => (
+                      <Text key={t} style={styles.communityTag}>{t}</Text>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+
             {journey ? (
               <TouchableOpacity style={[styles.startBtn, styles.stopBtn]} onPress={finishJourney} activeOpacity={0.9}>
                 <Text style={styles.startBtnText}>⏹ Yolculuğu Bitir</Text>
@@ -657,6 +684,20 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   jArrived: { color: "#4ADE80", fontFamily: font.extra, fontSize: 12.5, marginTop: 2 },
   jNext: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
   jNextText: { color: "#fff", fontFamily: font.extra, fontSize: 13 },
+
+  // ✨ Topluluk özeti (2.4)
+  community: {
+    marginTop: 14, backgroundColor: colors.surfaceAlt, borderRadius: radius.md,
+    padding: 14, borderWidth: 1, borderColor: colors.border, gap: 8,
+  },
+  communityTitle: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 10.5, letterSpacing: 1.1 },
+  communityText: { color: colors.text, fontFamily: font.medium, fontSize: 13.5, lineHeight: 20 },
+  communityTags: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  communityTag: {
+    color: colors.primaryDark, fontFamily: font.semibold, fontSize: 11.5,
+    backgroundColor: colors.primarySoft, paddingHorizontal: 9, paddingVertical: 3,
+    borderRadius: radius.pill, overflow: "hidden",
+  },
 
   // Yorumlar
   commentsWrap: { paddingHorizontal: 20, paddingTop: 10 },

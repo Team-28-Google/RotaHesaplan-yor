@@ -74,18 +74,24 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PlanResponse | null>(null);
 
-  const submit = async () => {
+  const submit = async (force?: "indoor") => {
     if (!text.trim()) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await planRoute(text.trim());
+      const res = await planRoute(text.trim(), force);
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bir hata oluştu");
     } finally {
       setLoading(false);
     }
+  };
+
+  // ☔ Yağmurlu günde kapalı-mekân alternatifi iste (2.5): aynı niyet, indoor zorlamalı
+  const retryIndoor = () => {
+    setResult(null);
+    submit("indoor");
   };
 
   const reset = () => {
@@ -102,6 +108,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
         <PlanResult
           result={result}
           onReset={reset}
+          onIndoor={retryIndoor}
           onOpenRoute={(id, title) => navigation.navigate("RouteFlood", { routeId: id, title, autoStart: true })}
         />
       ) : (
@@ -134,7 +141,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
 
         <TouchableOpacity
           style={[styles.btn, (!text.trim() || loading) && styles.btnDisabled]}
-          onPress={submit}
+          onPress={() => submit()}
           disabled={!text.trim() || loading}
           activeOpacity={0.9}
         >
@@ -152,8 +159,9 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   );
 }
 
-function PlanResult({ result, onReset, onOpenRoute }: {
-  result: PlanResponse; onReset: () => void; onOpenRoute: (id: string, title: string) => void;
+function PlanResult({ result, onReset, onIndoor, onOpenRoute }: {
+  result: PlanResponse; onReset: () => void; onIndoor: () => void;
+  onOpenRoute: (id: string, title: string) => void;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -234,6 +242,21 @@ function PlanResult({ result, onReset, onOpenRoute }: {
             </View>
             {!!ai.weather_note && <Text style={styles.note}>🌦️ {ai.weather_note}</Text>}
             {!!ai.budget_note && <Text style={styles.note}>💸 {ai.budget_note}</Text>}
+
+            {/* ☔ Yağmur uyarısı + kapalı alternatif (2.5) */}
+            {result.weather?.rainy && route.weather_fit !== "indoor" && !result.forced_fit && (
+              <View style={styles.rainBand}>
+                <Text style={styles.rainText}>
+                  ☔ Bugün hava yağışlı{result.weather.desc ? ` (${result.weather.desc})` : ""} — bu rota açık hava ağırlıklı.
+                </Text>
+                <TouchableOpacity style={styles.rainBtn} onPress={onIndoor} activeOpacity={0.85}>
+                  <Text style={styles.rainBtnText}>Kapalı mekân alternatifi öner</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {!!result.forced_fit && (
+              <Text style={styles.note}>☂️ Kapalı mekân tercihinle yeniden planlandı.</Text>
+            )}
           </View>
 
           <View style={styles.timeline}>
@@ -398,6 +421,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   socialText: { color: colors.accent, fontFamily: font.semibold, fontSize: 13.5, lineHeight: 19 },
 
   profileNote: { marginTop: 8, color: colors.textFaint, fontFamily: font.medium, fontSize: 12.5, fontStyle: "italic" },
+  rainBand: {
+    marginTop: 12, backgroundColor: "rgba(59,130,246,0.12)", borderRadius: radius.md,
+    padding: 12, borderWidth: 1, borderColor: "rgba(59,130,246,0.35)", gap: 10,
+  },
+  rainText: { color: colors.text, fontFamily: font.semibold, fontSize: 13, lineHeight: 18 },
+  rainBtn: { alignSelf: "flex-start", backgroundColor: "#3B82F6", borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 8 },
+  rainBtnText: { color: "#fff", fontFamily: font.bold, fontSize: 13 },
   actionRow: { flexDirection: "row", gap: 10, marginHorizontal: 20, marginTop: 16 },
   saveBtn: {
     flex: 1, paddingVertical: 14, alignItems: "center", borderRadius: radius.lg,

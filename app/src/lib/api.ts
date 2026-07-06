@@ -144,15 +144,19 @@ export async function countMyComments(): Promise<number> {
 }
 
 /** AI servisine doğal dil niyeti gönderir → kişiselleştirilmiş rota + flood anlatısı.
- *  Giriş yapılmışsa user_id eklenir → plan kullanıcının hafızasıyla kişiselleşir (2.1). */
-export async function planRoute(text: string): Promise<PlanResponse> {
+ *  Giriş yapılmışsa user_id eklenir (2.1); forceWeatherFit="indoor" → ☔ kapalı alternatif (2.5). */
+export async function planRoute(text: string, forceWeatherFit?: "indoor"): Promise<PlanResponse> {
   const uid = await currentUserId();
   let res: Response;
   try {
     res = await fetchWithTimeout(`${AI_SERVICE_URL}/plan-route`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, user_id: uid ?? undefined }),
+      body: JSON.stringify({
+        text,
+        user_id: uid ?? undefined,
+        force_weather_fit: forceWeatherFit,
+      }),
     }, 90_000);
   } catch (e) {
     if (isAbort(e)) throw new Error("AI servisi yanıt vermedi (zaman aşımı). Sunucu meşgul olabilir, tekrar dene.");
@@ -208,6 +212,42 @@ export async function syncOnboardingMemory(vibes: string[], budget: number): Pro
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+/** Davranış hafızası (2.2): favori/yolculuk/yorum olayını AI hafızasına işler.
+ *  Fire-and-forget — başarısızlık app akışını etkilemez. */
+export function sendMemoryEvent(kind: "favorite" | "journey" | "comment", routeId: string): void {
+  currentUserId().then((uid) => {
+    if (!uid) return;
+    fetchWithTimeout(`${AI_SERVICE_URL}/memory/event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: uid, kind, route_id: routeId }),
+    }, 15_000).catch(() => {});
+  }).catch(() => {});
+}
+
+// --------------------------- Topluluk yorum özeti (2.4) ---------------------------
+export interface CommentSummary {
+  ok: boolean;
+  summary?: string;
+  tags?: string[];
+  count?: number;
+}
+
+/** Rota yorumlarının AI özeti (≥3 yorum gerekir; servis 1 saat cache'ler). */
+export async function fetchCommentSummary(routeId: string): Promise<CommentSummary | null> {
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/summarize-comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ route_id: routeId }),
+    }, 30_000);
+    if (!res.ok) return null;
+    return (await res.json()) as CommentSummary;
+  } catch {
+    return null;
   }
 }
 
