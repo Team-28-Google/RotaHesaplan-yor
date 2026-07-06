@@ -295,6 +295,14 @@
 
 ## FAZ 4 — JOURNEY V2
 
+### ⬜ 4.0a AÇILIR/KAPANIR DETAY PENCERESİ ★ KULLANICI İSTEĞİ (7 Tem)
+- [ ] Haritalı ekranlarda alttaki detay penceresi **açılır/kapanır** olacak — gerektiğinde
+  TAM harita görülebilsin: RouteFlood detay sheet'i (öncelik) + Map ekranı alt kartları.
+- [ ] Davranış: tutamaktan sürükle ya da dokun → kapalı (sadece tutamak/mini bar) ↔ açık
+  (mevcut görünüm); harita her durumda etkileşimli kalır. Basit `Animated` yüksekliği yeter,
+  kütüphane gerekmez; kapalıyken marker'lara padding ayarı güncellenir.
+- **Kabul:** Sheet kapatılınca rota tüm ekranda görünüyor, tek dokunuşla geri açılıyor.
+
 ### ⬜ 4.0 ÇOK MODLU NAVİGASYON — "GMaps paritesi" (harita elden geçirme) 🤖 ★ KULLANICI İSTEĞİ (4 Tem)
 - [ ] **"Yolculuğa Başla" = GMaps tarzı TAM EKRAN navigasyon modu** (kullanıcı isteği, 4 Tem):
   sheet/timeline gizlenir, harita tam ekrana geçer; ÜSTTE sıradaki durak kartı (foto + isim +
