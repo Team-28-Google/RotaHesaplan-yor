@@ -1,3 +1,5 @@
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,7 +14,7 @@ import Skeleton from "../components/Skeleton";
 import { pop, success, tap } from "../lib/haptics";
 import {
   addComment, fetchComments, fetchCommentSummary, fetchRoute, fetchWalkRoute,
-  getFavoriteIds, sendMemoryEvent, setFavorite,
+  getFavoriteIds, sendMemoryEvent, setFavorite, uploadPhoto,
   type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { addJourney } from "../lib/journeyLog";
@@ -75,6 +77,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [comments, setComments] = useState<FloodComment[]>([]);
   const [cBody, setCBody] = useState("");
   const [cRating, setCRating] = useState<number | null>(null);
+  const [cPhoto, setCPhoto] = useState<string | null>(null); // yerel URI (3.2)
   const [cSending, setCSending] = useState(false);
   const [cError, setCError] = useState<string | null>(null);
   const [communitySummary, setCommunitySummary] = useState<CommentSummary | null>(null);
@@ -107,15 +110,28 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     fetchComments(routeId).then(setComments).catch(() => {});
   }, [routeId]);
 
+  const pickCommentPhoto = async () => {
+    tap();
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"], quality: 0.7, allowsMultipleSelection: false,
+      });
+      if (!res.canceled && res.assets[0]?.uri) setCPhoto(res.assets[0].uri);
+    } catch { /* izin reddi vb. — sessiz */ }
+  };
+
   const sendComment = async () => {
     const body = cBody.trim();
     if (!body || cSending) return;
     setCSending(true);
     setCError(null);
     try {
-      await addComment(routeId, body, cRating);
+      // foto varsa önce yükle (başarısızsa yorum fotosuz gider — bloke etme)
+      const url = cPhoto ? await uploadPhoto(cPhoto) : null;
+      await addComment(routeId, body, cRating, url ? [url] : []);
       setCBody("");
       setCRating(null);
+      setCPhoto(null);
       setComments(await fetchComments(routeId));
       sendMemoryEvent("comment", routeId); // davranış hafızası (2.2)
     } catch (e) {
@@ -446,7 +462,18 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 ))}
                 <Text style={styles.starHint}>{cRating ? `${cRating}/5` : "puan (opsiyonel)"}</Text>
               </View>
+              {!!cPhoto && (
+                <View style={styles.cPhotoWrap}>
+                  <Image source={{ uri: cPhoto }} style={styles.cPhotoPreview} contentFit="cover" />
+                  <TouchableOpacity style={styles.cPhotoRemove} onPress={() => setCPhoto(null)} hitSlop={8}>
+                    <Text style={styles.cPhotoRemoveText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               <View style={styles.commentRow}>
+                <TouchableOpacity style={styles.commentPhotoBtn} onPress={pickCommentPhoto} hitSlop={6}>
+                  <Text style={{ fontSize: 18 }}>📷</Text>
+                </TouchableOpacity>
                 <TextInput
                   style={styles.commentInput}
                   value={cBody}
@@ -474,6 +501,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   <Text style={styles.commentTime}>{timeAgo(c.created_at)}</Text>
                 </View>
                 {!!c.body && <Text style={styles.commentBody}>{c.body}</Text>}
+                {!!c.photo_urls?.[0] && (
+                  <Image source={{ uri: c.photo_urls[0] }} style={styles.commentPhoto} contentFit="cover" transition={180} />
+                )}
               </View>
             ))}
             {comments.length === 0 && (
@@ -808,6 +838,18 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   starOn: { color: "#FBBF24" },
   starHint: { marginLeft: 6, fontSize: 12, color: colors.textFaint, fontFamily: font.medium },
   commentRow: { flexDirection: "row", gap: 8, alignItems: "flex-end" },
+  commentPhotoBtn: {
+    width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.surfaceAlt,
+    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border,
+  },
+  cPhotoWrap: { alignSelf: "flex-start", marginBottom: 8 },
+  cPhotoPreview: { width: 92, height: 92, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  cPhotoRemove: {
+    position: "absolute", top: -7, right: -7, width: 22, height: 22, borderRadius: 11,
+    backgroundColor: colors.text, alignItems: "center", justifyContent: "center",
+  },
+  cPhotoRemoveText: { color: colors.bg, fontSize: 11, fontFamily: font.black },
+  commentPhoto: { width: 160, height: 110, borderRadius: radius.md, marginTop: 8, backgroundColor: colors.surfaceAlt },
   commentInput: {
     flex: 1, minHeight: 44, maxHeight: 110, backgroundColor: colors.surfaceAlt,
     borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10,

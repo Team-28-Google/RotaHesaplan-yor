@@ -104,6 +104,7 @@ export interface FloodComment {
   author_id: string;
   body: string | null;
   rating: number | null;
+  photo_urls: string[] | null;
   created_at: string;
   username: string;
 }
@@ -112,7 +113,7 @@ export interface FloodComment {
 export async function fetchComments(routeId: string): Promise<FloodComment[]> {
   const { data, error } = await supabase
     .from("flood_comments")
-    .select("id, route_id, author_id, body, rating, created_at, profiles(username)")
+    .select("id, route_id, author_id, body, rating, photo_urls, created_at, profiles(username)")
     .eq("route_id", routeId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -123,14 +124,36 @@ export async function fetchComments(routeId: string): Promise<FloodComment[]> {
   });
 }
 
-/** Rotaya yorum + opsiyonel 1-5 puan ekler. */
-export async function addComment(routeId: string, body: string, rating: number | null): Promise<void> {
+/** Rotaya yorum + opsiyonel 1-5 puan + opsiyonel foto ekler. */
+export async function addComment(
+  routeId: string, body: string, rating: number | null, photoUrls: string[] = [],
+): Promise<void> {
   const uid = await currentUserId();
   if (!uid) throw new Error("Giriş gerekli");
   const { error } = await supabase
     .from("flood_comments")
-    .insert({ route_id: routeId, author_id: uid, body, rating });
+    .insert({ route_id: routeId, author_id: uid, body, rating, photo_urls: photoUrls });
   if (error) throw error;
+}
+
+/** Yerel fotoğrafı 'photos' bucket'ına (uid/klasörüne) yükler → public URL (3.2).
+    Migration 0008 uygulanmamışsa/başarısızsa null döner — yorum fotosuz gider. */
+export async function uploadPhoto(localUri: string): Promise<string | null> {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return null;
+    const ext = (localUri.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${uid}/${Date.now()}.${ext}`;
+    // RN'de blob upload güvenilmez — ArrayBuffer ile yükle
+    const buf = await (await fetch(localUri)).arrayBuffer();
+    const { error } = await supabase.storage.from("photos").upload(path, buf, {
+      contentType: ext === "png" ? "image/png" : "image/jpeg",
+    });
+    if (error) return null;
+    return supabase.storage.from("photos").getPublicUrl(path).data.publicUrl;
+  } catch {
+    return null;
+  }
 }
 
 // --------------------------- Profil sayaçları ---------------------------
