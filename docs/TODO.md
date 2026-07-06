@@ -224,13 +224,13 @@
 - [ ] Plan isteği `city` gönderir; "Sana özel" şeridi şehir içinde skorlar.
 - **Kabul:** Ankara'da açan kullanıcı Ankara rotaları görüyor, plan atınca Ankara rotası geliyor.
 
-### ⬜ 3.1 Paylaşım kartı v2 🤖
-- [ ] Story varyantı: 1080×1920 oranlı (9:16) tam boy kart — mevcut kartın büyüğü + arka planda harita.
-- [ ] Harita izi: RouteFlood'daki MapView ref'inden `takeSnapshot({ format: "png" })` → kart arkaplan görseli
-  (Expo Go'da sorun çıkarsa dev build'de test; fallback: stilize düz çizim — durak noktalarını `View`'larla bezier'siz bağla).
-- [ ] Alt bant: "sana ile keşfet" + QR (`react-native-qrcode-svg` yerine önce statik QR png — expo update linkine).
-- [ ] Paylaş menüsünde iki seçenek: "Kart (4:5)" / "Story (9:16)".
-- **Kontrol:** Story Instagram'da tam ekran, kırpılmadan görünüyor.
+### ✅ 3.1 Paylaşım kartı v2 — TAMAMLANDI (7 Tem; +3.0b'nin paylaşım menüsü isteği)
+- [x] Bottom-sheet paylaşım menüsü (ortalı modal yerine): tutamak + format çipleri + önizleme.
+- [x] Story 9:16: 360×640 dp yerleşim (pixelRatio ile ~1080×1920 px çıktı); önizleme scale ile küçültülür.
+- [x] Harita izi: stilize düz çizim (`RouteTrace` — duraklar nokta, aralar döndürülmüş View çizgiler;
+  TODO'daki fallback tasarım bilinçli tercih edildi, MapView snapshot dev build'e kaldı).
+- [ ] (Polish, dev build sonrası) MapView `takeSnapshot` arka planı + QR bandı.
+- **Kontrol 👤:** Story Instagram'da tam ekran, kırpılmadan görünüyor mu?
 
 ### ✅ 3.2a Places API zenginleştirme — TAMAMLANDI (6 Tem)
 - [x] `google_place_lookup` (Text Search, koordinat bias, tek sonuç) + `google_photo_url`
@@ -242,32 +242,36 @@
 - [x] Bonus: main.py'de mükerrer `SearchRequest` tanımı temizlendi.
 - **CANLI TEST:** geçici rota → Ayasofya foto+⭐4.8, Galata Kulesi foto+⭐4.6, kapak otomatik; rota silindi.
 
-### ⬜ 3.2 Foto yükleme 🤖 (+ 👤 bucket onayı)
-- [ ] Supabase migration `0006_storage.sql`: `photos` bucket + RLS (authenticated insert kendi klasörüne, select public).
-- [ ] `npx expo install expo-image-picker`.
-- [ ] Yorum formuna 📷 butonu: seç → `supabase.storage.upload` → `photo_urls`'e ekle → yorumda thumbnail.
-- [ ] CreateRoute durak modalına opsiyonel foto (waypoints.photo_urls).
-- **Kontrol:** Foto'lu yorum atılıyor ve görünüyor.
+### 🟡 3.2 Foto yükleme — YORUM TARAFI TAMAM (7 Tem); 👤 migration bekliyor
+- [x] Migration `0008_storage.sql` yazıldı: photos bucket + RLS (kendi uid/ klasörüne insert, public select).
+- [x] `expo-image-picker` kuruldu; yorum formunda 📷 → önizleme/kaldır → `uploadPhoto`
+  (ArrayBuffer, başarısızsa yorum fotosuz gider) → yorumda thumbnail.
+- [ ] 👤 `0008_storage.sql`'i SQL Editor'de çalıştır (bucket oluşana dek fotolar sessizce atlanır).
+- [ ] CreateRoute durak modalına opsiyonel foto — 3.2a Places fotoğrafı zaten dolduruyor; düşük öncelik.
+- **Kontrol 👤:** Foto'lu yorum atılıyor ve görünüyor.
 
-### ⬜ 3.3 Rozet paylaşımı 🤖
-- [ ] Profile'da rozet açılış tespiti (önceki unlocked set'i AsyncStorage'da tut, diff → kutlama modalı).
-- [ ] Kutlama modalı: rozet büyük + konfeti animasyonu + "Paylaş" (view-shot aynı altyapı).
-- **Kontrol:** Yeni rozet → kutlama → paylaşılabilir kart.
+### ✅ 3.3 Rozet paylaşımı — TAMAMLANDI (7 Tem)
+- [x] Rozet diff tespiti (AsyncStorage `sana_badges_seen_v1`); ilk kurulumda mevcutlar sessizce
+  kaydedilir, yeni rozet bir kez kutlanır (spring animasyon + haptic success).
+- [x] Kutlama modalı: konfeti satırı + büyük rozet + "Paylaş" (view-shot, koyu marka kartı).
+- **Kontrol 👤:** Yeni rozet aç (örn. ilk yolculuk) → kutlama → paylaş.
 
-### ⬜ 3.4 Journey log → Supabase 🤖
-- [ ] Migration `0007_journeys.sql`: `journeys(id, user_id, route_id, distance_m, duration_min, stops, created_at)` + RLS
-  (insert/select own; leaderboard için ayrıca `select` aggregate policy ya da view).
-- [ ] `journeyLog.ts`: önce Supabase'e yaz, başarısızsa AsyncStorage kuyruğu (offline destek); Profile iki kaynağı birleştirir.
-- **Kontrol:** Yolculuk farklı cihazdan görünüyor.
+### ✅ 3.4 Journey log → Supabase — KOD TAMAM (7 Tem); 👤 migration bekliyor
+- [x] Migration `0007_journeys.sql` yazıldı: journeys + RLS (insert/select own) + weekly_leaderboard view.
+- [x] `journeyLog.ts`: önce Supabase, başarısızsa AsyncStorage kuyruğu (sonraki okumada otomatik flush);
+  yerel kopya offline önbellek. Arayüz değişmedi — RouteFlood/Profile dokunulmadı.
+- [ ] 👤 `0007_journeys.sql`'i SQL Editor'de çalıştır (o zamana dek kayıtlar kuyrukta güvenle bekler).
+- **Kontrol 👤:** Yolculuk farklı cihazdan görünüyor.
 
-### ⬜ 3.5 Haftalık liderlik 🤖 (3.4'e bağlı)
-- [ ] SQL view `weekly_leaderboard`: son 7 gün, user başına toplam km + yolculuk, ilk 10 (+ profiles.username join).
-- [ ] Home'a (Popüler Rotalar altına) yatay "🏆 Bu haftanın gezginleri" şeridi ya da Profile'a kart.
-- **Kontrol:** İki test hesabıyla sıralama doğru.
+### ✅ 3.5 Haftalık liderlik — KOD TAMAM (7 Tem; view 0007'nin içinde)
+- [x] `weekly_leaderboard` view: son 7 gün, toplulaştırılmış ilk 10 (ham satır sızdırmaz).
+- [x] Home footer: "🏆 Bu haftanın gezginleri" kartı (ilk 5; veri yoksa görünmez).
+- **Kontrol 👤:** (0007 sonrası) iki test hesabıyla sıralama doğru.
 
-### ⬜ 3.6 Davet linki 👤+🤖
-- [ ] Profil'e "Arkadaşını davet et" → `Share.share` ile EAS Update preview linki + kısa metin.
-- **Kontrol:** Link Expo Go'da app'i açıyor (mevcut expo-go-test-sharing akışı).
+### ✅ 3.6 Davet linki — TAMAMLANDI (7 Tem)
+- [x] Profil'e "Arkadaşını Davet Et" → `Share.share` ile EAS Update preview linki (INVITE_URL,
+  config.ts; app.json projectId ile doğrulandı).
+- **Kontrol 👤:** Link Expo Go'da app'i açıyor (expo-go-test-sharing akışı).
 
 ---
 
@@ -341,6 +345,7 @@
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 7 Tem | **FAZ 3 KODU BİTTİ** 🎉 (3.1–3.6) | 3.2a canlı test geçti (Ayasofya ⭐4.8 foto+kapak); 3.1 bottom-sheet + Story 9:16 + RouteTrace; 3.3 rozet kutlama; 3.4/3.5 journeys+liderlik (kod); 3.6 davet linki. 👤 kalan: 0007+0008 migration'ları SQL Editor'de + cihaz turu. Açık: 3.0b Rota-oluştur yeri, 3.0c çok şehir (beklemede), 3.1 polish (map snapshot+QR), CreateRoute durak fotosu |
 | 6 Tem | 0.4 Render RAFA | Kullanıcı kararı: dışarıda test yok, LAN yeterli; render.yaml hazırlık olarak repo'da kalıyor |
 | 6 Tem | 3.0b Home redesign (karma) | AI prompt kartı + "Sana özel" vibe şeridi + immersive Popüler kartlar; paylaşım 3.1'e ertelendi. Cihaz beğeni turu bekliyor |
 | 6 Tem | Public repo ön-tarama | Key taraması temiz (kod+geçmiş+render.yaml); public öncesi kalan: README+LICENSE (5.3) |
