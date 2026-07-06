@@ -64,14 +64,13 @@
 - [ ] Doğrula: foto marker'lar tam görünüyor mu (çeyrek bug bitti mi), koyu harita, konum izni.
 - **Kontrol:** Günlük geliştirme artık dev build üzerinden; Expo Go sadece hızlı bakış için.
 
-### ⬜ 0.4 AI servisini buluta taşı 👤+🤖
-- [ ] 🤖 `ai-service/`'e deploy dosyaları: `requirements.txt` doğrula + `render.yaml` (veya `Dockerfile`)
-  + `Procfile`: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-- [ ] 👤 render.com'da hesap → New Web Service → repo bağla (ya da manuel deploy) → env değişkenlerini
-  (NVIDIA/SerpApi/Supabase/OpenWeather) Render dashboard'a gir.
-- [ ] 🤖 `app/src/lib/config.ts` → `AI_SERVICE_URL = "https://sana-ai.onrender.com"` (+ lokal geliştirme için
-  `__DEV__` iken LAN IP fallback'i).
-- [ ] Test: mobil veriyle (Wi-Fi kapalı) Planla ekranı çalışıyor.
+### 🟡 0.4 AI servisini buluta taşı 👤+🤖 (🤖 hazırlık TAMAM — 4 Tem)
+- [x] 🤖 `render.yaml` blueprint hazır (repo kökü): rootDir ai-service, health check, tüm env'ler sync:false.
+- [x] 🤖 Kritik fix: `load_env()` artık `.env` dosyası olmayan ortamda os.environ'dan okuyor
+  (bu olmadan Render'da TÜM anahtarlar boş kalırdı).
+- [ ] 👤 render.com → New → **Blueprint** → repo'yu seç → env değerlerini gir (ai-service/.env'deki değerler).
+- [ ] 🤖 Deploy sonrası: `config.ts` → `AI_SERVICE_URL = "https://sana-ai.onrender.com"` (+ dev'de LAN fallback).
+- [ ] Test: mobil veriyle (Wi-Fi kapalı) Planla + canlı navigasyon çalışıyor.
 - **Not:** Render free tier uykuya geçer (ilk istek ~30 sn); demo öncesi bir istek atıp uyandır. Gerekirse
   planRoute timeout'u zaten 90 sn.
 - **Kontrol:** `npm run ai` olmadan telefon her yerden plan alabiliyor.
@@ -154,28 +153,27 @@
 - **Demo KANITLANDI:** Aynı cümle ("dışarı çıkıp güzel vakit geçirmek istiyorum") →
   profil sakin+deniz+kahve = **Kadıköy Sakin Gün**; profil tarih+sanat = **Sultanahmet Tarih Yürüyüşü**.
 
-### ⬜ 2.2 Davranış hafızası 🤖
-- [ ] ai-service: `POST /memory/event` `{ user_id, kind: favorite|journey|comment, route_id }` →
-  rota başlığı+etiketleriyle "Kullanıcı X rotasını favoriledi/yürüdü" embed'i (source_type=`preference_update`).
-- [ ] app: `setFavorite(true)`, `finishJourney`, `addComment` sonrasına fire-and-forget çağrı.
-- [ ] `plan_route`: son N preference_update'i profil cümlesine ekle.
-- **Kontrol:** 2-3 favori sonrası planlar o yöne kayıyor.
+### ✅ 2.2 Davranış hafızası — TAMAMLANDI (4 Tem)
+- [x] `POST /memory/event`: rota başlığı+etiketleriyle davranış embed'i. Canlı test:
+  "Kullanıcı 'Ortaköy Boğaz Esintisi' rotasını favorilerine ekledi (açik-hava, manzara, sosyal)".
+- [x] app tetikleri: favori / yolculuk bitirme / yorum → fire-and-forget.
+- [x] `plan_route`: son 3 davranış profil cümlesine harmanlanır; adım notu "profil + N davranış".
 
 ### ✅ 2.3 Plan sonucunu kaydet/başlat — TAMAMLANDI (4 Tem)
 - [x] PlanResult aksiyon çubuğu: "🤍 Kaydet" (→ ✓ Kaydedildi, favorilere ekler) +
   "🧭 Yolculuğa Başla" (RouteFlood'a gider). Döngü kapandı: planla → kaydet → yürü → paylaş.
 
-### ⬜ 2.4 AI yorum özeti 🤖
-- [ ] ai-service: `POST /summarize-comments` `{ route_id }` → yorumları Supabase'ten çek → LLM'e
-  "2 cümle özet + 3 kısa etiket, Türkçe, JSON" → yanıtı döndür (+ bellek içi 1 saat cache).
-- [ ] app: RouteFlood'da yorum sayısı ≥3 ise hero altında "✨ Topluluk ne diyor" kutusu (lazy: görünür olunca çağır).
-- **Kontrol:** Seed rotaya 3 test yorumu → anlamlı özet.
+### ✅ 2.4 AI yorum özeti — TAMAMLANDI (4 Tem)
+- [x] `POST /summarize-comments`: ≥3 yorum → LLM 2 cümle + 3 etiket (1 saat cache);
+  az yorumda `not_enough_comments` (canlı doğrulandı).
+- [x] app: RouteFlood hero'da "✨ TOPLULUK NE DİYOR · N yorum" kutusu (≥3 yorumda kendiliğinden gelir).
+- [ ] 👤 Demo hazırlığı: bir seed rotaya 3 test yorumu at → özeti gör.
 
-### ⬜ 2.5 Hava-duyarlı yeniden planlama 🤖 (0.5'e bağlı)
-- [ ] PlanResult: `weather.rainy` ise turuncu uyarı bandı + "☔ Kapalı alternatif öner" butonu →
-  aynı intent + `force_weather_fit=indoor` ile `/plan-route` tekrarı.
-- [ ] ai-service: `plan_route`'a opsiyonel `force_weather_fit` parametresi.
-- **Kontrol:** Yağmurlu günde (veya mock'la) alternatif akışı çalışıyor.
+### ✅ 2.5 Hava-duyarlı yeniden planlama — TAMAMLANDI (4 Tem)
+- [x] PlanResult: yağmurda mavi uyarı bandı + "Kapalı mekân alternatifi öner" → `force_weather_fit=indoor`
+  ile yeniden plan; sonuçta "☂️ Kapalı mekân tercihinle yeniden planlandı" notu.
+- [x] servis: iki geçişli zorlamalı seçim (önce indoor, sonra any; outdoor elenir). Canlı test:
+  forced=indoor → fit=any rota seçildi (seed'de saf indoor rota yok — beklenen davranış).
 
 ### ✅ 2.6 Agent orkestrasyon görünürlüğü — TAMAMLANDI (4 Tem) ★ video için
 - [x] ai-service: `steps: [{name, ms, note}]` — 6 gerçek adım, canlı test:
@@ -187,6 +185,13 @@
 ---
 
 ## FAZ 3 — SOSYAL & VİRAL
+
+### ⬜ 3.0b TASARIM REVİZYONU: Ana sayfa + Paylaşım menüsü ★ KULLANICI İSTEĞİ (4 Tem)
+- [ ] **Ana sayfa (Home) tasarımı elden geçirilecek** — yön/istekler kullanıcıdan gelecek
+  (mevcut: hero kart + Popüler Rotalar listesi; neyin değişeceği birlikte netleştirilecek).
+- [ ] **Paylaşım menüsü/modalı yeniden tasarlanacak** — yolculuk özeti modalı (Kapat/Paylaş)
+  ve paylaşım akışı; 3.1'deki kart v2 (story formatı, harita izi) ile birlikte ele alınabilir.
+- **Not:** Detay belirtilmedi; başlamadan önce kullanıcıyla istekleri netleştir.
 
 ### ⬜ 3.1 Paylaşım kartı v2 🤖
 - [ ] Story varyantı: 1080×1920 oranlı (9:16) tam boy kart — mevcut kartın büyüğü + arka planda harita.
@@ -238,6 +243,22 @@
 ---
 
 ## FAZ 4 — JOURNEY V2
+
+### ⬜ 4.0 ÇOK MODLU NAVİGASYON — "GMaps paritesi" (harita elden geçirme) 🤖 ★ KULLANICI İSTEĞİ (4 Tem)
+- [ ] **"Yolculuğa Başla" = GMaps tarzı TAM EKRAN navigasyon modu** (kullanıcı isteği, 4 Tem):
+  sheet/timeline gizlenir, harita tam ekrana geçer; ÜSTTE sıradaki durak kartı (foto + isim +
+  kalan mesafe), ALTTA navigasyon barı (ETA · kalan süre/mesafe · durak X/N · Çıkış butonu);
+  kamera follow+heading (mevcut) + recenter; yolculuktan çıkınca normal detay görünümüne dön.
+- [ ] **Mod seçici** (navigasyon barında): 🚶 Yürü · 🚌 Toplu taşıma · 🚗 Araba — Routes API zaten
+  destekliyor (`travelMode: WALK | TRANSIT | DRIVE`); `/walk-route` genelleştirilir → `/nav-route {mode}`.
+- [ ] **Mod karşılaştırması**: hedef durak için üç modun süre/mesafesi yan yana
+  ("🚶 25 dk · 🚌 12 dk · 🚗 8 dk") — tek Routes çağrısı/mod, hedef değişince hesaplanır.
+- [ ] **TRANSIT modunda**: hat bilgisi (otobüs no/metro hattı, biniş durağı, aktarma) — Routes API
+  TRANSIT yanıtındaki `transitDetails`'ten; journey bar'da "🚌 15A · Kadıköy İskele'den bin".
+- [ ] Rota detayındaki bacaklarda (durak arası) da mod bazlı gerçek süre alternatifi göster.
+- [ ] (Araştır) DRIVE modunda trafik-duyarlı süre Essentials'a girer mi, kota etkisi ne?
+- **Ön koşul:** 0.4 Render deploy (canlı navigasyon sokakta ancak bulut servisle çalışır).
+- **Kabul:** Yolculukta mod değiştirince çizgi + süre + talimat o moda göre güncelleniyor.
 
 ### ⬜ 4.1 Saha testi 👤 (kritik — kod değil, yürüyüş)
 - [ ] Gerçek rotada (örn. Moda) yolculuk modu: takip kamerası, 30m eşiği, auto-advance, rehber çizgi.
@@ -294,6 +315,7 @@
 | 3 Tem | 0.2-D Git geçmişi temizlendi | filter-repo ile Maps key + dev şifresi tüm geçmişten kazındı, force-push |
 | 3 Tem | 0.2 rotasyonlar | Maps ✅ NVIDIA ✅ (canlı test) Supabase ✅ (sb_ anahtarlara geçiş + legacy disable, eski anahtarlar 401). Kalan 👤: dev şifresi, sana-server key, NVIDIA eski revoke, Maps Android kısıtı |
 | 3 Tem | **Google Routes entegrasyonu** | Sokak geometrisi: clients.py (decoder+walk_leg) + pipeline.route_geometry + /route-geometry + migration 0006 + add_geometry.py (7/7 seed OK) + app segment çizimi. Hava: Google Weather API (25.3° canlı test) + OpenWeather yedek. **CİHAZDA DOĞRULANDI** (sokak çizgileri ✅) |
+| 4 Tem | **FAZ 2 TAMAMLANDI (6/6)** 🎉 | 2.2 davranış hafızası (canlı: Ortaköy favorisi embed'lendi) + 2.4 yorum özeti (cache'li, not_enough doğrulandı) + 2.5 hava-duyarlı (forced=indoor canlı test). 0.4 hazırlık: render.yaml + load_env bulut fix'i |
 | 4 Tem | **CANLI NAVİGASYON (GMaps hissi)** | Journey modunda konum→durak GERÇEK yürüme rotası (`/walk-route`, ~40m sapınca yeniden hesap), GMaps mavisi dolgun çizgi, navigasyon kamerası (zoom 17 + yöne dönme), bar'da "🚶 550m · ~7dk". Servis yoksa düz kesikli yedek. Canlı test: 662m/9dk/18 nokta ✅ |
 | 4 Tem | **2.6 TAMAMLANDI + harita senkron fix** | Agent adımları canlı (6 adım, gerçek süre+not); bekleme animasyonu + sonuç dökümü. Harita: viewability tabanlı kart senkronu + overlay padding + odaklı rotanın durak marker'ları (fotolu) |
 | 4 Tem | **FAZ 2.1 + 2.3 TAMAMLANDI** | AI hafıza canlı kanıtlandı: aynı cümle, farklı profil → farklı rota (Kadıköy vs Sultanahmet). Plan aksiyonları eklendi. Şehir-normalize bug fix. tsc + import temiz |
