@@ -1,0 +1,41 @@
+# Render Blueprint — SANA AI Service (FastAPI)
+# Kullanım: render.com → New → Blueprint → bu repo'yu seç.
+# Env değerleri dashboard'dan girilir (sync: false = Render sorar; repo'da değer YOK).
+services:
+  - type: web
+    name: sana-ai
+    runtime: python
+    rootDir: ai-service
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: nvidia
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_CHAT_MODEL
+        value: meta/llama-3.1-8b-instruct
+      - key: NVIDIA_EMBED_MODEL
+        value: nvidia/nv-embedqa-e5-v5
+      - key: EMBED_DIM
+        value: "1024"
+      - key: MAPS_PROVIDER
+        value: serpapi
+      - key: SERPAPI_KEY
+        sync: false
+      - key: GOOGLE_SERVER_API_KEY
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false

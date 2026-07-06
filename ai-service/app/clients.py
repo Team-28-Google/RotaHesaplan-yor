@@ -37,6 +37,11 @@ def load_env(path: str | None = None) -> dict:
     for k in list(env):
         if os.environ.get(k):
             env[k] = os.environ[k]
+    # .env dosyası olmayan ortamlar (Render vb.): ilgili değişkenleri os.environ'dan tamamla
+    _PREFIXES = ("SUPABASE_", "NVIDIA_", "GOOGLE_", "GEMINI_", "SERPAPI", "OPENWEATHER", "MAPS_", "LLM_", "EMBED_")
+    for k, v in os.environ.items():
+        if k not in env and k.startswith(_PREFIXES):
+            env[k] = v
     return env
 
 
