@@ -50,6 +50,15 @@ export interface RouteWithWaypoints extends Route {
   waypoints: Waypoint[];
 }
 
+/** weekly_leaderboard view satırı (3.5) — son 7 gün, toplulaştırılmış ilk 10 */
+export interface LeaderRow {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  journey_count: number;
+  total_distance_m: number;
+}
+
 // AI /plan-route yanıtı
 export interface PlanWeather {
   temp: number | null;

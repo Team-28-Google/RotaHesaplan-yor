@@ -10,14 +10,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
-import { fetchRoutes } from "../lib/api";
+import { fetchRoutes, fetchWeeklyLeaderboard } from "../lib/api";
 import { signOut } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/config";
 import { tap } from "../lib/haptics";
 import { getOnboarding } from "../lib/onboarding";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
-import type { RouteWithWaypoints } from "../lib/types";
+import type { LeaderRow, RouteWithWaypoints } from "../lib/types";
 import { routeColor, waypointIcon } from "../lib/ui";
 import type { HomeScreenProps } from "../navigation";
 
@@ -59,6 +59,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
+  const [leaders, setLeaders] = useState<LeaderRow[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,6 +78,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   useFocusEffect(
     useCallback(() => {
       getOnboarding().then((p) => setVibes(p?.vibes ?? []));
+      fetchWeeklyLeaderboard().then(setLeaders); // boş/erişilemezse şerit görünmez
       load().finally(() => setLoading(false));
     }, [load]),
   );
@@ -237,6 +239,22 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               <Text style={styles.emptyText}>İlk rotayı sen oluştur — "+" ile başla.</Text>
             </View>
           }
+          ListFooterComponent={
+            leaders.length > 0 ? (
+              <View style={styles.leaderCard}>
+                <Text style={styles.leaderTitle}>🏆 Bu haftanın gezginleri</Text>
+                {leaders.slice(0, 5).map((l, i) => (
+                  <View key={l.user_id} style={styles.leaderRow}>
+                    <Text style={styles.leaderRank}>{i + 1}</Text>
+                    <Text style={styles.leaderName} numberOfLines={1}>{l.username}</Text>
+                    <Text style={styles.leaderMeta}>
+                      {(l.total_distance_m / 1000).toFixed(1)} km · {l.journey_count} yolculuk
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null
+          }
           renderItem={({ item, index }) => {
             const exp = item.waypoints.filter((w) => w.kind === "experience");
             const km = item.total_distance_m ? (item.total_distance_m / 1000).toFixed(1) : "—";
@@ -327,6 +345,20 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   miniBody: { padding: 11, gap: 3 },
   miniTitle: { fontSize: 14, fontFamily: font.bold, color: colors.text },
   miniMeta: { fontSize: 12, fontFamily: font.medium, color: colors.textMuted },
+
+  leaderCard: {
+    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, gap: 10,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  leaderTitle: { fontSize: 15.5, fontFamily: font.extra, color: colors.text, marginBottom: 2 },
+  leaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  leaderRank: {
+    width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primarySoft,
+    color: colors.primaryDark, fontFamily: font.extra, fontSize: 12,
+    textAlign: "center", lineHeight: 22, overflow: "hidden",
+  },
+  leaderName: { flex: 1, fontSize: 14, fontFamily: font.bold, color: colors.text },
+  leaderMeta: { fontSize: 12.5, fontFamily: font.medium, color: colors.textMuted },
 
   bigCard: { height: 220, borderRadius: radius.xl, overflow: "hidden", backgroundColor: colors.surfaceAlt, ...shadow(10) },
   bigCover: { ...StyleSheet.absoluteFillObject },

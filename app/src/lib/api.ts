@@ -1,6 +1,6 @@
 import { AI_SERVICE_URL } from "./config";
 import { supabase } from "./supabase";
-import type { CreateStop, EnrichResult, PlaceResult, PlanResponse, RouteWithWaypoints, Waypoint } from "./types";
+import type { CreateStop, EnrichResult, LeaderRow, PlaceResult, PlanResponse, RouteWithWaypoints, Waypoint } from "./types";
 
 const bySeq = (a: Waypoint, b: Waypoint) => a.seq - b.seq;
 
@@ -42,6 +42,17 @@ export async function fetchRoute(routeId: string): Promise<RouteWithWaypoints> {
   const route = data as RouteWithWaypoints;
   route.waypoints = (route.waypoints ?? []).slice().sort(bySeq);
   return route;
+}
+
+/** Haftalık liderlik (3.5) — view yoksa/boşsa sessizce boş liste. */
+export async function fetchWeeklyLeaderboard(): Promise<LeaderRow[]> {
+  try {
+    const { data, error } = await supabase.from("weekly_leaderboard").select("*");
+    if (error) return [];
+    return (data ?? []) as LeaderRow[];
+  } catch {
+    return [];
+  }
 }
 
 // --------------------------- Favoriler ---------------------------
