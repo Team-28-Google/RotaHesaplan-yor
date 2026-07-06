@@ -7,7 +7,7 @@ export const SUPABASE_ANON_KEY = "sb_publishable_t3W_PR3kQGe-b_WfnATq6g_OqErHKGd
 
 // AI servisi (FastAPI). Telefon, PC'ye yerel ağ IP'si ile erişir.
 // PC IP değişirse burayı güncelle (PowerShell: ipconfig → Wi-Fi IPv4).
-export const AI_SERVICE_URL = "http://192.168.1.5:8000";
+export const AI_SERVICE_URL = "http://192.168.1.3:8000";
 
 // Giriş ekranı aç/kapa. false = giriş ekranı GÖSTERME, dev hesabıyla otomatik gir.
 // Demo/teslimde true yap → kullanıcılar kendi hesaplarıyla girer.
