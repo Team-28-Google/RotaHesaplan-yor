@@ -246,7 +246,7 @@
 - [x] Migration `0008_storage.sql` yazıldı: photos bucket + RLS (kendi uid/ klasörüne insert, public select).
 - [x] `expo-image-picker` kuruldu; yorum formunda 📷 → önizleme/kaldır → `uploadPhoto`
   (ArrayBuffer, başarısızsa yorum fotosuz gider) → yorumda thumbnail.
-- [ ] 👤 `0008_storage.sql`'i SQL Editor'de çalıştır (bucket oluşana dek fotolar sessizce atlanır).
+- [x] 👤 `0008_storage.sql` SQL Editor'de çalıştırıldı (7 Tem) — photos bucket canlı doğrulandı (public=true).
 - [ ] CreateRoute durak modalına opsiyonel foto — 3.2a Places fotoğrafı zaten dolduruyor; düşük öncelik.
 - **Kontrol 👤:** Foto'lu yorum atılıyor ve görünüyor.
 
@@ -260,7 +260,8 @@
 - [x] Migration `0007_journeys.sql` yazıldı: journeys + RLS (insert/select own) + weekly_leaderboard view.
 - [x] `journeyLog.ts`: önce Supabase, başarısızsa AsyncStorage kuyruğu (sonraki okumada otomatik flush);
   yerel kopya offline önbellek. Arayüz değişmedi — RouteFlood/Profile dokunulmadı.
-- [ ] 👤 `0007_journeys.sql`'i SQL Editor'de çalıştır (o zamana dek kayıtlar kuyrukta güvenle bekler).
+- [x] 👤 `0007_journeys.sql` SQL Editor'de çalıştırıldı (7 Tem) — tablo+view canlı doğrulandı;
+  duman testi: test yolculuğu → view'da "sana_seed — 4200 m, 1 yolculuk" → silindi.
 - **Kontrol 👤:** Yolculuk farklı cihazdan görünüyor.
 
 ### ✅ 3.5 Haftalık liderlik — KOD TAMAM (7 Tem; view 0007'nin içinde)
