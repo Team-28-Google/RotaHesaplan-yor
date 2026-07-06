@@ -16,6 +16,10 @@ export const AUTH_ENABLED = false;
 export const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL ?? "";
 export const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD ?? "";
 
+// Davet linki (3.6) — EAS Update preview kanalı; Expo Go'da açılır, APK gerekmez.
+// projectId app.json extra.eas.projectId ile aynı olmalı. Güncel link: npm run share:link
+export const INVITE_URL = "exp://u.expo.dev/56ef00aa-02fe-4a2f-89c6-fc8ac4ae31cf?channel-name=preview";
+
 // İstanbul merkez (harita başlangıç bölgesi)
 export const ISTANBUL_REGION = {
   latitude: 41.02,

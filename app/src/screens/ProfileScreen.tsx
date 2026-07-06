@@ -1,18 +1,29 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import * as Sharing from "expo-sharing";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator, Alert, Animated, Modal, ScrollView, Share, StyleSheet,
+  Switch, Text, TouchableOpacity, View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { captureRef } from "react-native-view-shot";
 
 import { countMyComments, countMyRoutes, getFavoriteIds } from "../lib/api";
 import { signOut } from "../lib/auth";
-import { AUTH_ENABLED } from "../lib/config";
+import { AUTH_ENABLED, INVITE_URL } from "../lib/config";
+import { success, tap } from "../lib/haptics";
 import { getJourneys, type JourneyEntry } from "../lib/journeyLog";
 import { supabase } from "../lib/supabase";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { ProfileScreenProps } from "../navigation";
+
+// Kutlanan rozetler (3.3): ilk kurulumda mevcutlar sessizce kaydedilir, sonra her
+// yeni açılan rozet bir kez kutlama modalıyla gösterilir.
+const BADGES_SEEN_KEY = "sana_badges_seen_v1";
 
 interface Badge {
   icon: string;
@@ -45,6 +56,18 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const [badges, setBadges] = useState<Badge[]>(buildBadges([], 0, 0, 0));
   const [myRoutes, setMyRoutes] = useState(0);
 
+  // Rozet kutlaması (3.3)
+  const [celebrate, setCelebrate] = useState<Badge | null>(null);
+  const [celebSharing, setCelebSharing] = useState(false);
+  const celebCardRef = useRef<View>(null);
+  const celebScale = useRef(new Animated.Value(0.6)).current;
+
+  useEffect(() => {
+    if (!celebrate) return;
+    celebScale.setValue(0.6);
+    Animated.spring(celebScale, { toValue: 1, speed: 14, bounciness: 12, useNativeDriver: true }).start();
+  }, [celebrate, celebScale]);
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -57,14 +80,58 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           supabase.auth.getUser().then((r) => r.data.user).catch(() => null),
         ]);
         if (!active) return;
+        const b = buildBadges(j, routes, favs.size, comments);
         setJourneys(j);
         setMyRoutes(routes);
-        setBadges(buildBadges(j, routes, favs.size, comments));
+        setBadges(b);
         setEmail(user?.email ?? "");
+
+        // Yeni açılan rozet var mı? (diff → kutlama; ilk kurulumda sessiz kayıt)
+        try {
+          const unlocked = b.filter((x) => x.unlocked).map((x) => x.name);
+          const raw = await AsyncStorage.getItem(BADGES_SEEN_KEY);
+          if (raw === null) {
+            await AsyncStorage.setItem(BADGES_SEEN_KEY, JSON.stringify(unlocked));
+          } else {
+            const seen: string[] = JSON.parse(raw);
+            const fresh = unlocked.filter((n) => !seen.includes(n));
+            if (fresh.length && active) {
+              setCelebrate(b.find((x) => x.name === fresh[0]) ?? null);
+              success();
+            }
+            await AsyncStorage.setItem(BADGES_SEEN_KEY, JSON.stringify(unlocked));
+          }
+        } catch { /* kutlama kritik değil */ }
       })();
       return () => { active = false; };
     }, []),
   );
+
+  const shareBadge = async () => {
+    if (celebSharing) return;
+    setCelebSharing(true);
+    try {
+      const uri = await captureRef(celebCardRef, { format: "png", quality: 1 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri.startsWith("file://") ? uri : `file://${uri}`, {
+          mimeType: "image/png",
+          dialogTitle: "Rozetini paylaş",
+        });
+      }
+    } catch { /* iptal — yoksay */ }
+    finally { setCelebSharing(false); }
+  };
+
+  const invite = async () => {
+    tap();
+    try {
+      await Share.share({
+        message:
+          "SANA ile şehrini yeniden keşfet! 🧭\n" +
+          "1) Expo Go uygulamasını kur\n2) Bu linki aç:\n" + INVITE_URL,
+      });
+    } catch { /* iptal — yoksay */ }
+  };
 
   const totalKm = journeys.reduce((s, x) => s + x.distance_m, 0) / 1000;
   const totalStops = journeys.reduce((s, x) => s + x.stops, 0);
@@ -131,6 +198,18 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
       </TouchableOpacity>
 
+      {/* Arkadaşını davet et (3.6) */}
+      <TouchableOpacity style={styles.settingRow} activeOpacity={0.8} onPress={invite}>
+        <View style={styles.settingIcon}>
+          <Ionicons name="gift" size={16} color={colors.primaryDark} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.settingTitle}>Arkadaşını Davet Et</Text>
+          <Text style={styles.settingDesc}>Test linkini gönder — Expo Go'da tek dokunuşla açılır</Text>
+        </View>
+        <Ionicons name="share-social-outline" size={18} color={colors.textFaint} />
+      </TouchableOpacity>
+
       {/* İstatistikler */}
       <View style={styles.statsCard}>
         <View style={styles.stat}>
@@ -195,6 +274,37 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           </View>
         ))
       )}
+
+      {/* Rozet kutlaması (3.3): yeni rozet ilk kez açıldığında bir kez gösterilir */}
+      <Modal visible={!!celebrate} transparent animationType="fade" onRequestClose={() => setCelebrate(null)}>
+        <View style={styles.celebBg}>
+          {celebrate && (
+            <Animated.View style={{ transform: [{ scale: celebScale }], alignItems: "center" }}>
+              <View ref={celebCardRef} collapsable={false} style={styles.celebCard}>
+                <LinearGradient colors={["#1B2447", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.celebInner}>
+                  <Text style={styles.celebConfetti}>🎊 ✨ 🎉 ✨ 🎊</Text>
+                  <Text style={styles.celebIcon}>{celebrate.icon}</Text>
+                  <Text style={styles.celebLabel}>YENİ ROZET</Text>
+                  <Text style={styles.celebName}>{celebrate.name}</Text>
+                  <Text style={styles.celebDesc}>{celebrate.desc}</Text>
+                  <View style={styles.celebBrandRow}>
+                    <View style={styles.celebBrandDot} />
+                    <Text style={styles.celebBrand}>SANA</Text>
+                  </View>
+                </LinearGradient>
+              </View>
+              <View style={styles.celebBtns}>
+                <TouchableOpacity style={styles.celebGhost} onPress={() => setCelebrate(null)}>
+                  <Text style={styles.celebGhostText}>Kapat</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.celebShare, celebSharing && { opacity: 0.6 }]} onPress={shareBadge} disabled={celebSharing}>
+                  {celebSharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.celebShareText}>📤 Paylaş</Text>}
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          )}
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -259,4 +369,22 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   journeyTitle: { color: colors.text, fontFamily: font.bold, fontSize: 14.5 },
   journeyMeta: { color: colors.textFaint, fontFamily: font.medium, fontSize: 12, marginTop: 2 },
+
+  // Rozet kutlaması (3.3) — kart tema-bağımsız koyu (paylaşılabilir görsel)
+  celebBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", alignItems: "center", justifyContent: "center", padding: 24 },
+  celebCard: { width: 280, borderRadius: radius.xl, overflow: "hidden", ...shadow(14) },
+  celebInner: { padding: 26, alignItems: "center" },
+  celebConfetti: { fontSize: 18, letterSpacing: 4 },
+  celebIcon: { fontSize: 64, marginTop: 14 },
+  celebLabel: { marginTop: 14, color: "#FF9F8B", fontFamily: font.bold, fontSize: 11, letterSpacing: 2.5 },
+  celebName: { marginTop: 6, color: "#F2F4FC", fontFamily: font.black, fontSize: 24, textAlign: "center" },
+  celebDesc: { marginTop: 6, color: "#8A93B8", fontFamily: font.medium, fontSize: 13.5, textAlign: "center" },
+  celebBrandRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 20 },
+  celebBrandDot: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: "#F4503B" },
+  celebBrand: { color: "#F2F4FC", fontFamily: font.black, fontSize: 14, letterSpacing: 2 },
+  celebBtns: { flexDirection: "row", gap: 10, marginTop: 16, width: 280 },
+  celebGhost: { flex: 1, paddingVertical: 13, alignItems: "center", borderRadius: radius.lg, backgroundColor: "rgba(255,255,255,0.12)" },
+  celebGhostText: { color: "#F2F4FC", fontFamily: font.bold },
+  celebShare: { flex: 1.4, paddingVertical: 13, alignItems: "center", borderRadius: radius.lg, backgroundColor: colors.primary },
+  celebShareText: { color: "#fff", fontFamily: font.extra, fontSize: 15 },
 });
