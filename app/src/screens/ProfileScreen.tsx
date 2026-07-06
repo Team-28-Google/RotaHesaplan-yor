@@ -151,86 +151,86 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       contentContainerStyle={{ paddingTop: insets.top + 18, paddingBottom: 32, paddingHorizontal: 16 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Kimlik */}
-      <View style={styles.head}>
-        <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatar}>
-          <Text style={styles.avatarText}>{username.slice(0, 1).toUpperCase()}</Text>
-        </LinearGradient>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name}>@{username}</Text>
-          <Text style={styles.city}>
-            <Ionicons name="location-outline" size={12} color={colors.textFaint} /> İstanbul
-          </Text>
+      {/* Gezgin kartı: kimlik + istatistikler + rozet ilerlemesi (tema-bağımsız koyu) */}
+      <LinearGradient colors={["#1B2447", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.heroCard}>
+        <View style={styles.heroTop}>
+          <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatar}>
+            <Text style={styles.avatarText}>{username.slice(0, 1).toUpperCase()}</Text>
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.heroName}>@{username}</Text>
+            <Text style={styles.heroCity}>
+              <Ionicons name="location" size={11} color="#FF9F8B" /> İstanbul · SANA gezgini
+            </Text>
+          </View>
+          {AUTH_ENABLED && (
+            <TouchableOpacity onPress={doSignOut} style={styles.heroSignOut} hitSlop={8}>
+              <Ionicons name="log-out-outline" size={19} color="rgba(255,255,255,0.75)" />
+            </TouchableOpacity>
+          )}
         </View>
-        {AUTH_ENABLED && (
-          <TouchableOpacity onPress={doSignOut} style={styles.signOut} hitSlop={8}>
-            <Ionicons name="log-out-outline" size={20} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
 
-      {/* Görünüm tercihi */}
-      <View style={styles.settingRow}>
-        <View style={styles.settingIcon}>
-          <Ionicons name={mode === "dark" ? "moon" : "sunny"} size={16} color={colors.primaryDark} />
+        <View style={styles.heroStats}>
+          {([
+            [String(journeys.length), "yolculuk"],
+            [totalKm.toFixed(1), "km"],
+            [String(totalStops), "durak"],
+            [String(myRoutes), "rota"],
+          ] as const).map(([val, label], i) => (
+            <View key={label} style={[styles.heroStat, i > 0 && styles.heroStatBorder]}>
+              <Text style={styles.heroStatVal}>{val}</Text>
+              <Text style={styles.heroStatLabel}>{label}</Text>
+            </View>
+          ))}
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.settingTitle}>Koyu Mod</Text>
-          <Text style={styles.settingDesc}>{mode === "dark" ? "Gece şehri teması açık" : "Aydınlık tema açık"}</Text>
-        </View>
-        <Switch
-          value={mode === "dark"}
-          onValueChange={(v) => setMode(v ? "dark" : "light")}
-          trackColor={{ false: colors.border, true: colors.primary }}
-          thumbColor="#FFFFFF"
-        />
-      </View>
 
-      {/* Tercihler (onboarding'i yeniden aç) */}
-      <TouchableOpacity style={styles.settingRow} activeOpacity={0.8} onPress={() => navigation.navigate("Onboarding")}>
-        <View style={styles.settingIcon}>
-          <Ionicons name="options" size={16} color={colors.primaryDark} />
+        <View style={styles.heroProgressRow}>
+          <Text style={styles.heroProgressLabel}>🏅 {unlockedCount}/{badges.length} rozet</Text>
+          <View style={styles.heroBarBg}>
+            <View style={[styles.heroBarFill, { width: `${Math.round((unlockedCount / badges.length) * 100)}%` }]} />
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.settingTitle}>Tercihlerimi Düzenle</Text>
-          <Text style={styles.settingDesc}>Vibe ve bütçe seçimlerin — önerileri kişiselleştirir</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
-      </TouchableOpacity>
+      </LinearGradient>
 
-      {/* Arkadaşını davet et (3.6) */}
-      <TouchableOpacity style={styles.settingRow} activeOpacity={0.8} onPress={invite}>
-        <View style={styles.settingIcon}>
-          <Ionicons name="gift" size={16} color={colors.primaryDark} />
+      {/* Ayarlar — tek kart, ayraçlı satırlar */}
+      <View style={styles.settingsCard}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingIcon}>
+            <Ionicons name={mode === "dark" ? "moon" : "sunny"} size={16} color={colors.primaryDark} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.settingTitle}>Koyu Mod</Text>
+            <Text style={styles.settingDesc}>{mode === "dark" ? "Gece şehri teması açık" : "Aydınlık tema açık"}</Text>
+          </View>
+          <Switch
+            value={mode === "dark"}
+            onValueChange={(v) => setMode(v ? "dark" : "light")}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor="#FFFFFF"
+          />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.settingTitle}>Arkadaşını Davet Et</Text>
-          <Text style={styles.settingDesc}>Test linkini gönder — Expo Go'da tek dokunuşla açılır</Text>
-        </View>
-        <Ionicons name="share-social-outline" size={18} color={colors.textFaint} />
-      </TouchableOpacity>
-
-      {/* İstatistikler */}
-      <View style={styles.statsCard}>
-        <View style={styles.stat}>
-          <Text style={styles.statVal}>{journeys.length}</Text>
-          <Text style={styles.statLabel}>yolculuk</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statVal}>{totalKm.toFixed(1)}</Text>
-          <Text style={styles.statLabel}>km</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statVal}>{totalStops}</Text>
-          <Text style={styles.statLabel}>durak</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statVal}>{myRoutes}</Text>
-          <Text style={styles.statLabel}>rota</Text>
-        </View>
+        <View style={styles.settingDivider} />
+        <TouchableOpacity style={styles.settingRow} activeOpacity={0.8} onPress={() => navigation.navigate("Onboarding")}>
+          <View style={styles.settingIcon}>
+            <Ionicons name="options" size={16} color={colors.primaryDark} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.settingTitle}>Tercihlerimi Düzenle</Text>
+            <Text style={styles.settingDesc}>Vibe ve bütçe seçimlerin — önerileri kişiselleştirir</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+        </TouchableOpacity>
+        <View style={styles.settingDivider} />
+        <TouchableOpacity style={styles.settingRow} activeOpacity={0.8} onPress={invite}>
+          <View style={styles.settingIcon}>
+            <Ionicons name="gift" size={16} color={colors.primaryDark} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.settingTitle}>Arkadaşını Davet Et</Text>
+            <Text style={styles.settingDesc}>Test linkini gönder — Expo Go'da tek dokunuşla açılır</Text>
+          </View>
+          <Ionicons name="share-social-outline" size={18} color={colors.textFaint} />
+        </TouchableOpacity>
       </View>
 
       {/* Rozetler */}
@@ -312,33 +312,43 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
 
-  settingRow: {
-    flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.surface,
-    borderRadius: radius.lg, padding: 14, borderWidth: 1, borderColor: colors.border, marginBottom: 14,
+  // Gezgin kartı — tema-bağımsız koyu (paylaşım kartlarıyla aynı dil)
+  heroCard: { borderRadius: radius.xl, padding: 18, marginBottom: 16, ...shadow(10) },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 14 },
+  avatar: { width: 62, height: 62, borderRadius: 31, alignItems: "center", justifyContent: "center", ...shadow(8) },
+  avatarText: { color: "#fff", fontFamily: font.black, fontSize: 25 },
+  heroName: { color: "#F2F4FC", fontFamily: font.extra, fontSize: 20 },
+  heroCity: { color: "#8A93B8", fontFamily: font.medium, fontSize: 12.5, marginTop: 3 },
+  heroSignOut: {
+    width: 38, height: 38, borderRadius: 19, backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center", justifyContent: "center",
   },
+  heroStats: {
+    flexDirection: "row", marginTop: 16, backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: radius.lg, paddingVertical: 12,
+  },
+  heroStat: { flex: 1, alignItems: "center" },
+  heroStatBorder: { borderLeftWidth: 1, borderLeftColor: "rgba(255,255,255,0.1)" },
+  heroStatVal: { color: "#F2F4FC", fontFamily: font.black, fontSize: 19 },
+  heroStatLabel: { color: "#8A93B8", fontFamily: font.semibold, fontSize: 11, marginTop: 2 },
+  heroProgressRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
+  heroProgressLabel: { color: "#F2F4FC", fontFamily: font.bold, fontSize: 12.5 },
+  heroBarBg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.12)", overflow: "hidden" },
+  heroBarFill: { height: 6, borderRadius: 3, backgroundColor: "#F4503B" },
+
+  // Ayarlar — tek kart, ayraçlı satırlar
+  settingsCard: {
+    backgroundColor: colors.surface, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.border, marginBottom: 22,
+  },
+  settingRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
+  settingDivider: { height: 1, backgroundColor: colors.border, marginLeft: 60 },
   settingIcon: {
     width: 34, height: 34, borderRadius: 17, backgroundColor: colors.primarySoft,
     alignItems: "center", justifyContent: "center",
   },
   settingTitle: { color: colors.text, fontFamily: font.bold, fontSize: 14.5 },
   settingDesc: { color: colors.textFaint, fontFamily: font.medium, fontSize: 12, marginTop: 2 },
-
-  head: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 18 },
-  avatar: { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", ...shadow(8) },
-  avatarText: { color: "#fff", fontFamily: font.black, fontSize: 24 },
-  name: { color: colors.text, fontFamily: font.extra, fontSize: 20 },
-  city: { color: colors.textFaint, fontFamily: font.medium, fontSize: 13, marginTop: 3 },
-  signOut: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
-
-  statsCard: {
-    flexDirection: "row", alignItems: "center", backgroundColor: colors.surface,
-    borderRadius: radius.lg, paddingVertical: 16, borderWidth: 1, borderColor: colors.border,
-    marginBottom: 22, ...shadow(6),
-  },
-  stat: { flex: 1, alignItems: "center" },
-  statVal: { color: colors.text, fontFamily: font.black, fontSize: 20 },
-  statLabel: { color: colors.textFaint, fontFamily: font.semibold, fontSize: 11.5, marginTop: 2 },
-  statDivider: { width: 1, height: 28, backgroundColor: colors.border },
 
   sectionHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
   sectionTitle: { color: colors.text, fontFamily: font.extra, fontSize: 17 },

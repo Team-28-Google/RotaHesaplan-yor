@@ -41,6 +41,13 @@
           "locationWhenInUsePermission": "Rotayı dışarıda takip ederken konumunu haritada göstermek için."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Deneyimini fotoğraflayıp yorumuna eklemek için kamera kullanılır.",
+          "photosPermission": "Yorumuna galeriden fotoğraf eklemek için."
+        }
+      ],
       "expo-font"
     ],
     "web": {

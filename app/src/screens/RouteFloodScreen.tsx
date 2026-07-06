@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Animated, Linking, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Animated, Linking, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { captureRef } from "react-native-view-shot";
@@ -110,14 +110,26 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     fetchComments(routeId).then(setComments).catch(() => {});
   }, [routeId]);
 
-  const pickCommentPhoto = async () => {
-    tap();
+  const launchPhoto = async (src: "camera" | "library") => {
     try {
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"], quality: 0.7, allowsMultipleSelection: false,
-      });
+      if (src === "camera") {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) return;
+      }
+      const res = src === "camera"
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7, allowsMultipleSelection: false });
       if (!res.canceled && res.assets[0]?.uri) setCPhoto(res.assets[0].uri);
     } catch { /* izin reddi vb. — sessiz */ }
+  };
+
+  const pickCommentPhoto = () => {
+    tap();
+    Alert.alert("Fotoğraf ekle", undefined, [
+      { text: "📷 Fotoğraf çek", onPress: () => launchPhoto("camera") },
+      { text: "🖼️ Galeriden seç", onPress: () => launchPhoto("library") },
+      { text: "Vazgeç", style: "cancel" },
+    ]);
   };
 
   const sendComment = async () => {

@@ -346,6 +346,7 @@
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 7 Tem | Profil redesign + kamera (kullanıcı isteği) | Gezgin kartı (koyu hero: kimlik+istatistik+rozet ilerleme) + ayarlar tek kartta; yorum fotoğrafına "📷 Fotoğraf çek / 🖼️ Galeriden seç" seçimi (kamera izni plugin'i app.json'a eklendi) |
 | 7 Tem | **FAZ 3 KODU BİTTİ** 🎉 (3.1–3.6) | 3.2a canlı test geçti (Ayasofya ⭐4.8 foto+kapak); 3.1 bottom-sheet + Story 9:16 + RouteTrace; 3.3 rozet kutlama; 3.4/3.5 journeys+liderlik (kod); 3.6 davet linki. 👤 kalan: 0007+0008 migration'ları SQL Editor'de + cihaz turu. Açık: 3.0b Rota-oluştur yeri, 3.0c çok şehir (beklemede), 3.1 polish (map snapshot+QR), CreateRoute durak fotosu |
 | 6 Tem | 0.4 Render RAFA | Kullanıcı kararı: dışarıda test yok, LAN yeterli; render.yaml hazırlık olarak repo'da kalıyor |
 | 6 Tem | 3.0b Home redesign (karma) | AI prompt kartı + "Sana özel" vibe şeridi + immersive Popüler kartlar; paylaşım 3.1'e ertelendi. Cihaz beğeni turu bekliyor |
