@@ -202,6 +202,28 @@
   yeterince görünür değil (seçenekler: AI kartının altına ikinci satır aksiyon, akış sonunda kart,
   ya da kalıcı FAB; kullanıcıyla netleştir).
 
+### ⬜ 3.0c ÇOK ŞEHİR DESTEĞİ ★ KULLANICI İSTEĞİ (6 Tem)
+> **Vizyon:** Sadece İstanbul değil — Ankara'daki da Gaziantep'teki de kullanacak;
+> hedef tüm Türkiye (ileride dünya). Home'da daha çok ve şehre uygun rota görünmeli.
+> **Pilot şehirler (6 Tem, kullanıcı seçimi): Ankara, Gaziantep, İzmir, Bursa** — 4 şehir
+> ~130-160 SerpApi araması, aylık kotaya sığar. Başlama zamanı: şimdilik beklemede (kullanıcı kararı).
+
+**A. Veri — pilot şehirlere seed rotalar 🤖**
+- [ ] `build_seed.py`'yi şehir-parametreli yap: şehir + semt listesi + kategori config'i
+  (İstanbul mantığı aynen: experience+utility karışık, 4-7 durak, vibe/bütçe çeşitliliği).
+- [ ] Pilot şehirler için 5-7'şer rota üret (SerpApi cache'li; kota ~30-40 arama/şehir, 250/ay içinde).
+- [ ] `add_geometry.py` (sokak geometrisi) + `backfill.py` (DB + embed) şehir bazlı koş.
+**B. Servis 🤖**
+- [ ] `plan_route`'a `city` parametresi: app konumdan gönderir; cümlede şehir geçiyorsa o kazanır,
+  yoksa app'inki, en son Istanbul fallback (şehir normalize mevcut).
+**C. App 🤖**
+- [ ] Konumdan şehir tespiti (expo-location reverse geocode) → aktif şehir; Home header'da
+  şehir chip'i ("📍 Ankara ▾") ile elle değiştirilebilir.
+- [ ] Home akışı + Map ekranı aktif şehre göre filtrelenir; harita başlangıcı `ISTANBUL_REGION`
+  sabiti yerine şehir merkezine göre (`cityRegion(city)`).
+- [ ] Plan isteği `city` gönderir; "Sana özel" şeridi şehir içinde skorlar.
+- **Kabul:** Ankara'da açan kullanıcı Ankara rotaları görüyor, plan atınca Ankara rotası geliyor.
+
 ### ⬜ 3.1 Paylaşım kartı v2 🤖
 - [ ] Story varyantı: 1080×1920 oranlı (9:16) tam boy kart — mevcut kartın büyüğü + arka planda harita.
 - [ ] Harita izi: RouteFlood'daki MapView ref'inden `takeSnapshot({ format: "png" })` → kart arkaplan görseli
