@@ -30,20 +30,30 @@ const AGENT_STEPS = [
   { icon: "✍️", label: "Anlatı yazılıyor" },
 ];
 
+// 🎲 Üretim modunun aşamaları (2.7) — daha uzun sürer, adımlar farklı akar
+const GEN_STEPS = [
+  { icon: "🧠", label: "Niyet çözümleniyor" },
+  { icon: "🌤️", label: "Hava kontrol ediliyor" },
+  { icon: "📍", label: "Gerçek mekânlar aranıyor" },
+  { icon: "🧩", label: "Yepyeni rota kuruluyor" },
+  { icon: "📸", label: "Foto + sokak geometrisi ekleniyor" },
+];
+
 /** Plan beklerken agent adımlarını akıtan gösterge — orkestrasyonu görünür kılar (2.6). */
-function AgentProgress() {
+function AgentProgress({ generating }: { generating?: boolean }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [idx, setIdx] = useState(0);
+  const STEPS = generating ? GEN_STEPS : AGENT_STEPS;
 
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => Math.min(i + 1, AGENT_STEPS.length - 1)), 1800);
+    const t = setInterval(() => setIdx((i) => Math.min(i + 1, STEPS.length - 1)), generating ? 3200 : 1800);
     return () => clearInterval(t);
-  }, []);
+  }, [generating, STEPS.length]);
 
   return (
     <View style={styles.agentBox}>
-      {AGENT_STEPS.map((s, i) => (
+      {STEPS.map((s, i) => (
         <View key={s.label} style={styles.agentRow}>
           {i < idx ? (
             <Text style={styles.agentDone}>✓</Text>
@@ -74,12 +84,15 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PlanResponse | null>(null);
 
-  const submit = async (force?: "indoor") => {
+  const [genMode, setGenMode] = useState(false); // 🎲 bekleme adımları üretim varyantında aksın
+
+  const submit = async (force?: "indoor", generate = false) => {
     if (!text.trim()) return;
+    setGenMode(generate);
     setLoading(true);
     setError(null);
     try {
-      const res = await planRoute(text.trim(), force);
+      const res = await planRoute(text.trim(), force, generate);
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bir hata oluştu");
@@ -92,6 +105,12 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   const retryIndoor = () => {
     setResult(null);
     submit("indoor");
+  };
+
+  // 🎲 AI Rota Üretici (2.7): havuzdan değil, gerçek mekânlardan yepyeni rota kur
+  const retryGenerate = () => {
+    setResult(null);
+    submit(undefined, true);
   };
 
   const reset = () => {
@@ -109,6 +128,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
           result={result}
           onReset={reset}
           onIndoor={retryIndoor}
+          onGenerate={retryGenerate}
           onOpenRoute={(id, title) => navigation.navigate("RouteFlood", { routeId: id, title, autoStart: true })}
         />
       ) : (
@@ -151,7 +171,10 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
             <Text style={styles.btnText}>✨ Planla</Text>
           )}
         </TouchableOpacity>
-            {loading && <AgentProgress />}
+            {loading && <AgentProgress generating={genMode} />}
+            {loading && genMode && (
+              <Text style={styles.genHint}>🎲 Yepyeni bir rota kuruluyor — bu, hazır eşleştirmeden biraz uzun sürer.</Text>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       )}
@@ -159,8 +182,8 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   );
 }
 
-function PlanResult({ result, onReset, onIndoor, onOpenRoute }: {
-  result: PlanResponse; onReset: () => void; onIndoor: () => void;
+function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
+  result: PlanResponse; onReset: () => void; onIndoor: () => void; onGenerate: () => void;
   onOpenRoute: (id: string, title: string) => void;
 }) {
   const { colors } = useTheme();
@@ -215,7 +238,11 @@ function PlanResult({ result, onReset, onIndoor, onOpenRoute }: {
         <View style={styles.handle} />
         <ScrollView contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
-            <Text style={styles.aiTag}>{result.personalized ? "🧠 Sana özel · hafızandan" : "✨ Sana özel"}</Text>
+            <Text style={styles.aiTag}>
+              {result.generated
+                ? "🎲 Az önce senin için ÜRETİLDİ — yepyeni rota"
+                : result.personalized ? "🧠 Sana özel · hafızandan" : "✨ Sana özel"}
+            </Text>
             <Text style={styles.title}>{ai.title ?? route.title}</Text>
             {!!ai.summary && <Text style={styles.summary}>{ai.summary}</Text>}
             {!!result.profile && (
@@ -322,6 +349,12 @@ function PlanResult({ result, onReset, onIndoor, onOpenRoute }: {
               <Text style={styles.goBtnText}>🧭 Yolculuğa Başla</Text>
             </TouchableOpacity>
           </View>
+
+          {/* 🎲 Beğenmediysen: havuz yerine gerçek mekânlardan yepyeni rota (2.7) */}
+          <TouchableOpacity style={styles.genBtn} onPress={() => { tap(); onGenerate(); }} activeOpacity={0.85}>
+            <Text style={styles.genBtnText}>🎲 Bana yeni rota üret</Text>
+            <Text style={styles.genBtnSub}>Kayıtlılardan değil — gerçek mekânlardan sıfırdan kurar</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity style={[styles.btn, styles.resetBtn]} onPress={onReset}>
             <Text style={styles.btnText}>← Yeni plan</Text>
@@ -442,4 +475,14 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   goBtnText: { color: "#fff", fontFamily: font.extra, fontSize: 14.5 },
 
   resetBtn: { marginHorizontal: 20, marginTop: 12 },
+
+  // 🎲 AI Rota Üretici (2.7)
+  genHint: { marginTop: 10, color: colors.textMuted, fontFamily: font.medium, fontSize: 12.5, textAlign: "center" },
+  genBtn: {
+    marginHorizontal: 20, marginTop: 14, paddingVertical: 13, alignItems: "center",
+    borderRadius: radius.lg, backgroundColor: colors.primarySoft,
+    borderWidth: 1, borderColor: colors.primary,
+  },
+  genBtnText: { color: colors.primaryDark, fontFamily: font.extra, fontSize: 15 },
+  genBtnSub: { color: colors.textMuted, fontFamily: font.medium, fontSize: 11.5, marginTop: 3 },
 });

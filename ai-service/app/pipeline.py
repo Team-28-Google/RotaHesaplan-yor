@@ -11,10 +11,12 @@ import json
 import sys
 import time
 
+import random
+
 from app.clients import (
-    get_route, get_weather, google_photo_url, google_place_lookup, google_walk_leg,
-    load_env, match_routes, nvidia_chat, nvidia_embed, sb_delete, sb_insert,
-    sb_patch, sb_select,
+    get_route, get_weather, google_photo_url, google_place_lookup, google_places_search,
+    google_walk_leg, load_env, match_routes, nvidia_chat, nvidia_embed, sb_delete,
+    sb_insert, sb_patch, sb_select,
 )
 
 # --------------------------- Prompt'lar ---------------------------
@@ -144,7 +146,212 @@ def parse_intent(env: dict, text: str) -> dict:
     return d
 
 
-def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None) -> dict:
+# --------------------------- AI Rota Üretici (2.7) ---------------------------
+# Havuzda eşleşme yoksa (ya da kullanıcı isterse) LLM, GERÇEK Places adaylarından
+# yepyeni bir rota kurar. Mekan uydurulamaz: composer yalnız aday index'i seçebilir.
+# Semt niyete göre seçilir → tüm adaylar aynı semtten gelir → rota doğal yürünebilir.
+
+_DISTRICTS = [
+    {"name": "Kadıköy · Moda", "lat": 40.9819, "lng": 29.0250,
+     "vibes": ["sakin", "deniz", "kahve", "yuruyus", "kafa-dinleme", "sosyal"]},
+    {"name": "Balat", "lat": 41.0292, "lng": 28.9486,
+     "vibes": ["tarih", "fotograf", "kesif", "sanat", "kahve"]},
+    {"name": "Karaköy · Galata", "lat": 41.0256, "lng": 28.9744,
+     "vibes": ["sanat", "kahve", "kultur", "gece", "fotograf"]},
+    {"name": "Üsküdar", "lat": 41.0226, "lng": 29.0078,
+     "vibes": ["tarih", "deniz", "manzara", "sakin"]},
+    {"name": "Ortaköy", "lat": 41.0472, "lng": 29.0269,
+     "vibes": ["deniz", "manzara", "sosyal", "gece"]},
+    {"name": "Sultanahmet", "lat": 41.0054, "lng": 28.9768,
+     "vibes": ["tarih", "kultur", "kalabalik"]},
+    {"name": "Bebek · Arnavutköy", "lat": 41.0662, "lng": 29.0430,
+     "vibes": ["deniz", "sakin", "yesil", "yuruyus"]},
+]
+
+_VIBE_QUERIES = {
+    "sakin": ["sakin park", "manzaralı çay bahçesi"],
+    "kafa-dinleme": ["sakin kahve dükkanı", "sahil parkı"],
+    "tarih": ["tarihi yer", "tarihi cami"],
+    "kultur": ["müze", "sanat galerisi"],
+    "sanat": ["sanat galerisi", "bağımsız kitabevi"],
+    "deniz": ["sahil yürüyüş yolu", "iskele"],
+    "manzara": ["seyir terası", "manzara noktası"],
+    "kahve": ["üçüncü dalga kahveci"],
+    "yesil": ["park", "koru"],
+    "gece": ["gece manzarası", "canlı cadde"],
+    "yuruyus": ["yürüyüş yolu", "seyir noktası"],
+    "sosyal": ["popüler kafe", "çarşı"],
+    "fotograf": ["renkli sokaklar", "fotoğraf noktası"],
+    "kesif": ["antikacılar", "yerel çarşı"],
+    "butce-dostu": ["ucuz yerel lokanta"],
+}
+_GENERIC_QUERIES = ["kahve dükkanı", "park", "manzara noktası", "tarihi yer"]
+
+_PRICE_ENUM = {"PRICE_LEVEL_FREE": 0, "PRICE_LEVEL_INEXPENSIVE": 1, "PRICE_LEVEL_MODERATE": 2,
+               "PRICE_LEVEL_EXPENSIVE": 3, "PRICE_LEVEL_VERY_EXPENSIVE": 4}
+
+# Üretici SADECE seçim+sıra yapar (dar iş = güvenilir JSON); anlatı ve kategoriyi
+# kanıtlanmış ENRICH_SYS (Rota Ortak-Yazarı) ikinci aşamada yazar.
+GENERATOR_SYS = (
+    "Sen SANA'nın rota mimarısın. Kullanıcının niyeti ve şehirden GERÇEK mekan adayları "
+    "(index'li) verilir. SADECE adaylardan seçim yap; mekan UYDURMA.\n"
+    "Kurallar:\n"
+    "1. 4-6 FARKLI aday seç; koordinatlara bakarak yürüme sırasına koy (zikzak yapma).\n"
+    "2. Çeşitlilik: aynı türden en fazla 2 durak (hepsi kafe olmasın).\n"
+    "3. Bütçe sınırına uy; puanı yüksek adayları tercih et.\n"
+    "4. SADECE şu JSON ile dön:\n"
+    '{"title": string (kısa, davetkar; semt adı geçebilir), "description": string (1-2 cümle), '
+    '"vibe_tags": string[] (3-5 kısa Türkçe etiket), "weather_fit": "indoor"|"outdoor"|"any", '
+    '"budget_level": 1-4, "stops": [integer (aday index, yürüme sırasında)]}'
+)
+
+
+def _pick_district(vibe_tags: list, mood: str) -> dict:
+    """Niyet vibe'larıyla en çok örtüşen semt; eşitlikte rastgele (çeşitlilik)."""
+    wanted = set(vibe_tags or []) | ({mood} if mood else set())
+    scored = [(len(wanted & set(d["vibes"])), d) for d in _DISTRICTS]
+    best = max(s for s, _ in scored)
+    return random.choice([d for s, d in scored if s == best])
+
+
+def _gather_candidates(env: dict, district: dict, vibe_tags: list, mood: str) -> list[dict]:
+    """Semt merkezine bias'lı en fazla 4 Places sorgusu → tekil aday havuzu."""
+    queries: list[str] = []
+    for v in (vibe_tags or []) + ([mood] if mood else []):
+        queries += _VIBE_QUERIES.get(v, [])
+    seen_q: set = set()
+    q_final: list[str] = []
+    for q in queries + _GENERIC_QUERIES:
+        if q not in seen_q:
+            seen_q.add(q)
+            q_final.append(q)
+        if len(q_final) >= 4:
+            break
+    cands: list[dict] = []
+    seen_ids: set = set()
+    for q in q_final:
+        for p in google_places_search(env, q, district["lat"], district["lng"]):
+            if p["place_id"] in seen_ids:
+                continue
+            # locationBias kesin filtre değil — semtten uzak sonuçlar rotayı yürünemez yapar
+            if _haversine_m(district["lat"], district["lng"], p["lat"], p["lng"]) > 4000:
+                continue
+            seen_ids.add(p["place_id"])
+            cands.append(p)
+    return cands
+
+
+def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_max: int,
+                    user_id: str | None, profile_text: str, _mark) -> dict | None:
+    """Yepyeni rota üret + kalıcılaştır + zenginleştir. Başarısızsa None (çağıran no_match döner)."""
+    city = "Istanbul"  # 3.0c çok şehirde semt haritası şehir-parametreli olacak
+    district = _pick_district(intent.get("vibe_tags") or [], intent.get("mood") or "")
+    cands = _gather_candidates(env, district, intent.get("vibe_tags") or [], intent.get("mood") or "")
+    _mark("Mekânlar arandı", f"{len(cands)} gerçek aday · {district['name']}")
+    if len(cands) < 4:
+        return None
+
+    lines = []
+    for i, c in enumerate(cands):
+        price = _PRICE_ENUM.get(c.get("price_level") or "", None)
+        lines.append(
+            f"{i}. {c['name']} | tür: {','.join(c['types'][:3]) or '?'} | puan: {c.get('rating') or '?'}"
+            f" | fiyat: {price if price is not None else '?'} | ({c['lat']:.4f},{c['lng']:.4f})"
+        )
+    gen_input = {
+        "niyet": intent, "kullanici_profili": profile_text or "bilinmiyor",
+        "hava": weather, "butce_siniri": budget_max, "adaylar": lines,
+    }
+    gen = None
+    for temp in (0.7, 0.4):  # ilk deneme yaratıcı; bozuk JSON'da daha soğuk tekrar
+        try:
+            raw = nvidia_chat(env, GENERATOR_SYS, json.dumps(gen_input, ensure_ascii=False),
+                              json_mode=True, temperature=temp, max_tokens=500, timeout=35)
+            d = json.loads(raw)
+            picks = []
+            seen_i: set = set()
+            for i in d.get("stops") or []:
+                if isinstance(i, int) and 0 <= i < len(cands) and i not in seen_i:
+                    seen_i.add(i)
+                    picks.append(cands[i])
+            picks = picks[:6]  # model fazla seçtiyse kırp (fail etme)
+            if len(picks) >= 4 and d.get("title"):
+                gen = (d, picks)
+                break
+        except Exception:  # noqa: BLE001 — ikinci turda tekrar dener
+            continue
+    if not gen:
+        return None
+    d, picks = gen
+    _mark("Yeni rota kuruldu", f"{len(picks)} durak · {d['title']}")
+
+    # Anlatı + kategori: kanıtlanmış Rota Ortak-Yazarı (enrich_route) ile
+    enriched = enrich_route([{"name": c["name"], "note": None} for c in picks])
+    e_stops = enriched.get("stops") or []
+
+    # Kalıcılaştır: yazar = isteyen kullanıcı (yoksa seed hesabı)
+    author = user_id
+    if not author:
+        rows = sb_select(env, "routes", "select=author_id&limit=1")
+        author = rows[0]["author_id"] if rows else None
+    if not author:
+        return None
+    try:
+        budget = int(d.get("budget_level") or 2)
+    except (TypeError, ValueError):
+        budget = 2
+    route_row = sb_insert(env, "routes", {
+        "author_id": author, "title": d["title"], "description": d.get("description") or "",
+        "city": city, "vibe_tags": (d.get("vibe_tags") or [])[:5],
+        "weather_fit": d.get("weather_fit") if d.get("weather_fit") in ("indoor", "outdoor", "any") else "any",
+        "budget_level": min(max(budget, 1), 4), "is_seed": False,
+    })[0]
+    rid = route_row["id"]
+    wp_rows = []
+    for seq, c in enumerate(picks):
+        e = e_stops[seq] if seq < len(e_stops) and isinstance(e_stops[seq], dict) else {}
+        photo = google_photo_url(env, c.get("photo_name"))  # foto adı elimizde: tek media çağrısı
+        wp_rows.append({
+            "route_id": rid, "seq": seq, "name": c["name"], "lat": c["lat"], "lng": c["lng"],
+            "category": e.get("category") or "other", "kind": "experience",
+            "note": e.get("narrative") or "", "place_id": c.get("place_id"),
+            "transport_mode": "start" if seq == 0 else "walk",
+            "photo_urls": [photo] if photo else [],
+            "metadata": {"rating": c["rating"]} if c.get("rating") is not None else {},
+        })
+    sb_insert(env, "waypoints", wp_rows)
+    cover = next((w["photo_urls"][0] for w in wp_rows if w["photo_urls"]), None)
+    if cover:
+        sb_patch(env, "routes", {"id": f"eq.{rid}"}, {"cover_photo_url": cover})
+
+    # Mevcut zincir: sokak geometrisi + hafızaya embed (foto/puan yukarıda yazıldı)
+    try:
+        route_geometry(rid)
+    except Exception:  # noqa: BLE001 — geometri süs; rota yine döner
+        pass
+    try:
+        embed_route(rid)
+    except Exception:  # noqa: BLE001
+        pass
+    _mark("Zenginleştirildi", "foto + sokak geometrisi + hafıza")
+
+    chosen = get_route(env, rid)
+    exp = [w for w in sorted(chosen.get("waypoints", []), key=lambda w: w.get("seq", 0))
+           if w.get("kind") == "experience"]
+    ai = {
+        "title": d["title"],
+        "summary": d.get("description") or "",
+        "weather_note": None,
+        "budget_note": BUDGET_LABELS.get(chosen.get("budget_level"), "uygun"),
+        "stops": [{"seq": i, "name": w["name"], "narrative": w.get("note") or ""}
+                  for i, w in enumerate(exp)],
+        "social_signal": "✨ Bu rota az önce senin için üretildi — ilk yürüyen sen olabilirsin.",
+    }
+    return {"route": chosen, "ai": ai}
+
+
+def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None,
+               force_generate: bool = False) -> dict:
     env = load_env()
 
     # Agent adımları: her aşamanın süresi + tek satır özeti (app bekleme ekranı + jüri için)
@@ -198,12 +405,36 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     _mark("Hava kontrol edildi",
           f"{weather.get('temp')}° {weather.get('desc', '')}".strip() if weather.get("temp") is not None else "veri yok")
 
+    def _generated_response() -> dict | None:
+        """2.7: yepyeni rota üret; başarılıysa plan_route ile aynı şekilde yanıt döndür."""
+        g = _generate_route(env, text, intent, weather, budget_max, user_id, profile_text, _mark)
+        if not g:
+            return None
+        return {
+            "ok": True, "generated": True,
+            "intent": intent, "weather": weather,
+            "route_id": g["route"].get("id"), "route": g["route"], "ai": g["ai"],
+            "personalized": bool(profile or pref_notes), "profile": profile_text or None,
+            "forced_fit": None, "steps": steps,
+        }
+
+    # [2b] Kullanıcı açıkça yeni rota istedi (🎲) → eşleştirmeyi atla, üret
+    if force_generate:
+        res = _generated_response()
+        if res:
+            return res
+        # üretim başarısızsa normal eşleştirmeye düş (aşağıda devam)
+
     # [3] Social Memory: niyet + profil birlikte embed'lenir → match_routes
     qtext = f"{intent.get('mood','')} {' '.join(intent.get('vibe_tags', []))} {text} {profile_text}".strip()
     emb = nvidia_embed(env, qtext, input_type="query")
     candidates = match_routes(env, emb, match_count=5, filter_city=city, max_budget=budget_max)
     _mark("Rotalar eşleştirildi", f"{len(candidates)} aday")
     if not candidates:
+        # 2.7 akıllı tetik: havuz boş kaldıysa yepyeni rota üretmeyi dene
+        res = _generated_response()
+        if res:
+            return res
         return {"ok": False, "reason": "no_match", "intent": intent, "weather": weather, "steps": steps}
 
     # [4] Budget/Logistics: hava biası (+ kullanıcı "kapalı alternatif" istediyse ZORLAMALI filtre)

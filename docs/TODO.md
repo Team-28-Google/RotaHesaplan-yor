@@ -186,17 +186,23 @@
   "⚙️ AGENT ADIMLARI" kutusu gerçek süre+notlarla.
 - [x] **2.3 polish:** Plan'dan "Yolculuğa Başla" artık rota detayında yolculuğu OTOMATİK başlatır.
 
-### ⬜ 2.7 AI ROTA ÜRETİCİ ★ KULLANICI İSTEĞİ (7 Tem) — BEKLEMEDE
-> **Sorun:** plan_route eşleştirici, üretici değil — hep kayıtlı havuzdan (7 seed) döner,
-> "yeni bir şey önermiyor". **Çözüm:** LLM gerçek mekânlardan yepyeni rota kursun.
-- [ ] Aday havuzu: niyet kategorilerine göre Google Places Text Search (semt bias'lı,
-  eldeki GOOGLE_SERVER_API_KEY); mekân uydurma imkânsız — LLM yalnız adaylardan seçer.
-- [ ] Composer: adaylardan yürünebilir sırada 4-6 durak + başlık/anlatı/etiket/bütçe (JSON mode).
-- [ ] Kalıcılık: routes+waypoints insert → mevcut zincir otomatik (route_geometry +
-  enrich_photos + embed_route) → akışta seed kalitesinde görünür.
-- [ ] Tetik (karar bekliyor): akıllı tetik (zayıf eşleşmede otomatik + "🎲 yeni rota üret" butonu) /
-  sadece buton / hep üret. Süre beklentisi ~10-20 sn (AgentProgress'e "Mekânlar aranıyor" adımı).
-- **Kabul:** "Bana yeni bir şey öner" → daha önce DB'de olmayan, gerçek mekânlı rota geliyor.
+### ✅ 2.7 AI ROTA ÜRETİCİ — TAMAMLANDI (7 Tem) ★
+> plan_route artık yalnız eşleştirici değil: LLM gerçek Places mekânlarından yepyeni rota kurabiliyor.
+- [x] **Semt seçimi:** niyet vibe'ları → 7 İstanbul semti haritası (deniz→Moda/Ortaköy, tarih→Balat/
+  Sultanahmet…); eşitlikte rastgele (çeşitlilik). Canlı: "sanat+kahve" → Balat ✓
+- [x] Aday havuzu: `google_places_search` (Text Search, ≤4 sorgu × 6 sonuç, semt merkezine
+  ≤4 km filtre — locationBias tek başına yetmiyor, Maltepe sızmıştı). ~22-24 gerçek aday.
+- [x] **İki aşamalı LLM** (8B modelde tek prompt kalitesiz çıktı): üretici SADECE seçim+sıra
+  (index listesi, uydurma imkânsız) → anlatı+kategori kanıtlanmış `enrich_route` ile.
+  Fazla durak kırpılır (model 7 seçerse fail değil ilk 6); iki sıcaklıkta deneme.
+- [x] Kalıcılık: routes+waypoints (foto photo_name'den direkt, rating→metadata) → route_geometry
+  + embed_route; yazar = isteyen kullanıcı (yoksa seed hesabı).
+- [x] Tetik: **force_generate** (app: sonuçta "🎲 Bana yeni rota üret" butonu) + **akıllı tetik**
+  (havuz no_match kalırsa otomatik üret). Üretim başarısızsa normal akışa zarif düşüş.
+- [x] app: 🎲 buton + "Az önce senin için ÜRETİLDİ" rozeti + üretim-modu bekleme adımları
+  (📍 Mekânlar aranıyor → 🧩 Rota kuruluyor → 📸 Foto+geometri) + 150 sn timeout.
+- **CANLI TEST ×2:** pipeline 15.7 sn (6 durak Kadıköy) + HTTP uçtan uca (5 durak Balat); testler silindi.
+- [ ] 👤 Cihazdan dene: Plan → sonuçta 🎲 → yepyeni rota üret (NIM yoğun saatte uzayabilir).
 
 ---
 
@@ -371,6 +377,7 @@
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 7 Tem | **2.7 AI ROTA ÜRETİCİ TAMAMLANDI** 🎲 | Semt seçimi + Places aday havuzu (≤4km) + iki aşamalı LLM (seçim→enrich anlatısı) + kalıcılık zinciri; 🎲 buton + akıllı tetik (no_match). Canlı ×2: Kadıköy 6 durak (15.7sn) + Balat 5 durak (HTTP). NIM yoğunken yavaşlayabiliyor (150sn timeout) |
 | 7 Tem | Profil redesign + kamera (kullanıcı isteği) | Gezgin kartı (koyu hero: kimlik+istatistik+rozet ilerleme) + ayarlar tek kartta; yorum fotoğrafına "📷 Fotoğraf çek / 🖼️ Galeriden seç" seçimi (kamera izni plugin'i app.json'a eklendi) |
 | 7 Tem | **FAZ 3 KODU BİTTİ** 🎉 (3.1–3.6) | 3.2a canlı test geçti (Ayasofya ⭐4.8 foto+kapak); 3.1 bottom-sheet + Story 9:16 + RouteTrace; 3.3 rozet kutlama; 3.4/3.5 journeys+liderlik (kod); 3.6 davet linki. 👤 kalan: 0007+0008 migration'ları SQL Editor'de + cihaz turu. Açık: 3.0b Rota-oluştur yeri, 3.0c çok şehir (beklemede), 3.1 polish (map snapshot+QR), CreateRoute durak fotosu |
 | 6 Tem | 0.4 Render RAFA | Kullanıcı kararı: dışarıda test yok, LAN yeterli; render.yaml hazırlık olarak repo'da kalıyor |

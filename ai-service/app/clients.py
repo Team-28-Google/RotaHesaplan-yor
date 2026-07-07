@@ -265,6 +265,49 @@ def google_photo_url(env: dict, photo_name: str | None, max_w: int = 1000):
     return (r or {}).get("photoUri")
 
 
+def google_places_search(env: dict, query: str, lat: float, lng: float,
+                         radius_m: float = 2500.0, limit: int = 6) -> list[dict]:
+    """Text Search (New), çevre bias'lı ÇOKLU sonuç — AI Rota Üretici aday havuzu (2.7).
+    Anahtar yoksa/hata olursa boş liste döner."""
+    key = _google_server_key(env)
+    if not key or not query:
+        return []
+    body = {
+        "textQuery": query,
+        "pageSize": min(limit, 10),
+        "languageCode": "tr",
+        "locationBias": {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": radius_m}},
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": ("places.id,places.displayName,places.location,places.rating,"
+                             "places.userRatingCount,places.priceLevel,places.types,places.photos"),
+    }
+    try:
+        r = _req("https://places.googleapis.com/v1/places:searchText", "POST", headers, body, timeout=20)
+    except Exception:
+        return []
+    out = []
+    for p in (r or {}).get("places") or []:
+        loc = p.get("location") or {}
+        name = ((p.get("displayName") or {}).get("text")) or ""
+        if loc.get("latitude") is None or not name:
+            continue
+        photos = p.get("photos") or []
+        out.append({
+            "place_id": p.get("id"),
+            "name": name,
+            "lat": loc["latitude"], "lng": loc["longitude"],
+            "rating": p.get("rating"),
+            "rating_count": p.get("userRatingCount"),
+            "price_level": p.get("priceLevel"),  # enum string (PRICE_LEVEL_MODERATE vb.)
+            "types": p.get("types") or [],
+            "photo_name": photos[0].get("name") if photos else None,
+        })
+    return out
+
+
 # --------------------------- SerpApi mekan arama ---------------------------
 _SEARCH_CACHE: dict = {}
 

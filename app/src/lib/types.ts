@@ -119,4 +119,6 @@ export interface PlanResponse {
   steps?: { name: string; ms: number; note?: string }[];
   /** ☔ Kapalı alternatif istendiyse hangi fit zorlandı (2.5) */
   forced_fit?: string | null;
+  /** 🎲 AI Rota Üretici (2.7): rota havuzdan değil, az önce gerçek mekânlardan kuruldu */
+  generated?: boolean;
 }

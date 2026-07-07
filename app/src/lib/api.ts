@@ -178,8 +178,11 @@ export async function countMyComments(): Promise<number> {
 }
 
 /** AI servisine doğal dil niyeti gönderir → kişiselleştirilmiş rota + flood anlatısı.
- *  Giriş yapılmışsa user_id eklenir (2.1); forceWeatherFit="indoor" → ☔ kapalı alternatif (2.5). */
-export async function planRoute(text: string, forceWeatherFit?: "indoor"): Promise<PlanResponse> {
+ *  Giriş yapılmışsa user_id eklenir (2.1); forceWeatherFit="indoor" → ☔ kapalı alternatif (2.5);
+ *  forceGenerate → 🎲 yepyeni rota üretilir (2.7, daha uzun sürer). */
+export async function planRoute(
+  text: string, forceWeatherFit?: "indoor", forceGenerate?: boolean,
+): Promise<PlanResponse> {
   const uid = await currentUserId();
   let res: Response;
   try {
@@ -190,8 +193,9 @@ export async function planRoute(text: string, forceWeatherFit?: "indoor"): Promi
         text,
         user_id: uid ?? undefined,
         force_weather_fit: forceWeatherFit,
+        force_generate: forceGenerate || undefined,
       }),
-    }, 90_000);
+    }, forceGenerate ? 150_000 : 90_000);
   } catch (e) {
     if (isAbort(e)) throw new Error("AI servisi yanıt vermedi (zaman aşımı). Sunucu meşgul olabilir, tekrar dene.");
     throw new Error("AI servisine ulaşılamadı. PC'de sunucu açık ve aynı Wi-Fi'de mi? (npm run ai)");
