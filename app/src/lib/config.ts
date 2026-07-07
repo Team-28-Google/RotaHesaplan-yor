@@ -5,9 +5,10 @@
 export const SUPABASE_URL = "https://vwqeupcbmlqkbhmwqyuq.supabase.co";
 export const SUPABASE_ANON_KEY = "sb_publishable_t3W_PR3kQGe-b_WfnATq6g_OqErHKGd";
 
-// AI servisi (FastAPI). Telefon, PC'ye yerel ağ IP'si ile erişir.
-// PC IP değişirse burayı güncelle (PowerShell: ipconfig → Wi-Fi IPv4).
-export const AI_SERVICE_URL = "http://192.168.1.3:8000";
+// AI servisi (FastAPI) — Render bulutunda (0.4, 8 Tem): her yerden erişilir,
+// testçiler dahil. Free tier 15 dk boşta uyur → ilk istek ~30 sn (timeout'lar karşılar).
+// Lokal geliştirme/debug gerekirse: "http://<PC-IP>:8000" + npm run ai.
+export const AI_SERVICE_URL = "https://sana-ai-5ejj.onrender.com";
 
 // Giriş ekranı aç/kapa. false = giriş ekranı GÖSTERME, dev hesabıyla otomatik gir.
 // Demo/teslimde true yap → kullanıcılar kendi hesaplarıyla girer.
