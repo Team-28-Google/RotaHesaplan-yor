@@ -64,11 +64,12 @@
 - [ ] Doğrula: foto marker'lar tam görünüyor mu (çeyrek bug bitti mi), koyu harita, konum izni.
 - **Kontrol:** Günlük geliştirme artık dev build üzerinden; Expo Go sadece hızlı bakış için.
 
-### ⏸️ 0.4 AI servisini buluta taşı — YAYIN ANINA ERTELENDİ (kullanıcı kararı, 6 Tem)
-> **Karar:** Dışarıda/sokakta test yapılmayacak; demo hep aynı Wi-Fi'da (LAN IP yeterli).
-> **Gerçekten yayınlanacağı zaman yapılacak** — FAZ 5'te preview APK testçilere dağıtılmadan
-> önce (5.2'nin ön koşulu sayılır); hazırlık (render.yaml + load_env fix) repo'da hazır bekliyor.
-> **Etkisi:** o zamana dek 4.0 navigasyon LAN'da test edilir; testçiler AI özelliklerini kullanamaz.
+### ✅ 0.4 AI servisini buluta taşı — TAMAMLANDI (8 Tem; testçiler AI'ya erişemeyince öne alındı)
+- [x] 👤 Render Blueprint kuruldu: **https://sana-ai-5ejj.onrender.com** (srv-d96jtmgjs32c73dplqbg).
+- [x] 🤖 `config.ts` bulut URL'ine geçti; canlı doğrulama buluttan uçtan uca (Ankara planı ✓).
+- [x] 🤖 EAS Update yayınlandı — testçilerde AI planlama/üretici aktif.
+- **Not:** Free tier 15 dk boşta uyur → ilk istek ~30 sn (timeout'lar karşılıyor); demo öncesi
+  bir istek atıp uyandır. `npm run ai` artık yalnız lokal debug için.
 - [x] 🤖 `render.yaml` blueprint hazır (repo kökü): rootDir ai-service, health check, tüm env'ler sync:false.
 - [x] 🤖 Kritik fix: `load_env()` artık `.env` dosyası olmayan ortamda os.environ'dan okuyor
   (bu olmadan Render'da TÜM anahtarlar boş kalırdı).
