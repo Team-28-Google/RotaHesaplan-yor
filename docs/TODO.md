@@ -266,6 +266,18 @@
 - [ ] (Polish, dev build sonrası) MapView `takeSnapshot` arka planı + QR bandı.
 - **Kontrol 👤:** Story Instagram'da tam ekran, kırpılmadan görünüyor mu?
 
+### ⬜ 3.1b PAYLAŞIM İZİ — Strava tarzı ★ KULLANICI İSTEĞİ (7 Tem)
+> Karttaki çizgi şu an stilize (duraklar arası düz çizgi). Kullanıcı Strava'daki gibi istiyor;
+> Strava'nın paylaşım videosu/animasyonu da ilham (rota izinin çizilerek aktığı replay).
+- [ ] Kartta **iz kaynağı seçimi**: "🗺️ Planlanan sokak yolu" / "👣 Gerçekten yürüdüğüm iz".
+- [ ] Planlanan yol: `leg_geometry` (DB'de hazır, Google Routes) → RouteTrace sokak kıvrımlarını
+  çizsin (nokta sayısı ~60-80'e örneklenir; düz çizgi yedeği geometri yoksa kalır).
+- [ ] Yürünen iz: **4.2'ye bağlı** (journey sırasında GPS izi kaydı) — iz varsa seçenek aktifleşir,
+  yoksa yalnız planlanan gösterilir.
+- [ ] (Stretch, video sonrası) Strava tarzı animasyonlu replay — izin çizilerek aktığı kısa video/GIF
+  paylaşımı; dev build + ekran kaydı yaklaşımıyla araştırılacak.
+- **Kabul:** Yolculuk bitiminde kartta iki iz seçeneği; Strava hissi.
+
 ### ✅ 3.2a Places API zenginleştirme — TAMAMLANDI (6 Tem)
 - [x] `google_place_lookup` (Text Search, koordinat bias, tek sonuç) + `google_photo_url`
   (Photo media redirect'i sunucuda çözülür → kalıcı googleusercontent URL; key DB'ye sızmaz).
@@ -343,7 +355,7 @@
 - [ ] Gerçek rotada (örn. Moda) yolculuk modu: takip kamerası, 30m eşiği, auto-advance, rehber çizgi.
 - [ ] Bulguları not et → eşik/zoom/`distanceInterval` ayarları 🤖.
 
-### ⬜ 4.2 Gerçek iz kaydı 🤖
+### ⬜ 4.2 Gerçek iz kaydı 🤖 (3.1b paylaşım izinin ön koşulu — önceliği arttı, 7 Tem)
 - [ ] `RouteFlood`: journey sırasında `userLoc` değişimlerini `trackRef: LatLng[]`e biriktir (min 10m aralık).
 - [ ] Haritada yürünen iz: ince yarı saydam ikinci polyline.
 - [ ] `finishJourney`: iz'i journey kaydına ekle (3.4 sonrası DB'ye `path jsonb`).
