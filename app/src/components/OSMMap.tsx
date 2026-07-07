@@ -156,12 +156,17 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
     return () => { alive = false; };
   }, [m.photo]);
 
-  // Geçişten kısa süre sonra snapshot'ı dondur (pil/performans)
+  // Android'de bitmap BEKLENİYOR/başarısız → canlı View'ı asla DONDURMA:
+  // çeyrek-render bug'ı tam yarım çizilmiş anda donan snapshot'tan çıkıyor.
+  // Bitmap gelince zaten native image yoluna geçilir (dondurma derdi kalmaz).
+  const keepTracking = BITMAP_MARKERS && !iconUri;
+
+  // Geçişten kısa süre sonra snapshot'ı dondur (pil/performans — yalnız iOS/bitmapli değilken)
   useEffect(() => {
-    if (!tracks) return;
+    if (!tracks || keepTracking) return;
     const t = setTimeout(() => setTracks(false), 700);
     return () => clearTimeout(t);
-  }, [tracks]);
+  }, [tracks, keepTracking]);
 
   // Android + bitmap hazır → native ikonlu marker (çeyrek bug'ı imkânsız; TÜM varyantlar)
   if (BITMAP_MARKERS && iconUri) {
@@ -200,7 +205,7 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
       onCalloutPress={onOpen}
       anchor={{ x: 0.5, y: 0.5 }}
       calloutAnchor={{ x: 0.5, y: 0 }}
-      tracksViewChanges={tracks}
+      tracksViewChanges={keepTracking || tracks}
     >
       <View style={styles.pinBox} collapsable={false}>
         {showPhoto ? (
