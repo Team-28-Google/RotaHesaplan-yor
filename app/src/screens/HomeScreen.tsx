@@ -4,17 +4,15 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View,
+  FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import CityPicker from "../components/CityPicker";
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
-import { fetchRoutes, fetchWeeklyLeaderboard } from "../lib/api";
-import { signOut } from "../lib/auth";
+import { fetchRoutes, fetchWeeklyLeaderboard, getMyProfile } from "../lib/api";
 import { cityInfo, getActiveCity, getChosenCity, setActiveCity } from "../lib/cities";
-import { AUTH_ENABLED } from "../lib/config";
 import { tap } from "../lib/haptics";
 import { getOnboarding } from "../lib/onboarding";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
@@ -64,6 +62,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [leaders, setLeaders] = useState<LeaderRow[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
   const [city, setCity] = useState("Istanbul"); // 3.0c: aktif şehir
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +87,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     useCallback(() => {
       getOnboarding().then((p) => setVibes(p?.vibes ?? []));
       fetchWeeklyLeaderboard().then(setLeaders); // boş/erişilemezse şerit görünmez
+      getMyProfile().then((p) => setAvatarUrl(p?.avatar_url ?? null)).catch(() => {});
       getChosenCity().then((c) => {
         if (c === null && !cityAsked.current) {
           cityAsked.current = true;
@@ -129,15 +129,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     load().finally(() => setRefreshing(false));
   }, [load]);
 
-  const account = () => {
-    if (!AUTH_ENABLED) return;
-    Alert.alert("Hesap", "Çıkış yapmak istiyor musun?", [
-      { text: "Vazgeç", style: "cancel" },
-      { text: "Çıkış", style: "destructive", onPress: () => { signOut(); } },
-    ]);
-  };
-
   const goCreate = () => { tap(); navigation.navigate("CreateRoute"); };
+  const goProfile = () => { tap(); navigation.navigate("Profile"); };
   const goPlan = () => { tap(); navigation.navigate("Plan"); };
   const openRoute = (r: RouteWithWaypoints) =>
     navigation.navigate("RouteFlood", { routeId: r.id, title: r.title });
@@ -192,8 +185,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <TouchableOpacity onPress={goCreate} style={styles.addBtn} activeOpacity={0.85}>
             <Ionicons name="add" size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={account} style={styles.avatar} activeOpacity={0.8}>
-            <Ionicons name="person" size={17} color={colors.textMuted} />
+          <TouchableOpacity onPress={goProfile} style={styles.avatar} activeOpacity={0.8}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImg} contentFit="cover" transition={150} />
+            ) : (
+              <Ionicons name="person" size={17} color={colors.textMuted} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -353,7 +350,11 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primary,
     alignItems: "center", justifyContent: "center",
   },
-  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
+  avatar: {
+    width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceAlt,
+    alignItems: "center", justifyContent: "center", overflow: "hidden",
+  },
+  avatarImg: { width: 38, height: 38, borderRadius: 19 },
 
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 8 },
   error: { color: colors.danger, fontFamily: font.medium, textAlign: "center" },

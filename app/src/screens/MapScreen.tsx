@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -164,6 +165,15 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         </View>
       </TouchableOpacity>
 
+      {/* Rota oluştur — sağ üst buton (kullanıcı isteği: haritadan da oluşturulabilsin) */}
+      <TouchableOpacity
+        style={[styles.createFab, { top: insets.top + 10 }]}
+        onPress={() => navigation.navigate("CreateRoute")}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={24} color="#fff" />
+      </TouchableOpacity>
+
       {/* Rota yoksa: davet kartı */}
       {routes.length === 0 && (
         <View style={[styles.emptyCard, { bottom: insets.bottom + 24 }]}>
@@ -257,6 +267,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   brandDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary },
   topRight: { position: "absolute", right: 16, flexDirection: "row", alignItems: "center", gap: 8 },
+  createFab: {
+    position: "absolute", right: 16, width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", ...shadow(10),
+  },
   iconBtn: {
     backgroundColor: colors.surface, borderRadius: radius.pill, width: 44, height: 44,
     alignItems: "center", justifyContent: "center", ...shadow(8),

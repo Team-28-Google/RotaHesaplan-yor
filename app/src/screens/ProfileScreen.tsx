@@ -1,6 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -11,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { captureRef } from "react-native-view-shot";
 
-import { countMyComments, countMyRoutes, getFavoriteIds } from "../lib/api";
+import { countMyComments, countMyRoutes, getFavoriteIds, getMyProfile, setMyAvatar, uploadPhoto } from "../lib/api";
 import { signOut } from "../lib/auth";
 import { AUTH_ENABLED, INVITE_URL } from "../lib/config";
 import { success, tap } from "../lib/haptics";
@@ -56,6 +58,43 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const [badges, setBadges] = useState<Badge[]>(buildBadges([], 0, 0, 0));
   const [myRoutes, setMyRoutes] = useState(0);
 
+  // Profil görseli (kullanıcı isteği): kamera/galeri → photos bucket → profiles.avatar_url
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+
+  const launchAvatar = async (src: "camera" | "library") => {
+    try {
+      if (src === "camera") {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) return;
+      }
+      const opts: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ["images"], quality: 0.8, allowsEditing: true, aspect: [1, 1],
+      };
+      const res = src === "camera"
+        ? await ImagePicker.launchCameraAsync(opts)
+        : await ImagePicker.launchImageLibraryAsync(opts);
+      const uri = !res.canceled ? res.assets[0]?.uri : null;
+      if (!uri) return;
+      setAvatarBusy(true);
+      const url = await uploadPhoto(uri);
+      if (url && (await setMyAvatar(url))) {
+        setAvatarUrl(url);
+        success();
+      }
+    } catch { /* izin reddi vb. — sessiz */ }
+    finally { setAvatarBusy(false); }
+  };
+
+  const changeAvatar = () => {
+    tap();
+    Alert.alert("Profil fotoğrafı", undefined, [
+      { text: "📷 Fotoğraf çek", onPress: () => launchAvatar("camera") },
+      { text: "🖼️ Galeriden seç", onPress: () => launchAvatar("library") },
+      { text: "Vazgeç", style: "cancel" },
+    ]);
+  };
+
   // Rozet kutlaması (3.3)
   const [celebrate, setCelebrate] = useState<Badge | null>(null);
   const [celebSharing, setCelebSharing] = useState(false);
@@ -85,6 +124,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         setMyRoutes(routes);
         setBadges(b);
         setEmail(user?.email ?? "");
+        getMyProfile().then((p) => { if (active) setAvatarUrl(p?.avatar_url ?? null); });
 
         // Yeni açılan rozet var mı? (diff → kutlama; ilk kurulumda sessiz kayıt)
         try {
@@ -154,9 +194,20 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       {/* Gezgin kartı: kimlik + istatistikler + rozet ilerlemesi (tema-bağımsız koyu) */}
       <LinearGradient colors={["#1B2447", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.heroCard}>
         <View style={styles.heroTop}>
-          <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatar}>
-            <Text style={styles.avatarText}>{username.slice(0, 1).toUpperCase()}</Text>
-          </LinearGradient>
+          <TouchableOpacity onPress={changeAvatar} activeOpacity={0.85} disabled={avatarBusy}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarPhoto} contentFit="cover" transition={180} />
+            ) : (
+              <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatar}>
+                <Text style={styles.avatarText}>{username.slice(0, 1).toUpperCase()}</Text>
+              </LinearGradient>
+            )}
+            <View style={styles.avatarBadge}>
+              {avatarBusy
+                ? <ActivityIndicator size={10} color="#fff" />
+                : <Ionicons name="camera" size={11} color="#fff" />}
+            </View>
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.heroName}>@{username}</Text>
             <Text style={styles.heroCity}>
@@ -317,6 +368,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   heroTop: { flexDirection: "row", alignItems: "center", gap: 14 },
   avatar: { width: 62, height: 62, borderRadius: 31, alignItems: "center", justifyContent: "center", ...shadow(8) },
   avatarText: { color: "#fff", fontFamily: font.black, fontSize: 25 },
+  avatarPhoto: { width: 62, height: 62, borderRadius: 31, backgroundColor: "rgba(255,255,255,0.1)" },
+  avatarBadge: {
+    position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: 11,
+    backgroundColor: "#F4503B", alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "#141B33",
+  },
   heroName: { color: "#F2F4FC", fontFamily: font.extra, fontSize: 20 },
   heroCity: { color: "#8A93B8", fontFamily: font.medium, fontSize: 12.5, marginTop: 3 },
   heroSignOut: {

@@ -188,6 +188,23 @@ export async function uploadPhoto(localUri: string): Promise<string | null> {
   }
 }
 
+// --------------------------- Profil ---------------------------
+/** Kendi profil satırım (avatar için) — giriş yoksa null. */
+export async function getMyProfile(): Promise<{ avatar_url: string | null } | null> {
+  const uid = await currentUserId();
+  if (!uid) return null;
+  const { data } = await supabase.from("profiles").select("avatar_url").eq("id", uid).single();
+  return (data as { avatar_url: string | null } | null) ?? null;
+}
+
+/** Profil fotoğrafını günceller (URL 'photos' bucket'ından gelir). */
+export async function setMyAvatar(url: string): Promise<boolean> {
+  const uid = await currentUserId();
+  if (!uid) return false;
+  const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", uid);
+  return !error;
+}
+
 // --------------------------- Profil sayaçları ---------------------------
 export async function countMyRoutes(): Promise<number> {
   const uid = await currentUserId();

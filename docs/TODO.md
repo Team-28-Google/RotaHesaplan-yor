@@ -398,6 +398,7 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 7 Tem | Harita [+] · Home avatar→Profil · profil fotoğrafı (kullanıcı istekleri) | Map'te sağ üst rota-oluştur FAB'ı; Home avatarı Profil'e gider + fotoğrafı gösterir; Profil avatarına dokun → kamera/galeri + kare kırpma → photos bucket → profiles.avatar_url |
 | 7 Tem | **3.0c ÇOK ŞEHİR TAMAM** 🏙️ | 5 şehir: 23 seed + şehir-bilinçli plan/üretici/arama + CityPicker (ilk açılışta otomatik). Bonus: arama Google Places'a geçti, SerpApi runtime'dan söküldü, çeyrek-marker fix v2. Seed beğenileri sıfırlandı (yeniden yazım) |
 | 7 Tem | **2.7 AI ROTA ÜRETİCİ TAMAMLANDI** 🎲 | Semt seçimi + Places aday havuzu (≤4km) + iki aşamalı LLM (seçim→enrich anlatısı) + kalıcılık zinciri; 🎲 buton + akıllı tetik (no_match). Canlı ×2: Kadıköy 6 durak (15.7sn) + Balat 5 durak (HTTP). NIM yoğunken yavaşlayabiliyor (150sn timeout) |
 | 7 Tem | Profil redesign + kamera (kullanıcı isteği) | Gezgin kartı (koyu hero: kimlik+istatistik+rozet ilerleme) + ayarlar tek kartta; yorum fotoğrafına "📷 Fotoğraf çek / 🖼️ Galeriden seç" seçimi (kamera izni plugin'i app.json'a eklendi) |
