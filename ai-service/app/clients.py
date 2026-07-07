@@ -282,7 +282,8 @@ def google_places_search(env: dict, query: str, lat: float, lng: float,
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
         "X-Goog-FieldMask": ("places.id,places.displayName,places.location,places.rating,"
-                             "places.userRatingCount,places.priceLevel,places.types,places.photos"),
+                             "places.userRatingCount,places.priceLevel,places.types,"
+                             "places.formattedAddress,places.photos"),
     }
     try:
         r = _req("https://places.googleapis.com/v1/places:searchText", "POST", headers, body, timeout=20)
@@ -303,6 +304,7 @@ def google_places_search(env: dict, query: str, lat: float, lng: float,
             "rating_count": p.get("userRatingCount"),
             "price_level": p.get("priceLevel"),  # enum string (PRICE_LEVEL_MODERATE vb.)
             "types": p.get("types") or [],
+            "address": p.get("formattedAddress"),
             "photo_name": photos[0].get("name") if photos else None,
         })
     return out

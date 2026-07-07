@@ -14,9 +14,9 @@ import time
 import random
 
 from app.clients import (
-    get_route, get_weather, google_photo_url, google_place_lookup, google_places_search,
-    google_walk_leg, load_env, match_routes, nvidia_chat, nvidia_embed, sb_delete,
-    sb_insert, sb_patch, sb_select,
+    _CITY_COORDS, get_route, get_weather, google_photo_url, google_place_lookup,
+    google_places_search, google_walk_leg, load_env, match_routes, nvidia_chat,
+    nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select, serpapi_search,
 )
 
 # --------------------------- Prompt'lar ---------------------------
@@ -717,6 +717,32 @@ def enrich_photos(route_id: str) -> dict:
     if cover_set:
         sb_patch(env, "routes", {"id": f"eq.{route_id}"}, {"cover_photo_url": cover})
     return {"ok": True, "updated": updated, "cover_set": cover_set}
+
+
+# --------------------------- Mekan araması (durak ekleme) ---------------------------
+def search_places(q: str, city: str | None = None) -> list[dict]:
+    """Durak ekleme araması — Google Places (New), AKTİF ŞEHİR merkezine bias'lı.
+    (Eski hali SerpApi + sabit İstanbul merkeziydi: Ankara'da 'Anıtkabir' saçmalıyordu.)
+    Google anahtarı yoksa SerpApi'ye düşer."""
+    env = load_env()
+    c = norm_city(city) or "Istanbul"
+    lat, lng = _CITY_COORDS.get(c.lower(), _CITY_COORDS["istanbul"])
+    results = google_places_search(env, q, lat, lng, radius_m=25000.0, limit=6)
+    if results:
+        out = []
+        for p in results:
+            out.append({
+                "name": p["name"], "lat": p["lat"], "lng": p["lng"],
+                "place_id": p.get("place_id"), "address": p.get("address"),
+                "rating": p.get("rating"),
+                "type": (p.get("types") or [None])[0],
+                # küçük önizleme — CreateRoute thumbnail'ı için (kalıcı URL, key sızmaz)
+                "thumbnail": google_photo_url(env, p.get("photo_name"), max_w=400),
+                "price": None,
+            })
+        return out
+    # yedek yol: Google anahtarı yok/başarısız → SerpApi (şehir merkezli ll ile)
+    return serpapi_search(env, q, ll=f"@{lat},{lng},12z")
 
 
 # --------------------------- Rota geometrisi (Google Routes) ---------------------------

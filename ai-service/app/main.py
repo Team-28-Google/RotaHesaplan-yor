@@ -14,13 +14,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import google_walk_leg, load_env, nvidia_embed, serpapi_search
+from app.clients import google_walk_leg, load_env, nvidia_embed
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
 from app.pipeline import enrich_route as run_enrich_route
 from app.pipeline import plan_route as run_pipeline
 from app.pipeline import route_geometry as run_route_geometry
 from app.pipeline import save_memory_event, save_onboarding_memory, summarize_comments
+from app.pipeline import search_places as run_search_places
 
 app = FastAPI(title="SANA AI Service", version="0.2.0")
 app.add_middleware(
@@ -83,6 +84,7 @@ class EmbedRouteRequest(BaseModel):
 
 class SearchRequest(BaseModel):
     q: str = Field(..., min_length=1)
+    city: str | None = None  # 3.0c: arama aktif şehir merkezine bias'lanır
 
 
 @app.get("/health")
@@ -183,5 +185,5 @@ def route_geometry(req: EmbedRouteRequest) -> dict:
 
 @app.post("/search-place")
 def search_place(req: SearchRequest) -> dict:
-    """Mekan araması (SerpApi) — rota oluştururken durak eklemek için."""
-    return {"results": serpapi_search(load_env(), req.q)}
+    """Mekan araması — Google Places (New), aktif şehre bias'lı (SerpApi yedek)."""
+    return {"results": run_search_places(req.q, req.city)}
