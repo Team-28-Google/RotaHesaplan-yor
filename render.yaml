@@ -31,10 +31,6 @@ services:
         value: nvidia/nv-embedqa-e5-v5
       - key: EMBED_DIM
         value: "1024"
-      - key: MAPS_PROVIDER
-        value: serpapi
-      - key: SERPAPI_KEY
-        sync: false
       - key: GOOGLE_SERVER_API_KEY
         sync: false
       - key: OPENWEATHER_API_KEY

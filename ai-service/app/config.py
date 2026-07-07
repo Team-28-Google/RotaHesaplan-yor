@@ -27,9 +27,7 @@ class Settings(BaseSettings):
     gemini_chat_model: str = "gemini-2.0-flash"
     gemini_embed_model: str = "text-embedding-004"
 
-    # Harita verisi sağlayıcı (mekan + yürüyüş mesafesi)
-    maps_provider: Literal["serpapi", "google"] = "serpapi"
-    serpapi_key: str = ""
+    # Harita/mekan verisi: Google Places + Routes (GOOGLE_SERVER_API_KEY, clients.py okur)
     google_maps_api_key: str = ""   # SADECE app harita GÖSTERİMİ (Android SDK, mobilde ücretsiz)
     openweather_api_key: str = ""
 

@@ -38,7 +38,7 @@ def load_env(path: str | None = None) -> dict:
         if os.environ.get(k):
             env[k] = os.environ[k]
     # .env dosyası olmayan ortamlar (Render vb.): ilgili değişkenleri os.environ'dan tamamla
-    _PREFIXES = ("SUPABASE_", "NVIDIA_", "GOOGLE_", "GEMINI_", "SERPAPI", "OPENWEATHER", "MAPS_", "LLM_", "EMBED_")
+    _PREFIXES = ("SUPABASE_", "NVIDIA_", "GOOGLE_", "GEMINI_", "OPENWEATHER", "LLM_", "EMBED_")
     for k, v in os.environ.items():
         if k not in env and k.startswith(_PREFIXES):
             env[k] = v
@@ -307,44 +307,6 @@ def google_places_search(env: dict, query: str, lat: float, lng: float,
             "address": p.get("formattedAddress"),
             "photo_name": photos[0].get("name") if photos else None,
         })
-    return out
-
-
-# --------------------------- SerpApi mekan arama ---------------------------
-_SEARCH_CACHE: dict = {}
-
-
-def serpapi_search(env: dict, query: str, ll: str = "@41.0082,28.9784,12z", hl: str = "tr") -> list[dict]:
-    """Mekan araması (Google Maps engine). Kota dostu basit cache."""
-    key = query.lower().strip()
-    if not key:
-        return []
-    if key in _SEARCH_CACHE:
-        return _SEARCH_CACHE[key]
-    params = urllib.parse.urlencode({
-        "engine": "google_maps", "q": query, "ll": ll, "hl": hl,
-        "type": "search", "api_key": env.get("SERPAPI_KEY", ""),
-    })
-    try:
-        r = _req("https://serpapi.com/search?" + params, "GET")
-    except Exception:  # noqa: BLE001
-        return []
-    out = []
-    for item in (r.get("local_results") or [])[:8]:
-        gps = item.get("gps_coordinates") or {}
-        if not gps.get("latitude"):
-            continue
-        out.append({
-            "name": item.get("title"),
-            "lat": gps["latitude"], "lng": gps["longitude"],
-            "place_id": item.get("place_id"),
-            "address": item.get("address"),
-            "rating": item.get("rating"),
-            "thumbnail": item.get("thumbnail"),
-            "price": item.get("price"),
-            "type": item.get("type"),
-        })
-    _SEARCH_CACHE[key] = out
     return out
 
 
