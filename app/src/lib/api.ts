@@ -44,6 +44,35 @@ export async function fetchRoute(routeId: string): Promise<RouteWithWaypoints> {
   return route;
 }
 
+// --------------------------- Rota düzenleme (2.7b) ---------------------------
+/** Rotadan durak çıkarır — yalnız rota sahibi yapabilir (RLS). */
+export async function removeStop(waypointId: string): Promise<void> {
+  const { error } = await supabase.from("waypoints").delete().eq("id", waypointId);
+  if (error) throw error;
+}
+
+/** Rotanın sonuna arama sonucundan durak ekler — yalnız rota sahibi (RLS). */
+export async function addStop(routeId: string, place: PlaceResult, seq: number): Promise<void> {
+  const { error } = await supabase.from("waypoints").insert({
+    route_id: routeId, seq, name: place.name, lat: place.lat, lng: place.lng,
+    kind: "experience", transport_mode: "walk", category: "other",
+    place_id: place.place_id ?? null,
+    photo_urls: place.thumbnail ? [place.thumbnail] : [],
+  });
+  if (error) throw error;
+}
+
+/** Durak değişince arka planda geometri + foto/puanı tazeler (hatalar yutulur). */
+export async function refreshRouteExtras(routeId: string): Promise<void> {
+  const post = (path: string) =>
+    fetchWithTimeout(`${AI_SERVICE_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ route_id: routeId }),
+    }, 45_000).then(() => undefined, () => undefined);
+  await Promise.all([post("/route-geometry"), post("/enrich-photos")]);
+}
+
 /** Haftalık liderlik (3.5) — view yoksa/boşsa sessizce boş liste. */
 export async function fetchWeeklyLeaderboard(): Promise<LeaderRow[]> {
   try {
@@ -177,11 +206,18 @@ export async function countMyComments(): Promise<number> {
   return count ?? 0;
 }
 
+/** 🎲 Üretim merkezi (2.7b): kullanıcı konumu YA DA semt adı; ikisi de yoksa AI semt seçer. */
+export interface GenOptions {
+  lat?: number;
+  lng?: number;
+  district?: string;
+}
+
 /** AI servisine doğal dil niyeti gönderir → kişiselleştirilmiş rota + flood anlatısı.
  *  Giriş yapılmışsa user_id eklenir (2.1); forceWeatherFit="indoor" → ☔ kapalı alternatif (2.5);
  *  forceGenerate → 🎲 yepyeni rota üretilir (2.7, daha uzun sürer). */
 export async function planRoute(
-  text: string, forceWeatherFit?: "indoor", forceGenerate?: boolean,
+  text: string, forceWeatherFit?: "indoor", forceGenerate?: boolean, gen?: GenOptions,
 ): Promise<PlanResponse> {
   const uid = await currentUserId();
   let res: Response;
@@ -194,6 +230,9 @@ export async function planRoute(
         user_id: uid ?? undefined,
         force_weather_fit: forceWeatherFit,
         force_generate: forceGenerate || undefined,
+        gen_lat: gen?.lat,
+        gen_lng: gen?.lng,
+        gen_district: gen?.district,
       }),
     }, forceGenerate ? 150_000 : 90_000);
   } catch (e) {

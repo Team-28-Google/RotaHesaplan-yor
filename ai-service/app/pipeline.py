@@ -242,10 +242,18 @@ def _gather_candidates(env: dict, district: dict, vibe_tags: list, mood: str) ->
 
 
 def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_max: int,
-                    user_id: str | None, profile_text: str, _mark) -> dict | None:
-    """Yepyeni rota üret + kalıcılaştır + zenginleştir. Başarısızsa None (çağıran no_match döner)."""
+                    user_id: str | None, profile_text: str, _mark,
+                    gen_center: tuple | None = None, gen_district: str | None = None) -> dict | None:
+    """Yepyeni rota üret + kalıcılaştır + zenginleştir. Başarısızsa None (çağıran no_match döner).
+    Merkez önceliği: kullanıcı konumu > seçilen semt > AI semt seçimi (2.7b)."""
     city = "Istanbul"  # 3.0c çok şehirde semt haritası şehir-parametreli olacak
-    district = _pick_district(intent.get("vibe_tags") or [], intent.get("mood") or "")
+    if gen_center:
+        district = {"name": "konumunun çevresi", "lat": gen_center[0], "lng": gen_center[1], "vibes": []}
+    elif gen_district:
+        district = next((d for d in _DISTRICTS if d["name"] == gen_district), None) \
+            or _pick_district(intent.get("vibe_tags") or [], intent.get("mood") or "")
+    else:
+        district = _pick_district(intent.get("vibe_tags") or [], intent.get("mood") or "")
     cands = _gather_candidates(env, district, intent.get("vibe_tags") or [], intent.get("mood") or "")
     _mark("Mekânlar arandı", f"{len(cands)} gerçek aday · {district['name']}")
     if len(cands) < 4:
@@ -351,7 +359,8 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
 
 
 def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None,
-               force_generate: bool = False) -> dict:
+               force_generate: bool = False, gen_center: tuple | None = None,
+               gen_district: str | None = None) -> dict:
     env = load_env()
 
     # Agent adımları: her aşamanın süresi + tek satır özeti (app bekleme ekranı + jüri için)
@@ -407,7 +416,8 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
 
     def _generated_response() -> dict | None:
         """2.7: yepyeni rota üret; başarılıysa plan_route ile aynı şekilde yanıt döndür."""
-        g = _generate_route(env, text, intent, weather, budget_max, user_id, profile_text, _mark)
+        g = _generate_route(env, text, intent, weather, budget_max, user_id, profile_text, _mark,
+                            gen_center, gen_district)
         if not g:
             return None
         return {

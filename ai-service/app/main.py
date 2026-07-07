@@ -39,6 +39,10 @@ class PlanRouteRequest(BaseModel):
     user_id: str | None = None  # verilirse plan kullanıcının hafızasıyla kişiselleştirilir
     force_weather_fit: str | None = Field(None, pattern="^(indoor|outdoor|any)$")  # ☔ kapalı alternatif
     force_generate: bool = False  # 🎲 AI Rota Üretici (2.7): havuzdan değil, yepyeni rota kur
+    # 🎲 üretim merkezi (2.7b): kullanıcı konumu YA DA semt adı; ikisi de yoksa AI semt seçer
+    gen_lat: float | None = None
+    gen_lng: float | None = None
+    gen_district: str | None = None
 
 
 class OnboardingMemoryRequest(BaseModel):
@@ -98,7 +102,9 @@ def embed(req: EmbedRequest) -> dict:
 def plan_route(req: PlanRouteRequest) -> dict:
     """Deterministik AI pipeline: niyet (+kullanıcı hafızası) → rota → AI flood anlatısı."""
     try:
-        return run_pipeline(req.text, req.user_id, req.force_weather_fit, req.force_generate)
+        gen_center = (req.gen_lat, req.gen_lng) if req.gen_lat is not None and req.gen_lng is not None else None
+        return run_pipeline(req.text, req.user_id, req.force_weather_fit, req.force_generate,
+                            gen_center, req.gen_district)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
 

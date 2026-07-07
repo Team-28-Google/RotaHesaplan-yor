@@ -1,16 +1,20 @@
+import * as Location from "expo-location";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
-import { planRoute, setFavorite } from "../lib/api";
+import {
+  addStop, fetchRoute, planRoute, refreshRouteExtras, removeStop, searchPlaces, setFavorite,
+  type GenOptions,
+} from "../lib/api";
 import { pop, tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
-import type { PlanResponse } from "../lib/types";
+import type { PlaceResult, PlanResponse, Waypoint } from "../lib/types";
 import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 import type { PlanScreenProps } from "../navigation";
 
@@ -19,6 +23,12 @@ const SUGGESTIONS = [
   "Tarihi ve kültürel yerler gezmek",
   "Boğazda açık havada yürüyüş",
   "Müze ve kapalı mekanlar, bütçe orta",
+];
+
+// 🎲 Üretim semtleri — servisteki _DISTRICTS ile birebir aynı adlar (2.7b)
+const GEN_DISTRICTS = [
+  "Kadıköy · Moda", "Balat", "Karaköy · Galata", "Üsküdar",
+  "Ortaköy", "Sultanahmet", "Bebek · Arnavutköy",
 ];
 
 // Pipeline'ın GERÇEK aşamaları (servis bunları aynı sırayla yürütür; bekleme ekranı akışı)
@@ -85,14 +95,37 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   const [result, setResult] = useState<PlanResponse | null>(null);
 
   const [genMode, setGenMode] = useState(false); // 🎲 bekleme adımları üretim varyantında aksın
+  // 2.7b: mod en başta seçilir; üretimde başlangıç konumu sorulur
+  const [mode, setMode] = useState<"match" | "generate">("match");
+  const [loc, setLoc] = useState<string>("ai"); // "ai" | "me" | semt adı
+  const [myLoc, setMyLoc] = useState<{ lat: number; lng: number } | null>(null);
 
-  const submit = async (force?: "indoor", generate = false) => {
+  // "📍 Konumum": izni ancak kullanıcı isteyince sor (Plan'a girer girmez prompt açılmasın)
+  const pickMyLocation = async () => {
+    tap();
+    setLoc("me");
+    if (myLoc) return;
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") { setLoc("ai"); return; }
+      const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setMyLoc({ lat: p.coords.latitude, lng: p.coords.longitude });
+    } catch { setLoc("ai"); }
+  };
+
+  const submit = async (force?: "indoor", generateOverride?: boolean) => {
     if (!text.trim()) return;
+    const generate = generateOverride ?? mode === "generate";
+    let gen: GenOptions | undefined;
+    if (generate) {
+      if (loc === "me" && myLoc) gen = myLoc;
+      else if (loc !== "ai" && loc !== "me") gen = { district: loc };
+    }
     setGenMode(generate);
     setLoading(true);
     setError(null);
     try {
-      const res = await planRoute(text.trim(), force, generate);
+      const res = await planRoute(text.trim(), force, generate, gen);
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bir hata oluştu");
@@ -138,7 +171,67 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
         >
           <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <Text style={styles.h1}>Nasıl bir gün istiyorsun?</Text>
-        <Text style={styles.h2}>Ruh halini yaz; SANA hafızasından sana göre bir rota kursun.</Text>
+        <Text style={styles.h2}>
+          {mode === "generate"
+            ? "Ruh halini yaz; SANA gerçek mekânlardan sıfırdan rota kursun."
+            : "Ruh halini yaz; SANA hafızasından sana göre bir rota kursun."}
+        </Text>
+
+        {/* 2.7b: kaynak seçimi en başta */}
+        <View style={styles.modeRow}>
+          <TouchableOpacity
+            style={[styles.modeChip, mode === "match" && styles.modeChipOn]}
+            onPress={() => { tap(); setMode("match"); }}
+          >
+            <Text style={[styles.modeText, mode === "match" && styles.modeTextOn]}>
+              {mode === "match" ? "✓ " : ""}📚 Kayıtlı rotalardan
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeChip, mode === "generate" && styles.modeChipOn]}
+            onPress={() => { tap(); setMode("generate"); }}
+          >
+            <Text style={[styles.modeText, mode === "generate" && styles.modeTextOn]}>
+              {mode === "generate" ? "✓ " : ""}🎲 Yepyeni üret
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 2.7b: üretimde başlangıç konumu sor */}
+        {mode === "generate" && (
+          <View style={{ gap: 8 }}>
+            <Text style={styles.locLabel}>Nereden başlayalım?</Text>
+            <View style={styles.chips}>
+              <TouchableOpacity
+                style={[styles.locChip, loc === "ai" && styles.locChipOn]}
+                onPress={() => { tap(); setLoc("ai"); }}
+              >
+                <Text style={[styles.locChipText, loc === "ai" && styles.locChipTextOn]}>
+                  {loc === "ai" ? "✓ " : ""}✨ AI seçsin
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.locChip, loc === "me" && styles.locChipOn]}
+                onPress={pickMyLocation}
+              >
+                <Text style={[styles.locChipText, loc === "me" && styles.locChipTextOn]}>
+                  {loc === "me" ? "✓ " : ""}📍 Konumum{loc === "me" && !myLoc ? " (alınıyor…)" : ""}
+                </Text>
+              </TouchableOpacity>
+              {GEN_DISTRICTS.map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.locChip, loc === d && styles.locChipOn]}
+                  onPress={() => { tap(); setLoc(d); }}
+                >
+                  <Text style={[styles.locChipText, loc === d && styles.locChipTextOn]}>
+                    {loc === d ? "✓ " : ""}{d}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
         <TextInput
           style={styles.input}
@@ -150,11 +243,18 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
         />
 
         <View style={styles.chips}>
-          {SUGGESTIONS.map((s) => (
-            <TouchableOpacity key={s} style={styles.chip} onPress={() => setText(s)}>
-              <Text style={styles.chipText}>{s}</Text>
-            </TouchableOpacity>
-          ))}
+          {SUGGESTIONS.map((s) => {
+            const on = text === s;
+            return (
+              <TouchableOpacity
+                key={s}
+                style={[styles.locChip, on && styles.locChipOn]}
+                onPress={() => { tap(); setText(on ? "" : s); }}
+              >
+                <Text style={[styles.locChipText, on && styles.locChipTextOn]}>{on ? "✓ " : ""}{s}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {error && <Text style={styles.error}>⚠️ {error}</Text>}
@@ -168,7 +268,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.btnText}>✨ Planla</Text>
+            <Text style={styles.btnText}>{mode === "generate" ? "🎲 Rota Üret" : "✨ Planla"}</Text>
           )}
         </TouchableOpacity>
             {loading && <AgentProgress generating={genMode} />}
@@ -189,8 +289,57 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [saved, setSaved] = useState(false);
-  const route = result.route;
+  // 2.7b: üretilen rota düzenlenebilir → route yerel state'te yaşar
+  const [route, setRoute] = useState(result.route);
+  useEffect(() => { setRoute(result.route); }, [result.route]);
   const ai = result.ai ?? {};
+  const editable = !!result.generated; // yalnız üretilen (sahibi = kullanıcı) rotalar
+
+  const [editBusy, setEditBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [q, setQ] = useState("");
+  const [places, setPlaces] = useState<PlaceResult[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  const refreshRoute = async () => {
+    if (!route) return;
+    try { setRoute(await fetchRoute(route.id)); } catch { /* sessiz */ }
+  };
+
+  const onRemoveStop = async (w: Waypoint) => {
+    if (!route || editBusy) return;
+    tap();
+    setEditBusy(true);
+    try {
+      await removeStop(w.id);
+      await refreshRoute(); // liste anında güncellenir
+      refreshRouteExtras(route.id).then(refreshRoute); // geometri/süre arka planda tazelenir
+    } catch { /* RLS reddi vb. — sessiz */ }
+    finally { setEditBusy(false); }
+  };
+
+  const doSearch = async () => {
+    if (!q.trim() || searching) return;
+    setSearching(true);
+    try { setPlaces(await searchPlaces(q.trim())); } catch { setPlaces([]); }
+    finally { setSearching(false); }
+  };
+
+  const onAddStop = async (p: PlaceResult) => {
+    if (!route || editBusy) return;
+    tap();
+    setAdding(false);
+    setQ("");
+    setPlaces([]);
+    setEditBusy(true);
+    try {
+      const maxSeq = Math.max(-1, ...route.waypoints.map((w) => w.seq));
+      await addStop(route.id, p, maxSeq + 1);
+      await refreshRoute();
+      refreshRouteExtras(route.id).then(refreshRoute);
+    } catch { /* sessiz */ }
+    finally { setEditBusy(false); }
+  };
 
   const savePlan = async () => {
     if (!route || saved) return;
@@ -229,7 +378,11 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
     );
   }
 
-  const narrative = (i: number) => ai.stops?.find((s) => s.seq === i)?.narrative ?? exp[i]?.note ?? "";
+  // Üretilen rotada anlatı waypoint.note'ta yaşar (düzenlemede index kayar → ai.stops eşleşmez)
+  const narrative = (i: number) =>
+    result.generated
+      ? exp[i]?.note ?? ""
+      : ai.stops?.find((s) => s.seq === i)?.narrative ?? exp[i]?.note ?? "";
 
   return (
     <View style={styles.container}>
@@ -253,9 +406,10 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
             {!!result.steps?.length && (
               <View style={styles.stepsBox}>
                 <Text style={styles.stepsTitle}>⚙️ AGENT ADIMLARI</Text>
+                {/* Süreler bilinçli gizli (premium his) — s.ms API'de duruyor, gerekirse geri açılır */}
                 {result.steps.map((s) => (
                   <Text key={s.name} style={styles.stepLine}>
-                    ✓ {s.name} · {(s.ms / 1000).toFixed(1)}sn{s.note ? ` · ${s.note}` : ""}
+                    ✓ {s.name}{s.note ? ` · ${s.note}` : ""}
                   </Text>
                 ))}
               </View>
@@ -303,12 +457,31 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
                       </Text>
                     </View>
                   )}
-                  <Text style={styles.stopName}>{waypointIcon(w)} {w.name}</Text>
+                  <View style={styles.stopHead}>
+                    <Text style={[styles.stopName, { flex: 1 }]}>{waypointIcon(w)} {w.name}</Text>
+                    {editable && exp.length > 2 && (
+                      <TouchableOpacity onPress={() => onRemoveStop(w)} hitSlop={10} disabled={editBusy}>
+                        <Text style={[styles.stopRemove, editBusy && { opacity: 0.4 }]}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   {!!narrative(i) && <Text style={styles.stopNote}>{narrative(i)}</Text>}
                 </View>
               </View>
             ))}
           </View>
+
+          {/* 2.7b: üretilen rotaya durak ekle */}
+          {editable && (
+            <TouchableOpacity
+              style={[styles.addStopBtn, editBusy && { opacity: 0.5 }]}
+              onPress={() => { tap(); setAdding(true); }}
+              disabled={editBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.addStopText}>{editBusy ? "Güncelleniyor…" : "＋ Durak ekle"}</Text>
+            </TouchableOpacity>
+          )}
 
           {util.length > 0 && (
             <View style={styles.nearby}>
@@ -361,6 +534,45 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
           </TouchableOpacity>
         </ScrollView>
       </View>
+
+      {/* 2.7b: durak ekleme — mekan arama (SerpApi, CreateRoute ile aynı kaynak) */}
+      <Modal visible={adding} transparent animationType="slide" onRequestClose={() => setAdding(false)}>
+        <View style={styles.addBg}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setAdding(false)} />
+          <View style={styles.addSheet}>
+            <View style={styles.addHandle} />
+            <Text style={styles.addTitle}>Durak ekle</Text>
+            <View style={styles.addRow}>
+              <TextInput
+                style={styles.addInput}
+                value={q}
+                onChangeText={setQ}
+                placeholder="Mekan ara (örn. Moda Sahili)"
+                placeholderTextColor={colors.textFaint}
+                autoFocus
+                returnKeyType="search"
+                onSubmitEditing={doSearch}
+              />
+              <TouchableOpacity style={styles.addSearchBtn} onPress={doSearch} disabled={searching}>
+                {searching ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.addSearchText}>Ara</Text>}
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 300 }} keyboardShouldPersistTaps="handled">
+              {places.map((p) => (
+                <TouchableOpacity key={`${p.place_id ?? p.name}-${p.lat}`} style={styles.addResult} onPress={() => onAddStop(p)}>
+                  <Text style={styles.addResultName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={styles.addResultMeta} numberOfLines={1}>
+                    {[p.type, p.address, p.rating ? `★${p.rating}` : null].filter(Boolean).join(" · ")}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {places.length === 0 && !searching && (
+                <Text style={styles.addEmpty}>Arama yap — sonuçtan seçtiğin durak rotanın sonuna eklenir.</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -387,8 +599,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 8 },
-  chipText: { fontSize: 13, color: colors.primaryDark, fontFamily: font.semibold },
   error: { color: colors.danger, fontFamily: font.medium },
   reason: { color: colors.textFaint, fontFamily: font.regular, fontSize: 13, textAlign: "center" },
   btn: {
@@ -476,8 +686,55 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
 
   resetBtn: { marginHorizontal: 20, marginTop: 12 },
 
-  // 🎲 AI Rota Üretici (2.7)
+  // 🎲 AI Rota Üretici (2.7 + 2.7b)
   genHint: { marginTop: 10, color: colors.textMuted, fontFamily: font.medium, fontSize: 12.5, textAlign: "center" },
+  modeRow: { flexDirection: "row", gap: 8 },
+  modeChip: {
+    flex: 1, paddingVertical: 11, alignItems: "center", borderRadius: radius.lg,
+    backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
+  },
+  modeChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  modeText: { fontSize: 13.5, fontFamily: font.bold, color: colors.textMuted },
+  modeTextOn: { color: "#fff" },
+  locLabel: { fontSize: 13, fontFamily: font.bold, color: colors.textMuted },
+  // Konum çipleri: nötr zemin, SEÇİLİ = dolgulu mercan + beyaz (öneri çiplerinden farklı —
+  // onlar primarySoft olduğu için seçim durumu orada görünmüyordu)
+  locChip: {
+    backgroundColor: colors.surfaceAlt, borderRadius: radius.pill,
+    paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.border,
+  },
+  locChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  locChipText: { fontSize: 13, color: colors.textMuted, fontFamily: font.semibold },
+  locChipTextOn: { color: "#fff", fontFamily: font.bold },
+  stopHead: { flexDirection: "row", alignItems: "center", gap: 8 },
+  stopRemove: { color: colors.danger, fontFamily: font.black, fontSize: 15, paddingHorizontal: 4 },
+  addStopBtn: {
+    marginHorizontal: 20, marginTop: 4, paddingVertical: 12, alignItems: "center",
+    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, borderStyle: "dashed",
+  },
+  addStopText: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 14 },
+  addBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  addSheet: {
+    backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24,
+  },
+  addHandle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 10 },
+  addTitle: { fontSize: 17, fontFamily: font.extra, color: colors.text, marginBottom: 10 },
+  addRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  addInput: {
+    flex: 1, height: 44, backgroundColor: colors.surfaceAlt, borderRadius: radius.md,
+    paddingHorizontal: 12, color: colors.text, fontFamily: font.regular, fontSize: 14,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  addSearchBtn: {
+    paddingHorizontal: 18, height: 44, borderRadius: radius.md, backgroundColor: colors.primary,
+    alignItems: "center", justifyContent: "center",
+  },
+  addSearchText: { color: "#fff", fontFamily: font.bold, fontSize: 14 },
+  addResult: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
+  addResultName: { color: colors.text, fontFamily: font.bold, fontSize: 14.5 },
+  addResultMeta: { color: colors.textFaint, fontFamily: font.medium, fontSize: 12, marginTop: 2 },
+  addEmpty: { color: colors.textFaint, fontFamily: font.medium, fontSize: 12.5, paddingVertical: 14, textAlign: "center" },
   genBtn: {
     marginHorizontal: 20, marginTop: 14, paddingVertical: 13, alignItems: "center",
     borderRadius: radius.lg, backgroundColor: colors.primarySoft,
