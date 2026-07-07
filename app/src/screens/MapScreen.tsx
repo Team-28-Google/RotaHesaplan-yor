@@ -11,6 +11,7 @@ import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import PressableScale from "../components/PressableScale";
 import { fetchRoutes } from "../lib/api";
 import { signOut } from "../lib/auth";
+import { cityInfo, getActiveCity } from "../lib/cities";
 import { AUTH_ENABLED } from "../lib/config";
 import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
@@ -34,10 +35,12 @@ export default function MapScreen({ navigation }: MapScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [city, setCity] = useState("Istanbul"); // 3.0c: aktif şehir (Home'dan seçilir)
   const listRef = useRef<FlatList<RouteWithWaypoints>>(null);
 
   const load = useCallback(() => {
-    fetchRoutes()
+    getActiveCity()
+      .then((c) => { setCity(c); return fetchRoutes(c); })
       .then((r) => { setRoutes(r); setError(null); })
       .catch((e) => setError(e instanceof Error ? e.message : "Rotalar yüklenemedi"))
       .finally(() => setLoading(false));
@@ -157,7 +160,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         <View style={styles.brandDot} />
         <View>
           <Text style={styles.brand}>SANA</Text>
-          <Text style={styles.brandSub}>İstanbul · {routes.length} rota keşfet</Text>
+          <Text style={styles.brandSub}>{cityInfo(city).label} · {routes.length} rota keşfet</Text>
         </View>
       </TouchableOpacity>
 

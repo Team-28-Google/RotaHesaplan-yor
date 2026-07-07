@@ -1,4 +1,5 @@
 import { AI_SERVICE_URL } from "./config";
+import { getActiveCity } from "./cities";
 import { supabase } from "./supabase";
 import type { CreateStop, EnrichResult, LeaderRow, PlaceResult, PlanResponse, RouteWithWaypoints, Waypoint } from "./types";
 
@@ -17,11 +18,13 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 const isAbort = (e: unknown) => e instanceof Error && e.name === "AbortError";
 
 /** Tüm rotaları sıralı waypoint'leriyle birlikte getirir (en yeni önce). */
-export async function fetchRoutes(): Promise<RouteWithWaypoints[]> {
-  const { data, error } = await supabase
+export async function fetchRoutes(city?: string): Promise<RouteWithWaypoints[]> {
+  let q = supabase
     .from("routes")
     .select("*, waypoints(*)")
     .order("created_at", { ascending: false });
+  if (city) q = q.eq("city", city); // 3.0c: aktif şehre filtre
+  const { data, error } = await q;
 
   if (error) throw error;
   return (data ?? []).map((r) => ({
@@ -233,6 +236,7 @@ export async function planRoute(
         gen_lat: gen?.lat,
         gen_lng: gen?.lng,
         gen_district: gen?.district,
+        city: await getActiveCity(), // 3.0c: cümlede şehir yoksa bu kullanılır
       }),
     }, forceGenerate ? 150_000 : 90_000);
   } catch (e) {
@@ -329,49 +333,26 @@ export async function fetchCommentSummary(routeId: string): Promise<CommentSumma
 }
 
 // --------------------------- Rota oluşturma ---------------------------
-interface PhotonFeature {
-  geometry?: { coordinates?: [number, number] };
-  properties?: {
-    name?: string; street?: string; housenumber?: string;
-    district?: string; city?: string; county?: string; state?: string; country?: string;
-    osm_key?: string; osm_value?: string;
-  };
-}
-
 /**
- * Mekan ara — Photon (Komoot, OpenStreetMap tabanlı) ile DOĞRUDAN.
- * Sunucu/anahtar/fatura gerekmez; AI servisi kapalı olsa bile çalışır.
- * İstanbul merkezine yanlı; yazdıkça çağrılabilir.
+ * Mekan ara — AI servisi üzerinden Google Places (New), AKTİF ŞEHİR merkezine bias'lı.
+ * (Eski hali doğrudan Photon/OSM + sabit İstanbul bias'ıydı — Ankara'da "Anıtkabir"
+ * araması saçmalıyordu; foto/puan da gelmiyordu.)
  */
 export async function searchPlaces(q: string): Promise<PlaceResult[]> {
-  const url =
-    `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}` +
-    `&limit=8&lang=default&lat=41.0082&lon=28.9784&location_bias_scale=0.4`;
   let res: Response;
   try {
-    res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } }, 12_000);
+    res = await fetchWithTimeout(`${AI_SERVICE_URL}/search-place`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q, city: await getActiveCity() }),
+    }, 20_000);
   } catch (e) {
     if (isAbort(e)) throw new Error("Arama zaman aşımına uğradı. Tekrar dene.");
-    throw new Error("İnternete ulaşılamadı. Bağlantını kontrol et.");
+    throw new Error("AI servisine ulaşılamadı (npm run ai açık mı, aynı Wi-Fi mi?)");
   }
   if (!res.ok) throw new Error(`Arama hatası (${res.status})`);
-  const data = (await res.json()) as { features?: PhotonFeature[] };
-  return (data.features ?? [])
-    .filter((f) => Array.isArray(f.geometry?.coordinates) && f.geometry!.coordinates!.length === 2)
-    .map((f) => {
-      const p = f.properties ?? {};
-      const [lng, lat] = f.geometry!.coordinates!;
-      const line = [
-        p.street ? (p.housenumber ? `${p.street} ${p.housenumber}` : p.street) : undefined,
-        p.district, p.city ?? p.county, p.state,
-      ].filter(Boolean) as string[];
-      return {
-        name: p.name || p.street || p.city || q,
-        lat, lng,
-        address: line.length ? Array.from(new Set(line)).join(", ") : undefined,
-        type: p.osm_value || p.osm_key || undefined,
-      } as PlaceResult;
-    });
+  const data = (await res.json()) as { results?: PlaceResult[] };
+  return data.results ?? [];
 }
 
 /** Eklenen durakları AI ile zenginleştir (başlık/etiket/kategori/anlatı). */
@@ -417,7 +398,8 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
   const { data: routeRow, error } = await supabase
     .from("routes")
     .insert({
-      author_id: uid, title: input.title, description: input.description, city: "Istanbul",
+      author_id: uid, title: input.title, description: input.description,
+      city: await getActiveCity(),
       vibe_tags: input.vibe_tags, weather_fit: input.weather_fit, budget_level: 2,
       is_seed: false, total_distance_m: dist, total_duration_min: Math.round(dist / 80),
     })

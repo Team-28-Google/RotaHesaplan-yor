@@ -1,5 +1,6 @@
+import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -11,6 +12,7 @@ import {
   addStop, fetchRoute, planRoute, refreshRouteExtras, removeStop, searchPlaces, setFavorite,
   type GenOptions,
 } from "../lib/api";
+import { cityInfo, getActiveCity } from "../lib/cities";
 import { pop, tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
@@ -21,14 +23,8 @@ import type { PlanScreenProps } from "../navigation";
 const SUGGESTIONS = [
   "Kafa dinlemek istiyorum, bütçem az",
   "Tarihi ve kültürel yerler gezmek",
-  "Boğazda açık havada yürüyüş",
+  "Açık havada uzun bir yürüyüş",
   "Müze ve kapalı mekanlar, bütçe orta",
-];
-
-// 🎲 Üretim semtleri — servisteki _DISTRICTS ile birebir aynı adlar (2.7b)
-const GEN_DISTRICTS = [
-  "Kadıköy · Moda", "Balat", "Karaköy · Galata", "Üsküdar",
-  "Ortaköy", "Sultanahmet", "Bebek · Arnavutköy",
 ];
 
 // Pipeline'ın GERÇEK aşamaları (servis bunları aynı sırayla yürütür; bekleme ekranı akışı)
@@ -99,6 +95,19 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   const [mode, setMode] = useState<"match" | "generate">("match");
   const [loc, setLoc] = useState<string>("ai"); // "ai" | "me" | semt adı
   const [myLoc, setMyLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeCity, setActiveCityState] = useState("Istanbul"); // 3.0c: semtler şehre göre
+  const districts = cityInfo(activeCity).districts;
+
+  // Home'da şehir değişmiş olabilir — sekmeye dönüşte tazele; eski semt seçimi geçersizse sıfırla
+  useFocusEffect(
+    useCallback(() => {
+      getActiveCity().then((c) => {
+        setActiveCityState(c);
+        setLoc((prev) =>
+          prev !== "ai" && prev !== "me" && !cityInfo(c).districts.includes(prev) ? "ai" : prev);
+      });
+    }, []),
+  );
 
   // "📍 Konumum": izni ancak kullanıcı isteyince sor (Plan'a girer girmez prompt açılmasın)
   const pickMyLocation = async () => {
@@ -218,7 +227,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
                   {loc === "me" ? "✓ " : ""}📍 Konumum{loc === "me" && !myLoc ? " (alınıyor…)" : ""}
                 </Text>
               </TouchableOpacity>
-              {GEN_DISTRICTS.map((d) => (
+              {districts.map((d) => (
                 <TouchableOpacity
                   key={d}
                   style={[styles.locChip, loc === d && styles.locChipOn]}

@@ -2,16 +2,18 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import CityPicker from "../components/CityPicker";
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
 import { fetchRoutes, fetchWeeklyLeaderboard } from "../lib/api";
 import { signOut } from "../lib/auth";
+import { cityInfo, getActiveCity, getChosenCity, setActiveCity } from "../lib/cities";
 import { AUTH_ENABLED } from "../lib/config";
 import { tap } from "../lib/haptics";
 import { getOnboarding } from "../lib/onboarding";
@@ -61,27 +63,50 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
   const [leaders, setLeaders] = useState<LeaderRow[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
+  const [city, setCity] = useState("Istanbul"); // 3.0c: aktif şehir
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (cityKey?: string) => {
     try {
-      setRoutes(await fetchRoutes());
+      const c = cityKey ?? (await getActiveCity());
+      setCity(c);
+      setRoutes(await fetchRoutes(c));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Yüklenemedi");
     }
   }, []);
 
-  // Sekmeye her dönüşte sessiz yenile (yeni rota / beğeni / tercih güncel kalsın)
+  // İlk açılışta şehir hiç seçilmemişse seçiciyi kendiliğinden aç (keşfedilebilirlik);
+  // kullanıcı kapatırsa bu oturumda bir daha zorlamayız.
+  const cityAsked = useRef(false);
+
+  // Sekmeye her dönüşte sessiz yenile (yeni rota / beğeni / tercih / şehir güncel kalsın)
   useFocusEffect(
     useCallback(() => {
       getOnboarding().then((p) => setVibes(p?.vibes ?? []));
       fetchWeeklyLeaderboard().then(setLeaders); // boş/erişilemezse şerit görünmez
+      getChosenCity().then((c) => {
+        if (c === null && !cityAsked.current) {
+          cityAsked.current = true;
+          setCityPickerOpen(true);
+        }
+      });
       load().finally(() => setLoading(false));
     }, [load]),
   );
+
+  // 3.0c: şehir seçici — seçim kalıcıdır (AsyncStorage), tüm ekranlar buna uyar
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
+  const onSelectCity = async (key: string) => {
+    setCityPickerOpen(false);
+    if (key === city) return;
+    await setActiveCity(key);
+    setLoading(true);
+    load(key).finally(() => setLoading(false));
+  };
 
   // Popüler: beğeniye göre. Sana özel: vibe eşleşme skoru > 0 olanlar, skor sırasıyla.
   const popular = useMemo(
@@ -140,12 +165,27 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   return (
     <View style={styles.container}>
+      <CityPicker
+        visible={cityPickerOpen}
+        current={city}
+        onClose={() => setCityPickerOpen(false)}
+        onSelect={onSelectCity}
+      />
       <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <View style={styles.brandRow}>
           <View style={styles.brandDot} />
           <View>
             <Text style={styles.brand}>SANA</Text>
-            <Text style={styles.brandSub}>Şehrin gerçek günlerini keşfet</Text>
+            <TouchableOpacity
+              onPress={() => { tap(); setCityPickerOpen(true); }}
+              hitSlop={8}
+              style={styles.cityChip}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="location" size={12} color={colors.primaryDark} />
+              <Text style={styles.cityChipText}>{cityInfo(city).label}</Text>
+              <Ionicons name="chevron-down" size={12} color={colors.textMuted} />
+            </TouchableOpacity>
           </View>
         </View>
         <View style={styles.headerBtns}>
@@ -302,6 +342,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   brandDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary },
   brand: { fontSize: 22, fontFamily: font.black, color: colors.text, letterSpacing: 1 },
   brandSub: { fontSize: 11.5, color: colors.textFaint, marginTop: 1, fontFamily: font.medium },
+  cityChip: {
+    flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start",
+    marginTop: 3, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
+    borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 4,
+  },
+  cityChipText: { fontSize: 12, color: colors.text, fontFamily: font.bold },
   headerBtns: { flexDirection: "row", alignItems: "center", gap: 10 },
   addBtn: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primary,
