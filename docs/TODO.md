@@ -236,27 +236,23 @@
   yeterince görünür değil (seçenekler: AI kartının altına ikinci satır aksiyon, akış sonunda kart,
   ya da kalıcı FAB; kullanıcıyla netleştir).
 
-### ⬜ 3.0c ÇOK ŞEHİR DESTEĞİ ★ KULLANICI İSTEĞİ (6 Tem)
-> **Vizyon:** Sadece İstanbul değil — Ankara'daki da Gaziantep'teki de kullanacak;
-> hedef tüm Türkiye (ileride dünya). Home'da daha çok ve şehre uygun rota görünmeli.
-> **Pilot şehirler (6 Tem, kullanıcı seçimi): Ankara, Gaziantep, İzmir, Bursa** — 4 şehir
-> ~130-160 SerpApi araması, aylık kotaya sığar. Başlama zamanı: şimdilik beklemede (kullanıcı kararı).
+### ✅ 3.0c ÇOK ŞEHİR DESTEĞİ — TAMAMLANDI (7 Tem) ★
+> SANA artık 5 şehirde: İstanbul + Ankara, Gaziantep, İzmir, Bursa (kullanıcı pilot seçimi).
 
-**A. Veri — pilot şehirlere seed rotalar 🤖**
-- [ ] `build_seed.py`'yi şehir-parametreli yap: şehir + semt listesi + kategori config'i
-  (İstanbul mantığı aynen: experience+utility karışık, 4-7 durak, vibe/bütçe çeşitliliği).
-- [ ] Pilot şehirler için 5-7'şer rota üret (SerpApi cache'li; kota ~30-40 arama/şehir, 250/ay içinde).
-- [ ] `add_geometry.py` (sokak geometrisi) + `backfill.py` (DB + embed) şehir bazlı koş.
-**B. Servis 🤖**
-- [ ] `plan_route`'a `city` parametresi: app konumdan gönderir; cümlede şehir geçiyorsa o kazanır,
-  yoksa app'inki, en son Istanbul fallback (şehir normalize mevcut).
-**C. App 🤖**
-- [ ] Konumdan şehir tespiti (expo-location reverse geocode) → aktif şehir; Home header'da
-  şehir chip'i ("📍 Ankara ▾") ile elle değiştirilebilir.
-- [ ] Home akışı + Map ekranı aktif şehre göre filtrelenir; harita başlangıcı `ISTANBUL_REGION`
-  sabiti yerine şehir merkezine göre (`cityRegion(city)`).
-- [ ] Plan isteği `city` gönderir; "Sana özel" şeridi şehir içinde skorlar.
-- **Kabul:** Ankara'da açan kullanıcı Ankara rotaları görüyor, plan atınca Ankara rotası geliyor.
+**A. Veri ✅** — 4 şehre 4'er tematik şablon (16 yeni, toplam 23 seed): Anıtkabir/Hamamönü/
+CerModern/Tunalı · Zeugma/çarşı-lezzet/Bey Mah./100.Yıl · Kordon/Kemeraltı/Alsancak/Asansör ·
+Koza Han/Yeşil/Kültürpark/Cumalıkızık. backfill + geometri: 25/25 rota. Cache repo'da (kota korunur).
+**B. Servis ✅** — norm_city + şehir kuralı: cümledeki BİLİNEN şehir > app'in aktif şehri > Istanbul
+(bilinmeyen ad = halüsinasyon, yok sayılır — canlı yakalandı: "çarşıda" şehir sanılmıştı);
+hava koordinatları 5 şehir; 2.7 üretici semt haritası şehir-bazlı. Canlı test ×3 geçti.
+**C. App ✅** — `cities.ts` (bölge+semtler+kalıcı seçim) + **CityPicker bottom-sheet**
+(şehir ikonu + semt önizleme + canlı rota sayısı; ilk açılışta otomatik açılır — keşfedilebilirlik);
+Home header'da çip; Home/Map şehre filtreli (harita fitAll ile şehre odaklanır); Plan semt çipleri
+şehre göre; CreateRoute aktif şehre kaydeder.
+**Bonus** — mekan araması Photon/SerpApi'den **Google Places'a** geçti (şehir-bias'lı; "Anıtkabir"
+fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde) + çeyrek-marker fix v2
+(bitmap bekleyen canlı marker artık dondurulmuyor).
+- [ ] (V2) Konumdan otomatik şehir tespiti (reverse geocode) — şimdilik elle seçim.
 
 ### ✅ 3.1 Paylaşım kartı v2 — TAMAMLANDI (7 Tem; +3.0b'nin paylaşım menüsü isteği)
 - [x] Bottom-sheet paylaşım menüsü (ortalı modal yerine): tutamak + format çipleri + önizleme.
@@ -402,6 +398,7 @@
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 7 Tem | **3.0c ÇOK ŞEHİR TAMAM** 🏙️ | 5 şehir: 23 seed + şehir-bilinçli plan/üretici/arama + CityPicker (ilk açılışta otomatik). Bonus: arama Google Places'a geçti, SerpApi runtime'dan söküldü, çeyrek-marker fix v2. Seed beğenileri sıfırlandı (yeniden yazım) |
 | 7 Tem | **2.7 AI ROTA ÜRETİCİ TAMAMLANDI** 🎲 | Semt seçimi + Places aday havuzu (≤4km) + iki aşamalı LLM (seçim→enrich anlatısı) + kalıcılık zinciri; 🎲 buton + akıllı tetik (no_match). Canlı ×2: Kadıköy 6 durak (15.7sn) + Balat 5 durak (HTTP). NIM yoğunken yavaşlayabiliyor (150sn timeout) |
 | 7 Tem | Profil redesign + kamera (kullanıcı isteği) | Gezgin kartı (koyu hero: kimlik+istatistik+rozet ilerleme) + ayarlar tek kartta; yorum fotoğrafına "📷 Fotoğraf çek / 🖼️ Galeriden seç" seçimi (kamera izni plugin'i app.json'a eklendi) |
 | 7 Tem | **FAZ 3 KODU BİTTİ** 🎉 (3.1–3.6) | 3.2a canlı test geçti (Ayasofya ⭐4.8 foto+kapak); 3.1 bottom-sheet + Story 9:16 + RouteTrace; 3.3 rozet kutlama; 3.4/3.5 journeys+liderlik (kod); 3.6 davet linki. 👤 kalan: 0007+0008 migration'ları SQL Editor'de + cihaz turu. Açık: 3.0b Rota-oluştur yeri, 3.0c çok şehir (beklemede), 3.1 polish (map snapshot+QR), CreateRoute durak fotosu |
