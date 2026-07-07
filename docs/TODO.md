@@ -202,9 +202,22 @@
 - [x] app: 🎲 buton + "Az önce senin için ÜRETİLDİ" rozeti + üretim-modu bekleme adımları
   (📍 Mekânlar aranıyor → 🧩 Rota kuruluyor → 📸 Foto+geometri) + 150 sn timeout.
 - **CANLI TEST ×2:** pipeline 15.7 sn (6 durak Kadıköy) + HTTP uçtan uca (5 durak Balat); testler silindi.
-- [ ] 👤 Cihazdan dene: Plan → sonuçta 🎲 → yepyeni rota üret (NIM yoğun saatte uzayabilir).
+- [x] 👤 Cihazda denendi (7 Tem) — kullanıcı kendi rotasını üretti ("Sakin ve Butçe Dostu Kadıköy Gezisi").
+- [x] **2.7b (7 Tem, kullanıcı istekleri):** mod seçici EN BAŞTA (📚 kayıtlılardan / 🎲 yepyeni üret);
+  üretimde "Nereden başlayalım?" (✨ AI seçsin / 📍 konumum — izin o an istenir / 7 semt çipi;
+  servis: gen_lat/lng/district, canlı test: Moda koordinatı → tüm duraklar Moda ✓); üretilen rotada
+  **durak düzenleme**: ✕ ile çıkar (min 2) + "＋ Durak ekle" arama sheet'i (SerpApi) — değişince
+  geometri+foto arka planda tazelenir. UX: tüm seçimler dolgulu mercan + ✓ (çip görsel birliği);
+  agent adımlarında süreler gizlendi (premium his — s.ms API'de duruyor).
 
 ---
+
+### 🐛 BUG: beğeni sayacı 0 kalıyor (7 Tem, kullanıcı raporu) — FİX HAZIR, 👤 BEKLİYOR
+- Teşhis: beğeniler `route_favorites`'a YAZILIYOR (3 satır) ama `routes.like_count` hep 0 —
+  `bump_like_count()` SECURITY DEFINER değildi → routes RLS'i (update yalnız sahibi) trigger'ın
+  sayaç güncellemesini sessizce 0 satıra düşürüyordu.
+- [x] 🤖 `0009_fix_like_count.sql` yazıldı: security definer + mevcut beğenilerden sayaç backfill.
+- [ ] 👤 SQL Editor'de çalıştır → Home'da kalpler gerçek sayıyı gösterecek.
 
 ## FAZ 3 — SOSYAL & VİRAL
 
