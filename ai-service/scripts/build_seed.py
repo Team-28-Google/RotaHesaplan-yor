@@ -112,6 +112,228 @@ TEMPLATES = [
             {"q": "halka açık tuvalet Emirgan", "category": "public_toilet", "kind": "utility", "note": "Koru civarı ücretsiz WC."},
         ],
     },
+
+    # ==================== ANKARA (3.0c) ====================
+    {
+        "title": "Anıtkabir'den Seğmenler'e",
+        "city": "Ankara",
+        "vibe_tags": ["tarih", "sakin", "yesil"],
+        "weather_fit": "any",
+        "ll": "@39.9251,32.8369,14z",
+        "stops": [
+            {"q": "Anıtkabir", "category": "historical_site", "kind": "experience", "note": "Cumhuriyetin kalbinde saygı duruşuyla başla."},
+            {"q": "Seğmenler Parkı Çankaya", "ll": "@39.8930,32.8600,15z", "category": "park", "kind": "experience", "note": "Şehrin ortasındaki vadide nefes al."},
+            {"q": "üçüncü dalga kahve Kavaklıdere", "ll": "@39.9042,32.8618,15z", "category": "cafe", "kind": "experience", "note": "Tunalı civarında sakin bir kahve molası."},
+            {"q": "halka açık tuvalet Kuğulu Park", "ll": "@39.9042,32.8618,15z", "category": "public_toilet", "kind": "utility", "note": "Park civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Hamamönü & Kale Tarihi Doku",
+        "city": "Ankara",
+        "vibe_tags": ["tarih", "kesif", "fotograf"],
+        "weather_fit": "any",
+        "ll": "@39.9403,32.8560,15z",
+        "stops": [
+            {"q": "Hamamönü tarihi evler", "category": "historical_site", "kind": "experience", "note": "Restore edilmiş Ankara evleri arasında dolan."},
+            {"q": "Ankara Kalesi", "category": "historical_site", "kind": "experience", "note": "Surlardan eski Ankara'ya tepeden bak."},
+            {"q": "Rahmi Koç Müzesi Ankara", "category": "museum", "kind": "experience", "note": "Çengelhan'da nostaljik bir tur."},
+            {"q": "çay evi Hamamönü", "category": "cafe", "kind": "experience", "note": "Avlulu bir konakta çay molası."},
+            {"q": "halka açık tuvalet Hamamönü", "category": "public_toilet", "kind": "utility", "note": "Meydan civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "CerModern & Gençlik Parkı",
+        "city": "Ankara",
+        "vibe_tags": ["sanat", "sosyal", "kultur"],
+        "weather_fit": "any",
+        "ll": "@39.9334,32.8480,15z",
+        "stops": [
+            {"q": "CerModern", "category": "gallery", "kind": "experience", "note": "Eski cer atölyesinde çağdaş sanat."},
+            {"q": "Gençlik Parkı Ankara", "category": "park", "kind": "experience", "note": "Havuz kenarında Ankara klasiği bir yürüyüş."},
+            {"q": "kafe Kızılay", "ll": "@39.9208,32.8541,15z", "category": "cafe", "kind": "experience", "note": "Şehrin nabzında bir mola."},
+            {"q": "halka açık tuvalet Gençlik Parkı", "category": "public_toilet", "kind": "utility", "note": "Park içi ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Kuğulu Park & Tunalı Keyfi",
+        "city": "Ankara",
+        "vibe_tags": ["sakin", "kahve", "sosyal"],
+        "weather_fit": "any",
+        "ll": "@39.9042,32.8618,15z",
+        "stops": [
+            {"q": "Kuğulu Park", "category": "park", "kind": "experience", "note": "Kuğuları izleyerek güne yumuşak başla."},
+            {"q": "Tunalı Hilmi Caddesi", "category": "bazaar", "kind": "experience", "note": "Cadde boyunca vitrinlere takıla takıla yürü."},
+            {"q": "üçüncü dalga kahve Tunalı", "category": "cafe", "kind": "experience", "note": "Ara sokakta iyi bir filtre kahve."},
+            {"q": "halka açık tuvalet Tunalı", "category": "public_toilet", "kind": "utility", "note": "Cadde civarı ücretsiz WC."},
+        ],
+    },
+
+    # ==================== GAZİANTEP (3.0c) ====================
+    {
+        "title": "Zeugma & Kale Kültür Günü",
+        "city": "Gaziantep",
+        "vibe_tags": ["tarih", "kultur", "fotograf"],
+        "weather_fit": "any",
+        "ll": "@37.0662,37.3833,14z",
+        "stops": [
+            {"q": "Zeugma Mozaik Müzesi", "category": "museum", "kind": "experience", "note": "Çingene Kızı'yla göz göze gel."},
+            {"q": "Gaziantep Kalesi", "category": "historical_site", "kind": "experience", "note": "Kalenin çevresinden şehre bak."},
+            {"q": "Tarihi kahve Gaziantep kale", "category": "cafe", "kind": "experience", "note": "Kale eteğinde menengiç kahvesi."},
+            {"q": "halka açık tuvalet Gaziantep merkez", "category": "public_toilet", "kind": "utility", "note": "Merkez civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Antep Çarşı Lezzet Turu",
+        "city": "Gaziantep",
+        "vibe_tags": ["lezzet", "kesif", "sosyal"],
+        "weather_fit": "any",
+        "ll": "@37.0625,37.3800,15z",
+        "stops": [
+            {"q": "Almacı Pazarı Gaziantep", "category": "bazaar", "kind": "experience", "note": "Baharat kokuları arasında güne başla."},
+            {"q": "Bakırcılar Çarşısı Gaziantep", "category": "bazaar", "kind": "experience", "note": "Çekiç sesleri eşliğinde bakır işçiliği."},
+            {"q": "İmam Çağdaş", "category": "restaurant", "kind": "experience", "note": "Baklava + kebap: Antep'in özeti."},
+            {"q": "künefe Gaziantep", "category": "street_food", "kind": "experience", "note": "Sıcak künefeyle tatlı bir final."},
+            {"q": "halka açık tuvalet Gaziantep çarşı", "category": "public_toilet", "kind": "utility", "note": "Çarşı civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Bey Mahallesi Sokakları",
+        "city": "Gaziantep",
+        "vibe_tags": ["tarih", "fotograf", "sakin"],
+        "weather_fit": "outdoor",
+        "ll": "@37.0605,37.3792,15z",
+        "stops": [
+            {"q": "Bey Mahallesi Gaziantep", "category": "viewpoint", "kind": "experience", "note": "Taş konaklar arasında ağır ağır yürü."},
+            {"q": "Emine Göğüş Mutfak Müzesi", "category": "museum", "kind": "experience", "note": "Antep mutfağının hikâyesini dinle."},
+            {"q": "kahveci Bey Mahallesi Gaziantep", "category": "cafe", "kind": "experience", "note": "Avlulu konakta bir mola."},
+            {"q": "halka açık tuvalet Bey Mahallesi", "category": "public_toilet", "kind": "utility", "note": "Mahalle civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "100. Yıl Parkı Nefes",
+        "city": "Gaziantep",
+        "vibe_tags": ["yesil", "sakin", "acik-hava"],
+        "weather_fit": "outdoor",
+        "ll": "@37.0796,37.3610,14z",
+        "stops": [
+            {"q": "100. Yıl Atatürk Kültür Parkı", "category": "park", "kind": "experience", "note": "Şehrin yeşil koridorunda yürüyüş."},
+            {"q": "Gaziantep Botanik Bahçesi", "category": "park", "kind": "experience", "note": "Bitkiler arasında sakin bir tur."},
+            {"q": "kafe 100. Yıl Parkı Gaziantep", "category": "cafe", "kind": "experience", "note": "Park çıkışında soluklan."},
+            {"q": "halka açık tuvalet 100. Yıl Parkı", "category": "public_toilet", "kind": "utility", "note": "Park içi ücretsiz WC."},
+        ],
+    },
+
+    # ==================== İZMİR (3.0c) ====================
+    {
+        "title": "Kordon Gün Batımı",
+        "city": "Izmir",
+        "vibe_tags": ["deniz", "manzara", "sosyal"],
+        "weather_fit": "outdoor",
+        "ll": "@38.4189,27.1287,14z",
+        "stops": [
+            {"q": "Konak Meydanı Saat Kulesi", "category": "historical_site", "kind": "experience", "note": "İzmir'in simgesiyle başla."},
+            {"q": "Kordon Boyu Alsancak", "category": "waterfront", "kind": "experience", "note": "Denize karşı çimlerde yürü, gün batımını bekle."},
+            {"q": "kafe Kordon Alsancak", "category": "cafe", "kind": "experience", "note": "Körfeze karşı bir kahve."},
+            {"q": "halka açık tuvalet Kordon", "category": "public_toilet", "kind": "utility", "note": "Sahil boyu ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Kemeraltı Keşif Turu",
+        "city": "Izmir",
+        "vibe_tags": ["tarih", "kesif", "butce-dostu"],
+        "weather_fit": "any",
+        "ll": "@38.4180,27.1280,15z",
+        "stops": [
+            {"q": "Kemeraltı Çarşısı", "category": "bazaar", "kind": "experience", "note": "Labirent sokaklarda kaybolmaya izin ver."},
+            {"q": "Kızlarağası Hanı", "category": "historical_site", "kind": "experience", "note": "Osmanlı hanında Türk kahvesi kokusu."},
+            {"q": "Agora Ören Yeri İzmir", "category": "historical_site", "kind": "experience", "note": "Antik Smyrna'nın kalbinde dur."},
+            {"q": "Türk kahvesi Kızlarağası", "category": "cafe", "kind": "experience", "note": "Han avlusunda közde kahve."},
+            {"q": "halka açık tuvalet Kemeraltı", "category": "public_toilet", "kind": "utility", "note": "Çarşı içi ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Alsancak Sanat Rotası",
+        "city": "Izmir",
+        "vibe_tags": ["sanat", "kahve", "sosyal"],
+        "weather_fit": "any",
+        "ll": "@38.4370,27.1428,15z",
+        "stops": [
+            {"q": "Arkas Sanat Merkezi", "category": "gallery", "kind": "experience", "note": "Levanten köşkünde seçkin sergiler."},
+            {"q": "Kıbrıs Şehitleri Caddesi", "category": "bazaar", "kind": "experience", "note": "Alsancak'ın canlı caddesinde dolan."},
+            {"q": "üçüncü dalga kahve Alsancak", "category": "cafe", "kind": "experience", "note": "Ara sokakta iyi bir espresso."},
+            {"q": "halka açık tuvalet Alsancak", "category": "public_toilet", "kind": "utility", "note": "Cadde civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Asansör'den Karataş'a",
+        "city": "Izmir",
+        "vibe_tags": ["manzara", "fotograf", "sakin"],
+        "weather_fit": "outdoor",
+        "ll": "@38.4093,27.1249,15z",
+        "stops": [
+            {"q": "Tarihi Asansör İzmir", "category": "viewpoint", "kind": "experience", "note": "Yukarıdan körfezi seyret."},
+            {"q": "Dario Moreno Sokağı", "category": "viewpoint", "kind": "experience", "note": "Begonvilli merdivenli sokakta fotoğraf."},
+            {"q": "Karataş sahil İzmir", "category": "waterfront", "kind": "experience", "note": "Sakin sahil hattında yürüyüşle bitir."},
+            {"q": "kafe Karataş İzmir", "category": "cafe", "kind": "experience", "note": "Mahalle kahvecisinde soluklan."},
+            {"q": "halka açık tuvalet Karataş", "category": "public_toilet", "kind": "utility", "note": "Sahil civarı ücretsiz WC."},
+        ],
+    },
+
+    # ==================== BURSA (3.0c) ====================
+    {
+        "title": "Hanlar Bölgesi & Koza Han",
+        "city": "Bursa",
+        "vibe_tags": ["tarih", "kultur", "sosyal"],
+        "weather_fit": "any",
+        "ll": "@40.1846,29.0610,15z",
+        "stops": [
+            {"q": "Ulu Cami Bursa", "category": "mosque", "kind": "experience", "note": "Yirmi kubbenin altında sessizlik."},
+            {"q": "Koza Han", "category": "bazaar", "kind": "experience", "note": "İpek hanının avlusunda çay iç."},
+            {"q": "Kapalıçarşı Bursa", "category": "bazaar", "kind": "experience", "note": "Bıçakçılar'dan havlucular'a çarşı turu."},
+            {"q": "kafe Koza Han Bursa", "category": "cafe", "kind": "experience", "note": "Avluda bir fincan daha."},
+            {"q": "halka açık tuvalet Bursa Kapalıçarşı", "category": "public_toilet", "kind": "utility", "note": "Çarşı civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Yeşil'den Irgandı'ya",
+        "city": "Bursa",
+        "vibe_tags": ["tarih", "sakin", "fotograf"],
+        "weather_fit": "any",
+        "ll": "@40.1815,29.0742,15z",
+        "stops": [
+            {"q": "Yeşil Türbe Bursa", "category": "historical_site", "kind": "experience", "note": "Turkuaz çinili türbede dur."},
+            {"q": "Yeşil Camii Bursa", "category": "mosque", "kind": "experience", "note": "Erken Osmanlı zarafeti."},
+            {"q": "Irgandı Köprüsü", "category": "viewpoint", "kind": "experience", "note": "Sanatçı atölyeli taş köprüden geç."},
+            {"q": "kafe Yeşil Bursa", "category": "cafe", "kind": "experience", "note": "Türbe manzaralı bir mola."},
+            {"q": "halka açık tuvalet Yeşil Bursa", "category": "public_toilet", "kind": "utility", "note": "Meydan civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Kültürpark Nefes Turu",
+        "city": "Bursa",
+        "vibe_tags": ["yesil", "sakin", "kultur"],
+        "weather_fit": "any",
+        "ll": "@40.1900,29.0500,15z",
+        "stops": [
+            {"q": "Kültürpark Bursa", "category": "park", "kind": "experience", "note": "Gölet çevresinde geniş bir tur."},
+            {"q": "Bursa Kent Müzesi", "category": "museum", "kind": "experience", "note": "Şehrin hikâyesine kısa bir dalış."},
+            {"q": "kafe Altıparmak Bursa", "category": "cafe", "kind": "experience", "note": "Cadde üstünde kahve molası."},
+            {"q": "halka açık tuvalet Kültürpark", "category": "public_toilet", "kind": "utility", "note": "Park içi ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Cumalıkızık Köy Sabahı",
+        "city": "Bursa",
+        "vibe_tags": ["doga", "tarih", "kesif"],
+        "weather_fit": "outdoor",
+        "ll": "@40.1786,29.1725,15z",
+        "stops": [
+            {"q": "Cumalıkızık", "category": "historical_site", "kind": "experience", "note": "700 yıllık köyün arnavut kaldırımlarında yürü."},
+            {"q": "kahvaltı Cumalıkızık", "category": "restaurant", "kind": "experience", "note": "Köy kahvaltısıyla güne başla."},
+            {"q": "Cumalıkızık Etnografya Müzesi", "category": "museum", "kind": "experience", "note": "Köy yaşamının izleri."},
+            {"q": "halka açık tuvalet Cumalıkızık", "category": "public_toilet", "kind": "utility", "note": "Köy meydanı ücretsiz WC."},
+        ],
+    },
 ]
 
 
@@ -162,7 +384,9 @@ def build_route(env: dict, tpl: dict) -> dict | None:
         dist += haversine_m(a, b)
 
     exp_names = ", ".join(w["name"] for w in exp)
-    description = f"{tpl['city']}'da tematik bir gün: {exp_names}."
+    _CITY_TR = {"Istanbul": "İstanbul'da", "Ankara": "Ankara'da", "Gaziantep": "Gaziantep'te",
+                "Izmir": "İzmir'de", "Bursa": "Bursa'da"}
+    description = f"{_CITY_TR.get(tpl['city'], tpl['city'] + chr(39) + 'da')} tematik bir gün: {exp_names}."
     cover = next((w["photo_urls"][0] for w in waypoints if w.get("photo_urls")), None)
 
     return {

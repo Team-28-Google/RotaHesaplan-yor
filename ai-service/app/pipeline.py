@@ -151,22 +151,74 @@ def parse_intent(env: dict, text: str) -> dict:
 # yepyeni bir rota kurar. Mekan uydurulamaz: composer yalnız aday index'i seçebilir.
 # Semt niyete göre seçilir → tüm adaylar aynı semtten gelir → rota doğal yürünebilir.
 
-_DISTRICTS = [
-    {"name": "Kadıköy · Moda", "lat": 40.9819, "lng": 29.0250,
-     "vibes": ["sakin", "deniz", "kahve", "yuruyus", "kafa-dinleme", "sosyal"]},
-    {"name": "Balat", "lat": 41.0292, "lng": 28.9486,
-     "vibes": ["tarih", "fotograf", "kesif", "sanat", "kahve"]},
-    {"name": "Karaköy · Galata", "lat": 41.0256, "lng": 28.9744,
-     "vibes": ["sanat", "kahve", "kultur", "gece", "fotograf"]},
-    {"name": "Üsküdar", "lat": 41.0226, "lng": 29.0078,
-     "vibes": ["tarih", "deniz", "manzara", "sakin"]},
-    {"name": "Ortaköy", "lat": 41.0472, "lng": 29.0269,
-     "vibes": ["deniz", "manzara", "sosyal", "gece"]},
-    {"name": "Sultanahmet", "lat": 41.0054, "lng": 28.9768,
-     "vibes": ["tarih", "kultur", "kalabalik"]},
-    {"name": "Bebek · Arnavutköy", "lat": 41.0662, "lng": 29.0430,
-     "vibes": ["deniz", "sakin", "yesil", "yuruyus"]},
-]
+_DISTRICTS: dict[str, list[dict]] = {
+    "Istanbul": [
+        {"name": "Kadıköy · Moda", "lat": 40.9819, "lng": 29.0250,
+         "vibes": ["sakin", "deniz", "kahve", "yuruyus", "kafa-dinleme", "sosyal"]},
+        {"name": "Balat", "lat": 41.0292, "lng": 28.9486,
+         "vibes": ["tarih", "fotograf", "kesif", "sanat", "kahve"]},
+        {"name": "Karaköy · Galata", "lat": 41.0256, "lng": 28.9744,
+         "vibes": ["sanat", "kahve", "kultur", "gece", "fotograf"]},
+        {"name": "Üsküdar", "lat": 41.0226, "lng": 29.0078,
+         "vibes": ["tarih", "deniz", "manzara", "sakin"]},
+        {"name": "Ortaköy", "lat": 41.0472, "lng": 29.0269,
+         "vibes": ["deniz", "manzara", "sosyal", "gece"]},
+        {"name": "Sultanahmet", "lat": 41.0054, "lng": 28.9768,
+         "vibes": ["tarih", "kultur", "kalabalik"]},
+        {"name": "Bebek · Arnavutköy", "lat": 41.0662, "lng": 29.0430,
+         "vibes": ["deniz", "sakin", "yesil", "yuruyus"]},
+    ],
+    "Ankara": [
+        {"name": "Kızılay · Tunalı", "lat": 39.9120, "lng": 32.8580,
+         "vibes": ["kahve", "sosyal", "kalabalik"]},
+        {"name": "Ulus · Hamamönü", "lat": 39.9403, "lng": 32.8560,
+         "vibes": ["tarih", "kultur", "kesif", "fotograf"]},
+        {"name": "Çankaya · Seğmenler", "lat": 39.8930, "lng": 32.8600,
+         "vibes": ["yesil", "sakin", "yuruyus", "kafa-dinleme"]},
+    ],
+    "Gaziantep": [
+        {"name": "Kale · Çarşı", "lat": 37.0640, "lng": 37.3820,
+         "vibes": ["tarih", "kultur", "lezzet", "kesif", "kalabalik"]},
+        {"name": "Bey Mahallesi", "lat": 37.0605, "lng": 37.3792,
+         "vibes": ["tarih", "fotograf", "sakin"]},
+        {"name": "100. Yıl", "lat": 37.0796, "lng": 37.3610,
+         "vibes": ["yesil", "sakin", "yuruyus", "kafa-dinleme"]},
+    ],
+    "Izmir": [
+        {"name": "Alsancak · Kordon", "lat": 38.4370, "lng": 27.1428,
+         "vibes": ["deniz", "kahve", "sanat", "sosyal", "gece"]},
+        {"name": "Konak · Kemeraltı", "lat": 38.4189, "lng": 27.1287,
+         "vibes": ["tarih", "kultur", "kesif", "kalabalik"]},
+        {"name": "Karataş", "lat": 38.4093, "lng": 27.1249,
+         "vibes": ["manzara", "fotograf", "sakin", "deniz"]},
+    ],
+    "Bursa": [
+        {"name": "Hanlar Bölgesi", "lat": 40.1846, "lng": 29.0610,
+         "vibes": ["tarih", "kultur", "kesif", "kalabalik"]},
+        {"name": "Yeşil · Irgandı", "lat": 40.1815, "lng": 29.0742,
+         "vibes": ["tarih", "sakin", "fotograf"]},
+        {"name": "Kültürpark", "lat": 40.1900, "lng": 29.0500,
+         "vibes": ["yesil", "sakin", "yuruyus", "kafa-dinleme"]},
+    ],
+}
+
+
+def norm_city(raw: str | None) -> str | None:
+    """Serbest şehir metnini DB'deki ASCII kanonik ada çevirir (İzmir→Izmir vb.)."""
+    if not raw:
+        return None
+    c = raw.casefold()
+    if "stanbul" in c:
+        return "Istanbul"
+    if "ankara" in c:
+        return "Ankara"
+    if "antep" in c:
+        return "Gaziantep"
+    if "zmir" in c:
+        return "Izmir"
+    if "bursa" in c:
+        return "Bursa"
+    return raw.strip().title()
 
 _VIBE_QUERIES = {
     "sakin": ["sakin park", "manzaralı çay bahçesi"],
@@ -206,10 +258,11 @@ GENERATOR_SYS = (
 )
 
 
-def _pick_district(vibe_tags: list, mood: str) -> dict:
-    """Niyet vibe'larıyla en çok örtüşen semt; eşitlikte rastgele (çeşitlilik)."""
+def _pick_district(city: str, vibe_tags: list, mood: str) -> dict:
+    """Şehrin semtlerinden niyet vibe'larıyla en çok örtüşeni; eşitlikte rastgele (çeşitlilik)."""
+    pool = _DISTRICTS.get(city) or _DISTRICTS["Istanbul"]
     wanted = set(vibe_tags or []) | ({mood} if mood else set())
-    scored = [(len(wanted & set(d["vibes"])), d) for d in _DISTRICTS]
+    scored = [(len(wanted & set(d["vibes"])), d) for d in pool]
     best = max(s for s, _ in scored)
     return random.choice([d for s, d in scored if s == best])
 
@@ -242,18 +295,17 @@ def _gather_candidates(env: dict, district: dict, vibe_tags: list, mood: str) ->
 
 
 def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_max: int,
-                    user_id: str | None, profile_text: str, _mark,
+                    user_id: str | None, profile_text: str, _mark, city: str = "Istanbul",
                     gen_center: tuple | None = None, gen_district: str | None = None) -> dict | None:
     """Yepyeni rota üret + kalıcılaştır + zenginleştir. Başarısızsa None (çağıran no_match döner).
-    Merkez önceliği: kullanıcı konumu > seçilen semt > AI semt seçimi (2.7b)."""
-    city = "Istanbul"  # 3.0c çok şehirde semt haritası şehir-parametreli olacak
+    Merkez önceliği: kullanıcı konumu > seçilen semt > AI semt seçimi (2.7b; 3.0c şehir-bazlı)."""
     if gen_center:
         district = {"name": "konumunun çevresi", "lat": gen_center[0], "lng": gen_center[1], "vibes": []}
     elif gen_district:
-        district = next((d for d in _DISTRICTS if d["name"] == gen_district), None) \
-            or _pick_district(intent.get("vibe_tags") or [], intent.get("mood") or "")
+        district = next((d for d in _DISTRICTS.get(city, []) if d["name"] == gen_district), None) \
+            or _pick_district(city, intent.get("vibe_tags") or [], intent.get("mood") or "")
     else:
-        district = _pick_district(intent.get("vibe_tags") or [], intent.get("mood") or "")
+        district = _pick_district(city, intent.get("vibe_tags") or [], intent.get("mood") or "")
     cands = _gather_candidates(env, district, intent.get("vibe_tags") or [], intent.get("mood") or "")
     _mark("Mekânlar arandı", f"{len(cands)} gerçek aday · {district['name']}")
     if len(cands) < 4:
@@ -360,7 +412,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
 
 def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None,
                force_generate: bool = False, gen_center: tuple | None = None,
-               gen_district: str | None = None) -> dict:
+               gen_district: str | None = None, app_city: str | None = None) -> dict:
     env = load_env()
 
     # Agent adımları: her aşamanın süresi + tek satır özeti (app bekleme ekranı + jüri için)
@@ -375,10 +427,19 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     # [1] Intent
     intent = parse_intent(env, text)
     _mark("Niyet çözümlendi", f"{intent.get('mood') or 'genel'} · bütçe {intent.get('budget_max')}")
-    city = intent.get("city") or "Istanbul"
-    # LLM bazen "İstanbul" (Türkçe İ) döndürür; DB "Istanbul" (ASCII) tutar → normalize et
-    if "stanbul" in city.casefold():
-        city = "Istanbul"
+    # Şehir çözümü (3.0c): cümlede AÇIKÇA İstanbul-dışı BİLİNEN bir şehir geçiyorsa o kazanır;
+    # yoksa app'in aktif şehri; en son Istanbul. Bilinmeyen ad = LLM halüsinasyonu sayılır
+    # (örn. "çarşıda"yı şehir sanabiliyor) ve yok sayılır.
+    intent_city = norm_city(intent.get("city"))
+    if intent_city not in _DISTRICTS:
+        intent_city = None
+    app_city_n = norm_city(app_city)
+    if app_city_n not in _DISTRICTS:
+        app_city_n = None
+    if intent_city and intent_city != "Istanbul":
+        city = intent_city
+    else:
+        city = app_city_n or intent_city or "Istanbul"
     try:
         budget_max = int(intent.get("budget_max") or 4)
     except (TypeError, ValueError):
@@ -417,7 +478,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     def _generated_response() -> dict | None:
         """2.7: yepyeni rota üret; başarılıysa plan_route ile aynı şekilde yanıt döndür."""
         g = _generate_route(env, text, intent, weather, budget_max, user_id, profile_text, _mark,
-                            gen_center, gen_district)
+                            city, gen_center, gen_district)
         if not g:
             return None
         return {

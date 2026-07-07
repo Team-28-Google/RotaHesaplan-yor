@@ -43,6 +43,8 @@ class PlanRouteRequest(BaseModel):
     gen_lat: float | None = None
     gen_lng: float | None = None
     gen_district: str | None = None
+    # 3.0c: app'in aktif şehri (cümlede açıkça başka şehir geçmiyorsa bu kullanılır)
+    city: str | None = None
 
 
 class OnboardingMemoryRequest(BaseModel):
@@ -104,7 +106,7 @@ def plan_route(req: PlanRouteRequest) -> dict:
     try:
         gen_center = (req.gen_lat, req.gen_lng) if req.gen_lat is not None and req.gen_lng is not None else None
         return run_pipeline(req.text, req.user_id, req.force_weather_fit, req.force_generate,
-                            gen_center, req.gen_district)
+                            gen_center, req.gen_district, req.city)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
 

@@ -350,7 +350,13 @@ def serpapi_search(env: dict, query: str, ll: str = "@41.0082,28.9784,12z", hl: 
 # Öncelik: Google Weather API (GOOGLE_WEATHER_API_KEY varsa) → OpenWeather (yedek).
 # İkisi de aynı şekle döner: {temp, desc, rainy, bias}.
 
-_CITY_COORDS = {"istanbul": (41.0082, 28.9784)}
+_CITY_COORDS = {
+    "istanbul": (41.0082, 28.9784),
+    "ankara": (39.9334, 32.8597),
+    "gaziantep": (37.0662, 37.3833),
+    "izmir": (38.4192, 27.1287),
+    "bursa": (40.1885, 29.0610),
+}
 
 
 def _weather_google(env: dict, city: str):
