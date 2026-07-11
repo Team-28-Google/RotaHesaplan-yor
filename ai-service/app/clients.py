@@ -183,21 +183,30 @@ def decode_polyline(encoded: str, precision: int = 5) -> list[dict]:
     return coords
 
 
-def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float):
-    """İki nokta arası YÜRÜME rotası (Routes API): sokak geometrisi + gerçek mesafe/süre.
-    Anahtar yoksa veya hata olursa None döner (çağıran kuş uçuşuna düşer)."""
+_TRAVEL_MODES = {"walk": "WALK", "transit": "TRANSIT", "drive": "DRIVE"}
+
+
+def google_nav_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float,
+                   mode: str = "walk"):
+    """İki nokta arası rota, seçilen ULAŞIM MODUNDA (4.0: 🚶🚌🚗) — geometri +
+    gerçek mesafe/süre; TRANSIT'te ilk hat bilgisi (hat adı, biniş durağı, yön).
+    Anahtar yoksa/hata olursa None (çağıran kuş uçuşuna düşer)."""
     key = _google_server_key(env)
     if not key:
         return None
+    travel = _TRAVEL_MODES.get(mode, "WALK")
     body = {
         "origin": {"location": {"latLng": {"latitude": a_lat, "longitude": a_lng}}},
         "destination": {"location": {"latLng": {"latitude": b_lat, "longitude": b_lng}}},
-        "travelMode": "WALK",
+        "travelMode": travel,
     }
+    mask = "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline"
+    if travel == "TRANSIT":
+        mask += ",routes.legs.steps.transitDetails"
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
-        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline",
+        "X-Goog-FieldMask": mask,
     }
     try:
         r = _req("https://routes.googleapis.com/directions/v2:computeRoutes", "POST", headers, body, timeout=30)
@@ -209,11 +218,50 @@ def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: 
     rt = routes[0]
     enc = ((rt.get("polyline") or {}).get("encodedPolyline")) or ""
     dur_s = int(str(rt.get("duration", "0s")).rstrip("s") or 0)
+
+    # TRANSIT: ilk toplu taşıma adımının hat bilgisi + araç tipi (🚇 metro / 🚊 tramvay /
+    # 🚆 tren / ⛴️ vapur / 🚌 otobüs) + aktarma sayısı
+    _VEHICLE_EMOJI = {
+        "SUBWAY": "🚇", "METRO_RAIL": "🚇",
+        "TRAM": "🚊", "LIGHT_RAIL": "🚊",
+        "HEAVY_RAIL": "🚆", "COMMUTER_TRAIN": "🚆", "RAIL": "🚆", "HIGH_SPEED_TRAIN": "🚄",
+        "FERRY": "⛴️",
+        "FUNICULAR": "🚡", "GONDOLA_LIFT": "🚡", "CABLE_CAR": "🚋",
+        "BUS": "🚌", "INTERCITY_BUS": "🚌", "TROLLEYBUS": "🚌",
+    }
+    transit = None
+    if travel == "TRANSIT":
+        transit_steps = 0
+        for leg in rt.get("legs") or []:
+            for st in leg.get("steps") or []:
+                td = st.get("transitDetails")
+                if not td:
+                    continue
+                transit_steps += 1
+                if transit is None:
+                    line = td.get("transitLine") or {}
+                    stop_details = td.get("stopDetails") or {}
+                    veh = ((line.get("vehicle") or {}).get("type") or "").upper()
+                    transit = {
+                        "line": line.get("nameShort") or line.get("name") or "hat",
+                        "board": ((stop_details.get("departureStop") or {}).get("name")),
+                        "headsign": td.get("headsign"),
+                        "vehicle": _VEHICLE_EMOJI.get(veh, "🚌"),
+                    }
+        if transit:
+            transit["transfers"] = max(0, transit_steps - 1)
+
     return {
         "coords": decode_polyline(enc) if enc else [],
         "distance_m": int(rt.get("distanceMeters") or 0),
         "duration_min": max(1, round(dur_s / 60)),
+        "transit": transit,
     }
+
+
+def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float):
+    """Yürüme kısayolu (geometri yazımı vb. eski çağıranlar için)."""
+    return google_nav_leg(env, a_lat, a_lng, b_lat, b_lng, "walk")
 
 
 # --------------------------- Google Places (New) — foto + puan (3.2a) ---------------------------

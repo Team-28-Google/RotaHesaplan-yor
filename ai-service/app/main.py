@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import google_walk_leg, load_env, nvidia_embed
+from app.clients import google_nav_leg, google_walk_leg, load_env, nvidia_embed
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
 from app.pipeline import enrich_route as run_enrich_route
@@ -59,6 +59,10 @@ class WalkRouteRequest(BaseModel):
     from_lng: float
     to_lat: float
     to_lng: float
+
+
+class NavRouteRequest(WalkRouteRequest):
+    mode: str = Field("walk", pattern="^(walk|transit|drive)$")  # 4.0 mod seçici
 
 
 class MemoryEventRequest(BaseModel):
@@ -162,6 +166,13 @@ def embed_route(req: EmbedRouteRequest) -> dict:
 def walk_route(req: WalkRouteRequest) -> dict:
     """Canlı navigasyon: kullanıcı konumu → hedef durak yürüme rotası (journey modu)."""
     leg = google_walk_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng)
+    return {"ok": bool(leg), **(leg or {})}
+
+
+@app.post("/nav-route")
+def nav_route(req: NavRouteRequest) -> dict:
+    """Çok modlu canlı navigasyon (4.0): 🚶 walk / 🚌 transit (+hat bilgisi) / 🚗 drive."""
+    leg = google_nav_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng, req.mode)
     return {"ok": bool(leg), **(leg or {})}
 
 

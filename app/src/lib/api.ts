@@ -505,30 +505,59 @@ export async function planRoute(
 }
 
 // --------------------------- Canlı navigasyon (journey) ---------------------------
+export type NavMode = "walk" | "transit" | "drive";
 export interface WalkLeg {
   coords: { lat: number; lng: number }[];
   distance_m: number;
   duration_min: number;
+  /** TRANSIT modunda ilk hat bilgisi (4.0): araç emojisi (🚇🚊🚆⛴️🚌), hat, biniş, yön, aktarma */
+  transit?: {
+    line: string; board?: string | null; headsign?: string | null;
+    vehicle?: string | null; transfers?: number | null;
+  } | null;
 }
 
-/** Kullanıcı konumu → hedef durak GERÇEK yürüme rotası (Google Maps hissi).
+/** Kullanıcı konumu → hedef durak GERÇEK rota, seçilen ULAŞIM MODUNDA (4.0: 🚶🚌🚗).
  *  Servis kapalıysa null döner → harita düz kesikli çizgiye düşer. */
+export async function fetchNavRoute(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+  mode: NavMode = "walk",
+): Promise<WalkLeg | null> {
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/nav-route`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng, mode }),
+    }, 15_000);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.coords) && data.coords.length >= 2) return data as WalkLeg;
+      return null;
+    }
+    // Eski servis (nav-route'suz) — yürüme modunda /walk-route'a düş, mod desteği deploy'la gelir
+    if (mode === "walk" && res.status === 404) {
+      const legacy = await fetchWithTimeout(`${AI_SERVICE_URL}/walk-route`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng }),
+      }, 12_000);
+      if (!legacy.ok) return null;
+      const d = await legacy.json();
+      return d.ok && Array.isArray(d.coords) && d.coords.length >= 2 ? (d as WalkLeg) : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Geriye uyumluluk: eski çağıranlar için yürüme modu kısayolu. */
 export async function fetchWalkRoute(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number },
 ): Promise<WalkLeg | null> {
-  try {
-    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/walk-route`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng }),
-    }, 12_000);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.ok && Array.isArray(data.coords) && data.coords.length >= 2 ? (data as WalkLeg) : null;
-  } catch {
-    return null;
-  }
+  return fetchNavRoute(from, to, "walk");
 }
 
 // --------------------------- AI hafıza (onboarding) ---------------------------

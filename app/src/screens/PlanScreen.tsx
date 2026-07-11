@@ -2,11 +2,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView,
+  ActivityIndicator, Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import CollapsibleSheet from "../components/CollapsibleSheet";
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import {
   addStop, fetchRoute, planRoute, refreshRouteExtras, removeStop, searchPlaces, setFavorite,
@@ -19,6 +20,9 @@ import { useTheme } from "../lib/themeContext";
 import type { PlaceResult, PlanResponse, Waypoint } from "../lib/types";
 import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 import type { PlanScreenProps } from "../navigation";
+
+// 4.0a: sonuç paneli tam ekran haritanın üstünde (aşağı kaydırılıp kapanır)
+const SHEET_H = Math.round(Dimensions.get("window").height * 0.58);
 
 const SUGGESTIONS = [
   "Kafa dinlemek istiyorum, bütçem az",
@@ -395,9 +399,12 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
 
   return (
     <View style={styles.container}>
-      <OSMMap polylines={polylines} markers={markers} padding={48} style={styles.map} showRecenter />
-      <View style={styles.sheet}>
-        <View style={styles.handle} />
+      <OSMMap
+        polylines={polylines} markers={markers} padding={48}
+        style={styles.map} overlayInsetBottom={SHEET_H - 60} showRecenter
+      />
+      {/* 4.0a: plan sonucu paneli de aşağı kaydırılıp kapanır — tam harita görünür */}
+      <CollapsibleSheet style={styles.sheet} peekLabel="Plan detayı">
         <ScrollView contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
             <Text style={styles.aiTag}>
@@ -542,7 +549,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
             <Text style={styles.btnText}>← Yeni plan</Text>
           </TouchableOpacity>
         </ScrollView>
-      </View>
+      </CollapsibleSheet>
 
       {/* 2.7b: durak ekleme — mekan arama (SerpApi, CreateRoute ile aynı kaynak) */}
       <Modal visible={adding} transparent animationType="slide" onRequestClose={() => setAdding(false)}>
@@ -637,10 +644,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   stepsTitle: { color: colors.textFaint, fontFamily: font.bold, fontSize: 10.5, letterSpacing: 1.2, marginBottom: 2 },
   stepLine: { color: colors.textMuted, fontFamily: font.medium, fontSize: 12 },
 
-  map: { height: 220, width: "100%" },
+  map: { ...StyleSheet.absoluteFillObject }, // 4.0a: tam ekran harita
   sheet: {
-    flex: 1, marginTop: -24, backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, overflow: "hidden",
+    position: "absolute", left: 0, right: 0, bottom: 0, height: SHEET_H,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+    overflow: "hidden", ...shadow(12),
   },
   handle: { width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, alignSelf: "center", marginTop: 9, marginBottom: 2 },
   hero: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },

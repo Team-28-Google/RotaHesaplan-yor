@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Animated, Linking, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Animated, Dimensions, Linking, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { captureRef } from "react-native-view-shot";
@@ -13,9 +13,10 @@ import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import Skeleton from "../components/Skeleton";
 import { pop, success, tap } from "../lib/haptics";
 import AddStopSheet from "../components/AddStopSheet";
+import CollapsibleSheet from "../components/CollapsibleSheet";
 import {
   addComment, addRouteToCollection, addStop, canEditRoute, currentUserId, fetchComments,
-  fetchCommentSummary, fetchMyCollections, fetchRoute, fetchSpendStats, fetchWalkRoute,
+  fetchCommentSummary, fetchMyCollections, fetchNavRoute, fetchRoute, fetchSpendStats,
   forkRoute, getFavoriteIds, getOrCreateShareToken, publishRoute, refreshRouteExtras,
   removeStop, sendMemoryEvent, setFavorite, uploadPhoto,
   type CollectionInfo, type CommentSummary, type FloodComment, type WalkLeg,
@@ -29,6 +30,9 @@ import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 import type { RouteFloodScreenProps } from "../navigation";
+
+// 4.0a: detay paneli tam ekran haritanın üstünde, ekranın ~%58'i (aşağı kaydırılıp kapanır)
+const SHEET_H = Math.round(Dimensions.get("window").height * 0.58);
 
 // Telefonun harita uygulamasında yürüyüş yol tarifini açar (Google key gerekmez)
 function openDirections(lat: number, lng: number) {
@@ -384,13 +388,14 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     startJourney();
   }, [route, exp]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // CANLI NAVİGASYON (GMaps hissi): konum → sıradaki durak GERÇEK yürüme rotası.
-  // Hedef değişince ya da hesaplanan noktadan ~40m uzaklaşınca yeniden çekilir.
+  // CANLI NAVİGASYON (4.0, GMaps paritesi): konum → sıradaki durak GERÇEK rota,
+  // seçilen ULAŞIM MODUNDA (🚶🚌🚗). Hedef/mod değişince ya da ~40m sapınca yeniden çekilir.
+  const [navMode, setNavMode] = useState<"walk" | "transit" | "drive">("walk");
   const [liveLeg, setLiveLeg] = useState<WalkLeg | null>(null);
   const legOrigin = useRef<{ lat: number; lng: number } | null>(null);
   const legBusy = useRef(false);
 
-  useEffect(() => { setLiveLeg(null); legOrigin.current = null; }, [target, journey]);
+  useEffect(() => { setLiveLeg(null); legOrigin.current = null; }, [target, journey, navMode]);
 
   useEffect(() => {
     const t = exp[target];
@@ -399,13 +404,23 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     if (!stale || legBusy.current) return;
     legBusy.current = true;
     const origin = { lat: userLoc.lat, lng: userLoc.lng };
-    fetchWalkRoute(origin, { lat: t.lat, lng: t.lng })
+    fetchNavRoute(origin, { lat: t.lat, lng: t.lng }, navMode)
       .then((leg) => {
         if (leg) { setLiveLeg(leg); legOrigin.current = origin; }
         else { legOrigin.current = origin; } // servis yok → düz çizgi yedeği; sürekli deneme yapma
       })
       .finally(() => { legBusy.current = false; });
-  }, [journey, userLoc, target, exp]);
+  }, [journey, userLoc, target, exp, navMode]);
+
+  // ✕ Navigasyondan çık (4.0): özet YOK — normal detay görünümüne dön
+  const cancelJourney = () => {
+    tap();
+    clearAdvance();
+    setJourney(false);
+    setArrived(false);
+    setTarget(0);
+    journeyStart.current = null;
+  };
 
   // Yolculuğu kapat → özet + paylaşım kartı göster, yerel günlüğe yaz (Profil istatistikleri)
   const finishJourney = () => {
@@ -509,7 +524,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         polylines={polylines}
         markers={markers}
         padding={48}
-        style={[styles.map, journey && styles.mapJourney]}
+        style={styles.map}
+        overlayInsetBottom={journey ? 140 : SHEET_H - 60}
         userLocation={userLoc}
         followLocation={journey ? userLoc : null}
         followHeading={journey ? userLoc?.heading ?? null : null}
@@ -517,12 +533,40 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         trackLine={journey ? track : null}
         showRecenter
       />
-      <TouchableOpacity style={[styles.backBtn, { top: insets.top + 8 }]} onPress={() => navigation.goBack()} hitSlop={12}>
-        <Text style={styles.backIcon}>‹</Text>
+      {/* Geri (normalde) / ✕ navigasyondan çık (yolculukta — özet YOK, iptal) */}
+      <TouchableOpacity
+        style={[styles.backBtn, { top: insets.top + 8 }]}
+        onPress={() => (journey ? cancelJourney() : navigation.goBack())}
+        hitSlop={12}
+      >
+        <Text style={styles.backIcon}>{journey ? "✕" : "‹"}</Text>
       </TouchableOpacity>
 
-      <View style={styles.sheet}>
-        <View style={styles.handle} />
+      {/* 4.0: yolculukta ÜST kart — sıradaki durak (foto + ad + kalan) */}
+      {journey && targetStop && (
+        <View style={[styles.navTop, { top: insets.top + 8 }]}>
+          {targetStop.photo_urls?.[0] ? (
+            <Image source={{ uri: targetStop.photo_urls[0] }} style={styles.navTopPhoto} contentFit="cover" />
+          ) : (
+            <View style={styles.navTopIcon}><Text style={{ fontSize: 18 }}>{waypointIcon(targetStop)}</Text></View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.navTopLabel}>SIRADAKİ · {target + 1}/{exp.length}</Text>
+            <Text style={styles.navTopName} numberOfLines={1}>{targetStop.name}</Text>
+            {userLoc && (
+              <Text style={styles.navTopMeta}>
+                {liveLeg
+                  ? `🧭 ${distText(liveLeg.distance_m)} · ~${liveLeg.duration_min} dk`
+                  : `📏 ${distText(distMeters(userLoc, targetStop))} (kuş uçuşu)`}
+              </Text>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* 4.0a: detay paneli — aşağı kaydırınca TAM harita; yolculukta tamamen gizli */}
+      {!journey && (
+      <CollapsibleSheet style={styles.sheet} peekLabel="Detaylar">
         <ScrollView contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
           {/* Hero */}
           <View style={styles.hero}>
@@ -741,10 +785,37 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             )}
           </View>
         </ScrollView>
-      </View>
+      </CollapsibleSheet>
+      )}
 
       {journey && (
         <Animated.View style={[styles.journeyBar, { paddingBottom: insets.bottom + 10, transform: [{ translateY: jBarY }] }]}>
+          {/* 4.0: mod seçici — 🚶 Yürü · 🚌 Toplu · 🚗 Araba (Routes API canlı) */}
+          <View style={styles.modeRow}>
+            {([["walk", "🚶 Yürü"], ["transit", "🚌 Toplu"], ["drive", "🚗 Araba"]] as const).map(([m, label]) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.modeChip, navMode === m && styles.modeChipOn]}
+                onPress={() => { tap(); setNavMode(m); }}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.modeText, navMode === m && styles.modeTextOn]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* TRANSIT: hat bilgisi (Routes API transitDetails) */}
+          {navMode === "transit" && liveLeg?.transit && (
+            <Text style={styles.transitInfo} numberOfLines={1}>
+              {liveLeg.transit.vehicle ?? "🚌"} {liveLeg.transit.line}
+              {liveLeg.transit.board ? ` · ${liveLeg.transit.board}'dan bin` : ""}
+              {liveLeg.transit.headsign ? ` · yön: ${liveLeg.transit.headsign}` : ""}
+              {liveLeg.transit.transfers ? ` · ${liveLeg.transit.transfers} aktarma` : ""}
+            </Text>
+          )}
+          {navMode === "transit" && liveLeg && !liveLeg.transit && (
+            <Text style={styles.transitInfo} numberOfLines={1}>🚶 Bu mesafe için yürüme önerildi (hat gerekmedi)</Text>
+          )}
+          <View style={styles.jRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.jLabel}>Durak {target + 1}/{exp.length}</Text>
             <Text style={styles.jStop} numberOfLines={1}>{targetStop?.name}</Text>
@@ -756,7 +827,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   <Text style={styles.jArrived}>🎉 Rota tamamlandı — keyfini çıkar</Text>
                 )
               ) : liveLeg ? (
-                <Text style={styles.jDist}>🚶 {distText(liveLeg.distance_m)} · ~{liveLeg.duration_min} dk · rotayı izle</Text>
+                <Text style={styles.jDist}>
+                  {navMode === "walk" ? "🚶" : navMode === "transit" ? "🚌" : "🚗"} {distText(liveLeg.distance_m)} · ~{liveLeg.duration_min} dk · rotayı izle
+                </Text>
               ) : (
                 <Text style={styles.jDist}>📍 {distText(distMeters(userLoc, targetStop))} ileride · seni takip ediyorum</Text>
               )
@@ -773,6 +846,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               <Text style={styles.jNextText}>Bitir</Text>
             </TouchableOpacity>
           )}
+          </View>
         </Animated.View>
       )}
 
@@ -1096,8 +1170,22 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   error: { color: colors.danger, paddingHorizontal: 24, textAlign: "center", fontFamily: font.medium },
-  map: { height: 230, width: "100%" },
-  mapJourney: { height: 380 }, // yolculukta harita büyür: takip + rehber çizgi net görünsün
+  // 4.0a: harita TAM EKRAN; detay paneli üstüne biner (aşağı kaydırınca tamamı görünür)
+  map: { ...StyleSheet.absoluteFillObject },
+  // 4.0: yolculukta üst "sıradaki durak" kartı
+  navTop: {
+    position: "absolute", left: 64, right: 14, flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 10,
+    borderWidth: 1, borderColor: colors.border, ...shadow(10),
+  },
+  navTopPhoto: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  navTopIcon: {
+    width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.surfaceAlt,
+    alignItems: "center", justifyContent: "center",
+  },
+  navTopLabel: { color: colors.textFaint, fontFamily: font.bold, fontSize: 10, letterSpacing: 1 },
+  navTopName: { color: colors.text, fontFamily: font.extra, fontSize: 15, marginTop: 1 },
+  navTopMeta: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 12, marginTop: 2 },
   backBtn: {
     position: "absolute", left: 14, width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", ...shadow(8),
@@ -1105,8 +1193,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   backIcon: { fontSize: 26, color: colors.text, marginTop: -3, fontFamily: font.bold },
 
   sheet: {
-    flex: 1, marginTop: -24, backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, overflow: "hidden",
+    position: "absolute", left: 0, right: 0, bottom: 0, height: SHEET_H,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+    overflow: "hidden", ...shadow(12),
   },
   handle: {
     width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border,
@@ -1211,11 +1301,22 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   dirText: { fontSize: 12.5, color: colors.primaryDark, fontFamily: font.bold },
   // Journey bar her iki temada da koyu kalır (harita üstü kontrast) → metinleri sabit açık
   journeyBar: {
-    position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#10162C", paddingHorizontal: 16, paddingTop: 12,
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    backgroundColor: "#10162C", paddingHorizontal: 16, paddingTop: 10,
     borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg,
     borderTopWidth: 1, borderTopColor: "#263052",
   },
+  jRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  // 4.0 mod seçici (navigasyon barında)
+  modeRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  modeChip: {
+    flex: 1, paddingVertical: 7, alignItems: "center", borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "#263052",
+  },
+  modeChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  modeText: { color: "#8A93B8", fontFamily: font.bold, fontSize: 12.5 },
+  modeTextOn: { color: "#fff" },
+  transitInfo: { color: "#7DD3FC", fontFamily: font.bold, fontSize: 12.5, marginBottom: 6 },
   jLabel: { color: "#8A93B8", fontFamily: font.semibold, fontSize: 12 },
   jStop: { color: "#F2F4FC", fontFamily: font.extra, fontSize: 16, marginTop: 1 },
   jDist: { color: "#FFB4A5", fontFamily: font.semibold, fontSize: 12.5, marginTop: 2 },

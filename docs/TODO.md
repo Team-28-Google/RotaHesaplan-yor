@@ -384,30 +384,26 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [x] CreateRoute + 🎲 üretici rotaları da ÖZEL başlar; servis: özel rota BAŞKASINA önerilmez.
 - [x] 👤 0015 uygulandı (canlı doğrulandı: 30 açık rota, görünürlük politikaları aktif).
 
-### ⬜ 4.0a AÇILIR/KAPANIR DETAY PENCERESİ ★ KULLANICI İSTEĞİ (7 Tem)
-- [ ] Haritalı ekranlarda alttaki detay penceresi **açılır/kapanır** olacak — gerektiğinde
-  TAM harita görülebilsin: RouteFlood detay sheet'i (öncelik) + Map ekranı alt kartları.
-- [ ] Davranış: tutamaktan sürükle ya da dokun → kapalı (sadece tutamak/mini bar) ↔ açık
-  (mevcut görünüm); harita her durumda etkileşimli kalır. Basit `Animated` yüksekliği yeter,
-  kütüphane gerekmez; kapalıyken marker'lara padding ayarı güncellenir.
-- **Kabul:** Sheet kapatılınca rota tüm ekranda görünüyor, tek dokunuşla geri açılıyor.
+### ✅ 4.0a AÇILIR/KAPANIR DETAY PENCERESİ — TAMAMLANDI (12 Tem) ★
+- [x] `CollapsibleSheet` ortak bileşeni: sürükle (PanResponder) ya da dokun; KAPALIYKEN
+  tutamak + etiketli pill + ⌃ oklar görünür ("yukarı çek" hissi net).
+- [x] RouteFlood + Plan sonucu: harita TAM EKRAN, panel üstüne biner (%58) — kaydırınca tüm rota.
+- [x] Map ekranı kart karüseli de kapanabilir ("N rota — kartları aç" pill'i).
+- **Kontrol 👤:** üç ekranda da kapat/aç.
 
-### ⬜ 4.0 ÇOK MODLU NAVİGASYON — "GMaps paritesi" (harita elden geçirme) 🤖 ★ KULLANICI İSTEĞİ (4 Tem)
-- [ ] **"Yolculuğa Başla" = GMaps tarzı TAM EKRAN navigasyon modu** (kullanıcı isteği, 4 Tem):
-  sheet/timeline gizlenir, harita tam ekrana geçer; ÜSTTE sıradaki durak kartı (foto + isim +
-  kalan mesafe), ALTTA navigasyon barı (ETA · kalan süre/mesafe · durak X/N · Çıkış butonu);
-  kamera follow+heading (mevcut) + recenter; yolculuktan çıkınca normal detay görünümüne dön.
-- [ ] **Mod seçici** (navigasyon barında): 🚶 Yürü · 🚌 Toplu taşıma · 🚗 Araba — Routes API zaten
-  destekliyor (`travelMode: WALK | TRANSIT | DRIVE`); `/walk-route` genelleştirilir → `/nav-route {mode}`.
-- [ ] **Mod karşılaştırması**: hedef durak için üç modun süre/mesafesi yan yana
-  ("🚶 25 dk · 🚌 12 dk · 🚗 8 dk") — tek Routes çağrısı/mod, hedef değişince hesaplanır.
-- [ ] **TRANSIT modunda**: hat bilgisi (otobüs no/metro hattı, biniş durağı, aktarma) — Routes API
-  TRANSIT yanıtındaki `transitDetails`'ten; journey bar'da "🚌 15A · Kadıköy İskele'den bin".
-- [ ] Rota detayındaki bacaklarda (durak arası) da mod bazlı gerçek süre alternatifi göster.
-- [ ] (Araştır) DRIVE modunda trafik-duyarlı süre Essentials'a girer mi, kota etkisi ne?
-- ~~Ön koşul: 0.4 Render deploy~~ → 0.4 rafa kalktı (6 Tem); test LAN'da (ev Wi-Fi) yapılır,
-  4.1 saha testi de buna göre ev çevresi/aynı ağ senaryosuna daralır.
-- **Kabul:** Yolculukta mod değiştirince çizgi + süre + talimat o moda göre güncelleniyor.
+### 🟡 4.0 ÇOK MODLU NAVİGASYON — ÇEKİRDEK TAMAM (12 Tem) ★
+- [x] **TAM EKRAN navigasyon**: yolculukta detay paneli tamamen gizlenir, harita tam ekran;
+  ÜSTTE sıradaki durak kartı (foto + ad + kalan mesafe/süre + X/N); geri butonu ✕ (özetsiz çıkış);
+  kamera follow+heading (mevcut) korunur.
+- [x] **Mod seçici** navigasyon barında: 🚶 Yürü · 🚌 Toplu · 🚗 Araba — `/nav-route {mode}`
+  (google_nav_leg; /walk-route geriye uyumlu, app 404'te walk'a düşer).
+- [x] **TRANSIT hat bilgisi**: canlı doğrulandı — Karaköy→Kadıköy: "M2 · Haliç'ten bin ·
+  yön: Yenikapı"; barda hat satırı gösterilir. Canlı: walk 18dk / drive 7dk (farklı geometri) ✓.
+- [ ] Mod karşılaştırması (üç modun süresi yan yana) — V2.
+- [ ] Rota detayı bacaklarında mod bazlı alternatif süreler — V2.
+- [ ] (Araştır) DRIVE trafik-duyarlı süre/kota — V2.
+- **Kabul 👤:** Yolculukta mod değiştirince çizgi + süre o moda göre güncelleniyor
+  (mod seçici CLOUD'a push'tan sonra telefonda çalışır — /nav-route deploy'u gerekir).
 
 ### ⬜ 4.1 Saha testi 👤 (kritik — kod değil, yürüyüş)
 - [ ] Gerçek rotada (örn. Moda) yolculuk modu: takip kamerası, 30m eşiği, auto-advance, rehber çizgi.

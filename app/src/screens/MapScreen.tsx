@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import CollapsibleSheet from "../components/CollapsibleSheet";
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import PressableScale from "../components/PressableScale";
 import { fetchRoutes } from "../lib/api";
@@ -185,8 +186,11 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         </View>
       )}
 
-      {/* Alt: sayfa noktaları + kart karüseli */}
-      <View style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}>
+      {/* Alt: sayfa noktaları + kart karüseli — aşağı kaydırılıp kapanabilir (4.0a) */}
+      <CollapsibleSheet
+        style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}
+        peekLabel={`${routes.length} rota`}
+      >
         <View style={styles.dots}>
           {routes.map((r, i) => (
             <View key={r.id} style={[styles.dot, i === active && styles.dotActive]} />
@@ -240,7 +244,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
             );
           }}
         />
-      </View>
+      </CollapsibleSheet>
     </View>
   );
 }
