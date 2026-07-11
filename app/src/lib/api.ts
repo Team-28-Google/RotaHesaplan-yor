@@ -65,6 +65,80 @@ export async function addStop(routeId: string, place: PlaceResult, seq: number):
   if (error) throw error;
 }
 
+// --------------------------- Fork & yayınlama (3.13) ---------------------------
+/** Başkasının rotasını KOPYALAYARAK kendine kaydeder (orijinale dokunmaz);
+ *  extra verilirse yeni durak kopyaya eklenir. Kopya ÖZEL başlar. */
+export async function forkRoute(src: RouteWithWaypoints, extra?: PlaceResult): Promise<string> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Giriş gerekli");
+  const { data: r, error } = await supabase.from("routes").insert({
+    author_id: uid, title: src.title, description: src.description,
+    city: src.city, vibe_tags: src.vibe_tags, weather_fit: src.weather_fit,
+    budget_level: src.budget_level, is_seed: false, is_public: false,
+    cover_photo_url: src.cover_photo_url,
+    total_distance_m: src.total_distance_m, total_duration_min: src.total_duration_min,
+  }).select("id").single();
+  if (error || !r) throw error ?? new Error("Kopya oluşturulamadı");
+  const newId = r.id as string;
+
+  const wps = (src.waypoints ?? []).slice().sort((a, b) => a.seq - b.seq).map((w) => ({
+    route_id: newId, seq: w.seq, name: w.name, lat: w.lat, lng: w.lng,
+    category: w.category, kind: w.kind, note: w.note, place_id: w.place_id,
+    price_level: w.price_level, transport_mode: w.transport_mode, transport_note: w.transport_note,
+    photo_urls: w.photo_urls ?? [], metadata: w.metadata ?? {},
+    leg_geometry: w.leg_geometry ?? null, leg_distance_m: w.leg_distance_m ?? null,
+    leg_duration_min: w.leg_duration_min ?? null,
+  }));
+  if (extra) {
+    const maxSeq = wps.length ? Math.max(...wps.map((w) => w.seq)) : -1;
+    wps.push({
+      route_id: newId, seq: maxSeq + 1, name: extra.name, lat: extra.lat, lng: extra.lng,
+      category: "other", kind: "experience", note: null, place_id: extra.place_id ?? null,
+      price_level: null, transport_mode: "walk", transport_note: null,
+      photo_urls: extra.thumbnail ? [extra.thumbnail] : [], metadata: {},
+      leg_geometry: null, leg_distance_m: null, leg_duration_min: null,
+    });
+  }
+  const { error: wErr } = await supabase.from("waypoints").insert(wps);
+  if (wErr) throw wErr;
+  refreshRouteExtras(newId); // yeni bacağın geometrisi + fotosu arka planda
+  return newId;
+}
+
+/** "🌍 Rotanı paylaş": rota herkese açılır (yalnız sahibi — RLS). */
+export async function publishRoute(routeId: string): Promise<boolean> {
+  const { error } = await supabase.from("routes").update({ is_public: true }).eq("id", routeId);
+  return !error;
+}
+
+/** Bir kullanıcının rotaları (liderlik vitrini) — RLS gereği yalnız HERKESE AÇIK olanlar gelir. */
+export async function fetchUserRoutes(userId: string): Promise<RouteWithWaypoints[]> {
+  const { data, error } = await supabase
+    .from("routes").select("*, waypoints(*)")
+    .eq("author_id", userId).eq("is_seed", false)
+    .order("like_count", { ascending: false });
+  if (error) return [];
+  return (data ?? []).map((r) => ({
+    ...(r as RouteWithWaypoints),
+    waypoints: ((r as RouteWithWaypoints).waypoints ?? []).slice().sort(bySeq),
+  }));
+}
+
+/** Rotalarım: kendi oluşturduğun/kopyaladığın rotalar (özel + açık hepsi). */
+export async function fetchMyRoutes(): Promise<RouteWithWaypoints[]> {
+  const uid = await currentUserId();
+  if (!uid) return [];
+  const { data, error } = await supabase
+    .from("routes").select("*, waypoints(*)")
+    .eq("author_id", uid)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return (data ?? []).map((r) => ({
+    ...(r as RouteWithWaypoints),
+    waypoints: ((r as RouteWithWaypoints).waypoints ?? []).slice().sort(bySeq),
+  }));
+}
+
 // --------------------------- Ortak düzenleme (3.7) ---------------------------
 /** Rota sahibi için davet token'ı getirir (yoksa üretir) — RLS: yalnız sahibi. */
 export async function getOrCreateShareToken(routeId: string): Promise<string | null> {
@@ -125,6 +199,24 @@ export async function fetchWeeklyLeaderboard(): Promise<LeaderRow[]> {
     const { data, error } = await supabase.from("weekly_leaderboard").select("*");
     if (error) return [];
     return (data ?? []) as LeaderRow[];
+  } catch {
+    return [];
+  }
+}
+
+/** ❤️ En beğenilen rota yazarları (3.12) — view yoksa/boşsa sessizce boş liste. */
+export interface AuthorLeaderRow {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  total_likes: number;
+  route_count: number;
+}
+export async function fetchAuthorLeaderboard(): Promise<AuthorLeaderRow[]> {
+  try {
+    const { data, error } = await supabase.from("author_likes_leaderboard").select("*");
+    if (error) return [];
+    return (data ?? []) as AuthorLeaderRow[];
   } catch {
     return [];
   }
@@ -461,7 +553,8 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
       author_id: uid, title: input.title, description: input.description,
       city: await getActiveCity(),
       vibe_tags: input.vibe_tags, weather_fit: input.weather_fit, budget_level: 2,
-      is_seed: false, total_distance_m: dist, total_duration_min: Math.round(dist / 80),
+      is_seed: false, is_public: false, // 3.13: özel başlar; "🌍 Rotanı paylaş" ile açılır
+      total_distance_m: dist, total_duration_min: Math.round(dist / 80),
     })
     .select("id")
     .single();

@@ -24,6 +24,8 @@ import type { RootStackParamList, TabParamList } from "./src/navigation";
 import AuthScreen from "./src/screens/AuthScreen";
 import CreateRouteScreen from "./src/screens/CreateRouteScreen";
 import HomeScreen from "./src/screens/HomeScreen";
+import LeaderboardScreen from "./src/screens/LeaderboardScreen";
+import UserRoutesScreen from "./src/screens/UserRoutesScreen";
 import MapScreen from "./src/screens/MapScreen";
 import OnboardingScreen, { OnboardingFlow } from "./src/screens/OnboardingScreen";
 import PlanScreen from "./src/screens/PlanScreen";
@@ -158,6 +160,8 @@ function Root() {
             <Stack.Screen name="RouteFlood" component={RouteFloodScreen} />
             <Stack.Screen name="CreateRoute" component={CreateRouteScreen} />
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+            <Stack.Screen name="UserRoutes" component={UserRoutesScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       )}

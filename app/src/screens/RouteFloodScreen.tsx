@@ -15,8 +15,9 @@ import { pop, success, tap } from "../lib/haptics";
 import AddStopSheet from "../components/AddStopSheet";
 import {
   addComment, addStop, canEditRoute, currentUserId, fetchComments, fetchCommentSummary,
-  fetchRoute, fetchSpendStats, fetchWalkRoute, getFavoriteIds, getOrCreateShareToken,
-  refreshRouteExtras, removeStop, sendMemoryEvent, setFavorite, uploadPhoto,
+  fetchRoute, fetchSpendStats, fetchWalkRoute, forkRoute, getFavoriteIds,
+  getOrCreateShareToken, publishRoute, refreshRouteExtras, removeStop, sendMemoryEvent,
+  setFavorite, uploadPhoto,
   type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { INVITE_URL } from "../lib/config";
@@ -88,6 +89,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const journeyStart = useRef<number | null>(null);
   const [track, setTrack] = useState<{ lat: number; lng: number }[]>([]); // yürünen iz (4.2)
+  const visitedRef = useRef<Set<number>>(new Set()); // GPS ile varılan duraklar (3.11 hile koruması)
 
   // Yorumlar
   const [comments, setComments] = useState<FloodComment[]>([]);
@@ -98,8 +100,11 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [cError, setCError] = useState<string | null>(null);
   const [communitySummary, setCommunitySummary] = useState<CommentSummary | null>(null);
 
-  // Yolculuk özeti + paylaşım kartı (3.1: iki format — Kart 4:5 / Story 9:16)
+  // Yolculuk özeti: önce DEĞERLENDİRME (düşünce+puan+harcama), sonra paylaşım kartı (3.8 UX)
   const [summary, setSummary] = useState<JourneySummary | null>(null);
+  const [sumPhase, setSumPhase] = useState<"review" | "share">("review");
+  const [revText, setRevText] = useState("");
+  const [revRating, setRevRating] = useState<number | null>(null);
   const [cardFormat, setCardFormat] = useState<"card" | "story">("card");
   const [traceSrc, setTraceSrc] = useState<"plan" | "walked">("plan"); // 3.1b iz kaynağı
   const [sharing, setSharing] = useState(false);
@@ -164,12 +169,41 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     tap();
     setEditBusy(true);
     try {
-      const maxSeq = Math.max(-1, ...route.waypoints.map((w) => w.seq));
-      await addStop(route.id, p, maxSeq + 1);
-      await refreshRouteState();
-      refreshRouteExtras(routeId).then(refreshRouteState);
+      if (canEdit) {
+        // Sahibi/collaborator: rotanın kendisine ekler
+        const maxSeq = Math.max(-1, ...route.waypoints.map((w) => w.seq));
+        await addStop(route.id, p, maxSeq + 1);
+        await refreshRouteState();
+        refreshRouteExtras(routeId).then(refreshRouteState);
+      } else {
+        // 3.13: BAŞKASININ rotası DEĞİŞMEZ — kendi özel kopyan oluşur ("Rotalarım")
+        const newId = await forkRoute(route, p);
+        success();
+        Alert.alert(
+          "Rotalarım'a kaydedildi 🎉",
+          "Bu rotanın senin kopyan oluşturuldu — orijinal rota değişmedi. Kopyan şimdilik özel; istersen içinden '🌍 Rotanı paylaş' ile herkese açabilirsin.",
+          [
+            { text: "Kopyamı aç", onPress: () => navigation.replace("RouteFlood", { routeId: newId, title: route.title }) },
+            { text: "Tamam", style: "cancel" },
+          ],
+        );
+      }
     } catch { /* sessiz */ }
     finally { setEditBusy(false); }
+  };
+
+  // 🌍 Rotanı paylaş (3.13): özel rota herkese açılır
+  const [publishing, setPublishing] = useState(false);
+  const onPublish = async () => {
+    if (!route || publishing) return;
+    tap();
+    setPublishing(true);
+    try {
+      if (await publishRoute(route.id)) {
+        success();
+        setRoute({ ...route, is_public: true });
+      }
+    } finally { setPublishing(false); }
   };
 
   // Sahibi davet linki paylaşır → linke tıklayan collaborator olur (App.tsx yakalar)
@@ -288,6 +322,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       return;
     }
     if (!arrived) success(); // varış anı — dokunsal kutlama
+    visitedRef.current.add(target); // GPS'le gerçekten varıldı (3.11)
     setArrived(true);
     if (target < exp.length - 1 && !advanceTimer.current) {
       advanceTimer.current = setTimeout(() => {
@@ -316,6 +351,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     clearAdvance();
     journeyStart.current = Date.now();
     setTrack(userLoc ? [{ lat: userLoc.lat, lng: userLoc.lng }] : []); // iz sıfırdan başlar
+    visitedRef.current = new Set(); // varış sayacı sıfırlanır (3.11)
     setJourney(true);
     setTarget(0);
     setArrived(false);
@@ -374,13 +410,20 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       track: walked,
     };
     setSummary(s);
+    setSumPhase("review");
+    setRevText("");
+    setRevRating(null);
     setSpent(null);
     journeyRemoteId.current = null;
+    // 3.11: durakların en az yarısına (min 2) GPS ile varıldıysa doğrulanmış —
+    // liderliğe yalnız doğrulanmış yolculuklar girer ("Bitir"e basmak yetmez)
+    const verified = visitedRef.current.size >= Math.min(exp.length, Math.max(2, Math.ceil(exp.length / 2)));
     addJourney({
       routeId: route.id, title: route.title, city: route.city,
       distance_m: s.distM, duration_min: s.durationMin, stops: s.stops,
       date: s.date.toISOString(),
       path: walked.length >= 2 ? walked : undefined,
+      verified,
     }).then((id) => { journeyRemoteId.current = id; });
     sendMemoryEvent("journey", route.id); // davranış hafızası (2.2)
   };
@@ -491,6 +534,21 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               ))}
             </View>
 
+            {/* 🌍 Yayınlama (3.13): özel rota — sahibi paylaşana dek yalnız o görür */}
+            {isOwner && route.is_public === false && (
+              <TouchableOpacity
+                style={[styles.publishBtn, publishing && { opacity: 0.6 }]}
+                onPress={onPublish}
+                disabled={publishing}
+                activeOpacity={0.9}
+              >
+                <Text style={styles.publishBtnText}>
+                  {publishing ? "Paylaşılıyor…" : "🌍 Rotanı paylaş — herkes görsün"}
+                </Text>
+                <Text style={styles.publishBtnSub}>🔒 Şimdilik sadece sen görüyorsun</Text>
+              </TouchableOpacity>
+            )}
+
             {/* 🤝 Ortak düzenleme (3.7): sahibi davet eder; davetli rozetini görür */}
             {isOwner && (
               <TouchableOpacity style={styles.inviteBtn} onPress={shareEditInvite} activeOpacity={0.85}>
@@ -568,17 +626,17 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             ))}
           </View>
 
-          {/* ＋ Durak ekle (3.7 — sahibi ya da davetli) */}
-          {canEdit && (
-            <TouchableOpacity
-              style={[styles.addStopBtn, editBusy && { opacity: 0.5 }]}
-              onPress={() => { tap(); setAddingStop(true); }}
-              disabled={editBusy}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.addStopText}>{editBusy ? "Güncelleniyor…" : "＋ Durak ekle"}</Text>
-            </TouchableOpacity>
-          )}
+          {/* ＋ Durak ekle: yetkili rotaya ekler; DEĞİLSE kendi kopyasına (3.13 fork) */}
+          <TouchableOpacity
+            style={[styles.addStopBtn, editBusy && { opacity: 0.5 }]}
+            onPress={() => { tap(); setAddingStop(true); }}
+            disabled={editBusy}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.addStopText}>
+              {editBusy ? "Güncelleniyor…" : canEdit ? "＋ Durak ekle" : "＋ Durak ekle — kendi kopyana kaydolur"}
+            </Text>
+          </TouchableOpacity>
 
           {/* Yakındaki pratik noktalar (rota dışı) */}
           {util.length > 0 && (
@@ -704,6 +762,78 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
           {summary && (
             <View style={styles.sumSheet}>
               <View style={styles.sumHandle} />
+              {sumPhase === "review" ? (
+                /* ADIM 1 — Değerlendirme (3.8 UX): düşünceler + puan + 💸; sonra kart */
+                <View style={{ width: "100%" }}>
+                  <Text style={styles.sumTitle}>🎉 Rota tamamlandı</Text>
+                  <Text style={styles.revSub}>Deneyimini anlat — topluluğa yol gösterir (hepsi opsiyonel).</Text>
+
+                  <View style={[styles.starsRow, { marginTop: 12 }]}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <TouchableOpacity key={s} onPress={() => { tap(); setRevRating(revRating === s ? null : s); }} hitSlop={6}>
+                        <Text style={[styles.star, revRating != null && s <= revRating && styles.starOn]}>★</Text>
+                      </TouchableOpacity>
+                    ))}
+                    <Text style={styles.starHint}>{revRating ? `${revRating}/5` : "rotayı puanla"}</Text>
+                  </View>
+
+                  <TextInput
+                    style={styles.revInput}
+                    value={revText}
+                    onChangeText={setRevText}
+                    placeholder="Rota hakkında düşüncelerin… (yorum olarak eklenir)"
+                    placeholderTextColor={colors.textFaint}
+                    multiline
+                  />
+
+                  <View style={styles.spendRow}>
+                    <Text style={styles.spendLabel}>💸 Ne kadar harcadın?</Text>
+                    <View style={styles.spendChips}>
+                      {[0, 100, 250, 500, 1000].map((v) => {
+                        const on = spent === v;
+                        return (
+                          <TouchableOpacity
+                            key={v}
+                            style={[styles.spendChip, on && styles.spendChipOn]}
+                            onPress={() => {
+                              tap();
+                              const next = on ? null : v;
+                              setSpent(next);
+                              if (next !== null) setJourneySpend(journeyRemoteId.current, next);
+                            }}
+                          >
+                            <Text style={[styles.spendChipText, on && styles.spendChipTextOn]}>
+                              {v === 0 ? "₺0" : v === 1000 ? "₺1000+" : `₺${v}`}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.revNext}
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      tap();
+                      const body = revText.trim();
+                      if (body) {
+                        // Düşünce → rota yorumu (topluluk özetini besler); hata akışı bozmaz
+                        addComment(routeId, body, revRating)
+                          .then(() => {
+                            fetchComments(routeId).then(setComments).catch(() => {});
+                            sendMemoryEvent("comment", routeId);
+                          })
+                          .catch(() => {});
+                      }
+                      setSumPhase("share");
+                    }}
+                  >
+                    <Text style={styles.revNextText}>Devam — paylaşım kartı →</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+              <>
               <Text style={styles.sumTitle}>🎉 Rota tamamlandı</Text>
 
               {/* Format seçimi */}
@@ -717,32 +847,6 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                     <Text style={[styles.fmtChipText, cardFormat === f && styles.fmtChipTextOn]}>{label}</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
-
-              {/* 💸 Harcama bildirimi (3.8) — opsiyonel; topluluk ortalamasını besler */}
-              <View style={styles.spendRow}>
-                <Text style={styles.spendLabel}>💸 Ne kadar harcadın?</Text>
-                <View style={styles.spendChips}>
-                  {[0, 100, 250, 500, 1000].map((v) => {
-                    const on = spent === v;
-                    return (
-                      <TouchableOpacity
-                        key={v}
-                        style={[styles.spendChip, on && styles.spendChipOn]}
-                        onPress={() => {
-                          tap();
-                          const next = on ? null : v;
-                          setSpent(next);
-                          if (next !== null) setJourneySpend(journeyRemoteId.current, next);
-                        }}
-                      >
-                        <Text style={[styles.spendChipText, on && styles.spendChipTextOn]}>
-                          {v === 0 ? "₺0" : v === 1000 ? "₺1000+" : `₺${v}`}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
               </View>
 
               {/* İz kaynağı (3.1b) — story'de; gerçek iz yoksa yalnız planlanan */}
@@ -836,6 +940,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   {sharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.sumShareText}>📤 Paylaş</Text>}
                 </TouchableOpacity>
               </View>
+              </>
+              )}
             </View>
           )}
         </View>
@@ -964,6 +1070,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   pill: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
   pillText: { fontSize: 13, color: colors.text, fontFamily: font.bold },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  // 3.13 yayınlama
+  publishBtn: {
+    marginTop: 12, paddingVertical: 12, alignItems: "center",
+    borderRadius: radius.lg, backgroundColor: colors.primary, ...shadow(6),
+  },
+  publishBtnText: { color: "#fff", fontFamily: font.extra, fontSize: 14.5 },
+  publishBtnSub: { color: "rgba(255,255,255,0.8)", fontFamily: font.medium, fontSize: 11.5, marginTop: 2 },
   // 3.7 ortak düzenleme
   inviteBtn: {
     marginTop: 12, paddingVertical: 11, alignItems: "center",
@@ -1124,6 +1237,19 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   shareTitle: { marginTop: 6, color: "#F2F4FC", fontFamily: font.black, fontSize: 24, lineHeight: 30 },
   shareDate: { marginTop: 4, color: "#8A93B8", fontFamily: font.medium, fontSize: 12.5 },
   shareStops: { marginTop: 16, gap: 6 },
+  // Değerlendirme adımı (3.8 UX)
+  revSub: { marginTop: 4, color: colors.textMuted, fontFamily: font.regular, fontSize: 13 },
+  revInput: {
+    marginTop: 12, minHeight: 64, maxHeight: 120, backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10,
+    color: colors.text, fontFamily: font.regular, fontSize: 14,
+    borderWidth: 1, borderColor: colors.border, textAlignVertical: "top",
+  },
+  revNext: {
+    marginTop: 14, paddingVertical: 14, alignItems: "center",
+    borderRadius: radius.lg, backgroundColor: colors.primary, ...shadow(6),
+  },
+  revNextText: { color: "#fff", fontFamily: font.extra, fontSize: 15 },
   // 💸 harcama (3.8)
   spendRow: { width: "100%", marginTop: 10, gap: 8 },
   spendLabel: { fontSize: 13.5, fontFamily: font.bold, color: colors.text },

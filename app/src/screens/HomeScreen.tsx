@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CityPicker from "../components/CityPicker";
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
-import { fetchRoutes, fetchWeeklyLeaderboard, getMyProfile } from "../lib/api";
+import { fetchAuthorLeaderboard, fetchRoutes, fetchWeeklyLeaderboard, type AuthorLeaderRow } from "../lib/api";
 import { cityInfo, getActiveCity, getChosenCity, setActiveCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { getOnboarding } from "../lib/onboarding";
@@ -60,9 +60,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
   const [leaders, setLeaders] = useState<LeaderRow[]>([]);
+  const [authorLeaders, setAuthorLeaders] = useState<AuthorLeaderRow[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
   const [city, setCity] = useState("Istanbul"); // 3.0c: aktif şehir
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +87,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     useCallback(() => {
       getOnboarding().then((p) => setVibes(p?.vibes ?? []));
       fetchWeeklyLeaderboard().then(setLeaders); // boş/erişilemezse şerit görünmez
-      getMyProfile().then((p) => setAvatarUrl(p?.avatar_url ?? null)).catch(() => {});
+      fetchAuthorLeaderboard().then(setAuthorLeaders); // ❤️ yazar liderliği (3.12)
       getChosenCity().then((c) => {
         if (c === null && !cityAsked.current) {
           cityAsked.current = true;
@@ -113,6 +113,15 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     () => [...routes].sort((a, b) => (b.like_count ?? 0) - (a.like_count ?? 0)),
     [routes],
   );
+  // 🔥 Çok Beğenilenler (3.9): aktif şehirde beğeni almış rotalar, çoktan aza (boşsa şerit gizli)
+  const mostLiked = useMemo(
+    () => routes
+      .filter((r) => (r.like_count ?? 0) >= 1)
+      .sort((a, b) => (b.like_count ?? 0) - (a.like_count ?? 0))
+      .slice(0, 8),
+    [routes],
+  );
+
   const forYou = useMemo(() => {
     if (!vibes.length) return [];
     const wanted = new Set(vibes.flatMap((v) => VIBE_MATCH[v] ?? [v]));
@@ -130,7 +139,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   }, [load]);
 
   const goCreate = () => { tap(); navigation.navigate("CreateRoute"); };
-  const goProfile = () => { tap(); navigation.navigate("Profile"); };
+  const goLeaderboard = () => { tap(); navigation.navigate("Leaderboard"); };
   const goPlan = () => { tap(); navigation.navigate("Plan"); };
   const openRoute = (r: RouteWithWaypoints) =>
     navigation.navigate("RouteFlood", { routeId: r.id, title: r.title });
@@ -182,15 +191,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
         </View>
         <View style={styles.headerBtns}>
-          <TouchableOpacity onPress={goCreate} style={styles.addBtn} activeOpacity={0.85}>
-            <Ionicons name="add" size={22} color="#fff" />
+          {/* 🏆 Liderlik — rota oluşturun solunda (profil simgesi kalktı; Profil alt barda) */}
+          <TouchableOpacity onPress={goLeaderboard} style={styles.trophyBtn} activeOpacity={0.85}>
+            <Ionicons name="trophy" size={17} color={colors.primaryDark} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={goProfile} style={styles.avatar} activeOpacity={0.8}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatarImg} contentFit="cover" transition={150} />
-            ) : (
-              <Ionicons name="person" size={17} color={colors.textMuted} />
-            )}
+          <TouchableOpacity onPress={goCreate} style={styles.createBtn} activeOpacity={0.85}>
+            <Ionicons name="add" size={17} color="#fff" />
+            <Text style={styles.createBtnText}>Rota Oluştur</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -266,6 +273,42 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 </View>
               )}
 
+              {/* 🔥 Çok Beğenilenler (3.9): topluluğun kalp verdikleri, beğeni rozeti vurgulu */}
+              {mostLiked.length > 0 && (
+                <View style={{ gap: 12 }}>
+                  <View style={styles.sectionRow}>
+                    <Text style={styles.sectionTitle}>🔥 Çok Beğenilenler</Text>
+                    <Text style={styles.sectionHint}>topluluğun favorileri</Text>
+                  </View>
+                  <FlatList
+                    data={mostLiked}
+                    horizontal
+                    keyExtractor={(r) => `ml-${r.id}`}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 12 }}
+                    renderItem={({ item, index }) => {
+                      const exp = item.waypoints.filter((w) => w.kind === "experience");
+                      const dur = fmtDur(item.total_duration_min);
+                      return (
+                        <PressableScale style={styles.miniCard} onPress={() => openRoute(item)}>
+                          {renderCover(item, index, styles.miniCover)}
+                          <View style={styles.miniLike}>
+                            <Ionicons name="heart" size={12} color="#FF6B54" />
+                            <Text style={styles.miniLikeText}> {item.like_count}</Text>
+                          </View>
+                          <View style={styles.miniBody}>
+                            <Text style={styles.miniTitle} numberOfLines={1}>{item.title}</Text>
+                            <Text style={styles.miniMeta}>
+                              {[dur, `${exp.length} durak`].filter(Boolean).join(" · ")}
+                            </Text>
+                          </View>
+                        </PressableScale>
+                      );
+                    }}
+                  />
+                </View>
+              )}
+
               <Text style={styles.sectionTitle}>Popüler Rotalar</Text>
             </View>
           }
@@ -277,18 +320,52 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             </View>
           }
           ListFooterComponent={
-            leaders.length > 0 ? (
-              <View style={styles.leaderCard}>
-                <Text style={styles.leaderTitle}>🏆 Bu haftanın gezginleri</Text>
-                {leaders.slice(0, 5).map((l, i) => (
-                  <View key={l.user_id} style={styles.leaderRow}>
-                    <Text style={styles.leaderRank}>{i + 1}</Text>
-                    <Text style={styles.leaderName} numberOfLines={1}>{l.username}</Text>
-                    <Text style={styles.leaderMeta}>
-                      {(l.total_distance_m / 1000).toFixed(1)} km · {l.journey_count} yolculuk
-                    </Text>
-                  </View>
-                ))}
+            leaders.length > 0 || authorLeaders.length > 0 ? (
+              <View style={{ gap: 14 }}>
+                {leaders.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.leaderCard}
+                    activeOpacity={0.85}
+                    onPress={() => { tap(); navigation.navigate("Leaderboard"); }}
+                  >
+                    <View style={styles.leaderHead}>
+                      <Text style={styles.leaderTitle}>🏆 Bu haftanın gezginleri</Text>
+                      <Text style={styles.leaderMore}>Tümü ›</Text>
+                    </View>
+                    <Text style={styles.leaderSub}>yalnız doğrulanmış yolculuklar sayılır 📍</Text>
+                    {leaders.slice(0, 5).map((l, i) => (
+                      <View key={l.user_id} style={styles.leaderRow}>
+                        <Text style={styles.leaderRank}>{i + 1}</Text>
+                        <Text style={styles.leaderName} numberOfLines={1}>{l.username}</Text>
+                        <Text style={styles.leaderMeta}>
+                          {(l.total_distance_m / 1000).toFixed(1)} km · {l.journey_count} yolculuk
+                        </Text>
+                      </View>
+                    ))}
+                  </TouchableOpacity>
+                )}
+                {/* ❤️ Rota yazarı liderliği (3.12): rotaları en çok beğenilenler */}
+                {authorLeaders.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.leaderCard}
+                    activeOpacity={0.85}
+                    onPress={() => { tap(); navigation.navigate("Leaderboard"); }}
+                  >
+                    <View style={styles.leaderHead}>
+                      <Text style={styles.leaderTitle}>❤️ En beğenilen rota yazarları</Text>
+                      <Text style={styles.leaderMore}>Tümü ›</Text>
+                    </View>
+                    {authorLeaders.slice(0, 5).map((l, i) => (
+                      <View key={l.user_id} style={styles.leaderRow}>
+                        <Text style={styles.leaderRank}>{i + 1}</Text>
+                        <Text style={styles.leaderName} numberOfLines={1}>{l.username}</Text>
+                        <Text style={styles.leaderMeta}>
+                          {l.total_likes} ❤️ · {l.route_count} rota
+                        </Text>
+                      </View>
+                    ))}
+                  </TouchableOpacity>
+                )}
               </View>
             ) : null
           }
@@ -345,16 +422,18 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 4,
   },
   cityChipText: { fontSize: 12, color: colors.text, fontFamily: font.bold },
-  headerBtns: { flexDirection: "row", alignItems: "center", gap: 10 },
-  addBtn: {
-    width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primary,
+  headerBtns: { flexDirection: "row", alignItems: "center", gap: 8 },
+  trophyBtn: {
+    width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft,
+    borderWidth: 1, borderColor: colors.primary,
     alignItems: "center", justifyContent: "center",
   },
-  avatar: {
-    width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceAlt,
-    alignItems: "center", justifyContent: "center", overflow: "hidden",
+  createBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: colors.primary, borderRadius: radius.pill,
+    paddingLeft: 10, paddingRight: 14, paddingVertical: 9,
   },
-  avatarImg: { width: 38, height: 38, borderRadius: 19 },
+  createBtnText: { color: "#fff", fontFamily: font.extra, fontSize: 13 },
 
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 8 },
   error: { color: colors.danger, fontFamily: font.medium, textAlign: "center" },
@@ -388,6 +467,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 190, backgroundColor: colors.surface, borderRadius: radius.lg,
     overflow: "hidden", borderWidth: 1, borderColor: colors.border, ...shadow(6),
   },
+  miniLike: {
+    position: "absolute", top: 8, right: 8, flexDirection: "row", alignItems: "center",
+    backgroundColor: "rgba(11,16,34,0.72)", borderRadius: radius.pill,
+    paddingHorizontal: 8, paddingVertical: 4,
+  },
+  miniLikeText: { color: "#fff", fontFamily: font.bold, fontSize: 11.5 },
   miniCover: { width: "100%", height: 108, backgroundColor: colors.surfaceAlt },
   miniBody: { padding: 11, gap: 3 },
   miniTitle: { fontSize: 14, fontFamily: font.bold, color: colors.text },
@@ -398,6 +483,9 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   leaderTitle: { fontSize: 15.5, fontFamily: font.extra, color: colors.text, marginBottom: 2 },
+  leaderSub: { fontSize: 11.5, fontFamily: font.medium, color: colors.textFaint, marginTop: -6 },
+  leaderHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  leaderMore: { fontSize: 12.5, fontFamily: font.bold, color: colors.primaryDark },
   leaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   leaderRank: {
     width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primarySoft,

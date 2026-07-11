@@ -339,13 +339,23 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
   kalsın; harcama yalnız rota detayında).
 - [x] Rota sahibi ayrı alan girmez — ilk yolculuk bildirimi sayılır (tasarım kararı).
 
-### ⬜ 3.9 ÇOK BEĞENİLENLER BÖLÜMÜ ★ KULLANICI İSTEĞİ (11 Tem)
-- [ ] Home'a ayrı "🔥 Çok Beğenilenler" yatay şeridi: aktif şehirde like_count'u en yüksek
-  rotalar (eşik: ≥1 beğeni; boşsa bölüm gizli) — "Sana özel"in altında, Popüler'in üstünde.
-- [ ] Kartlarda beğeni sayısı vurgulu (❤️ N rozeti büyük); dokununca rota detayı.
-- [ ] (Değerlendir) "Popüler Rotalar" zaten beğeniye göre sıralı — bu şerit öne çıkan İLK 5'i
-  ayrıca vurgular; isim/ayrım cihaz turunda kullanıcıyla netleşir.
-- **Kabul:** Beğeni alan rotalar Home'da ayrı bölümde parlıyor.
+### ✅ 3.9 ÇOK BEĞENİLENLER — TAMAMLANDI (12 Tem) ★
+- [x] Home'da "🔥 Çok Beğenilenler" yatay şeridi (aktif şehir, ≥1 ❤️, çoktan aza, boşsa gizli;
+  kartlarda vurgulu beğeni rozeti).
+
+### ✅ 3.11 LİDERLİK HİLE KORUMASI — TAMAMLANDI (12 Tem) ★ KULLANICI İSTEĞİ
+- [x] Yolculuk yalnız durakların ≥yarısına (min 2) GPS ile GERÇEKTEN varıldıysa "doğrulanmış";
+  haftalık liderliğe yalnız doğrulanmışlar girer (migration 0014, 👤 uygulandı).
+  Koltuktan "Bitir" profilde görünür ama liderliğe işlemez.
+
+### ✅ 3.12 LİDERLİK SAYFASI + YAZAR LİDERLİĞİ — TAMAMLANDI (12 Tem) ★ KULLANICI İSTEĞİ
+- [x] "❤️ En beğenilen rota yazarları" (view, 0014) + Home'da ikinci liderlik kartı.
+- [x] Tam LİDERLİK SAYFASI: iki sekme (🏆 En Çok Gezen / ❤️ En Beğenilen), 🥇🥈🥉+👑,
+  avatarlı satırlar; Home kartları ve header'daki 🏆 butonundan açılır.
+- [x] **Kişi vitrini**: liderlikte kişiye dokun → @kullanıcı sayfası (herkese açık rotaları,
+  beğeniye sıralı) → rotasına git/kopyala. Yolculuk bitişi de yeniden aktı: önce
+  DEĞERLENDİRME (⭐ + düşünce→yorum + 💸), sonra paylaşım kartı (kullanıcı isteği).
+- [x] Home header: profil simgesi kalktı; 🏆 liderlik + yazılı "＋ Rota Oluştur" butonu.
 
 ### ⬜ 3.10 ORTAK KOLEKSİYONLAR — Instagram tarzı ★ KULLANICI İSTEĞİ (11 Tem)
 > Arkadaşınla ortak rota koleksiyonu ("Gezilecekler 🇮🇹"); ikiniz de rota ekler/çıkarır,
@@ -359,6 +369,20 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [ ] Davet linki: `INVITE_URL&joinCollection=<token>` — App.tsx'teki yakalayıcı genişler.
 - [ ] Güncellik: focus-refresh (app geneliyle aynı); (V2) Supabase Realtime ile anlık.
 - **Kabul:** A koleksiyon açar, B linkle katılır, ikisi de rota ekler — iki cihazda da görünür.
+
+### ✅ 3.13 FORK & YAYINLAMA MODELİ — TAMAMLANDI (12 Tem) ★ KULLANICI İSTEĞİ
+> "Durak ekle başkasının rotasını DEĞİŞTİRMESİN — kendine kaydolsun; 'rotanı paylaş'
+> deyince herkes görsün." GitHub/IG modeli: fork → özel → yayınla.
+- [x] Migration 0015: `routes.is_public` (mevcutlar açık kalır) + görünürlük RLS'i
+  (rota+duraklar: açık VEYA sahibi VEYA collaborator).
+- [x] "＋ Durak ekle" artık HERKESTE: yetkili rotaya ekler; değilse `forkRoute` —
+  rota+duraklar kopyalanır, yeni durak eklenir, ÖZEL başlar → "Rotalarım"a düşer
+  ("Kopyamı aç" ile geçilir; orijinal rota asla değişmez).
+- [x] "🌍 Rotanı paylaş — herkes görsün" (sahibi, özelken): is_public=true.
+- [x] Kayıtlı sekmesi ikiye ayrıldı: ❤️ Kaydettiklerim | 🗺️ Rotalarım (🔒 Özel / 🌍 Açık rozetli);
+  şehir/yakınımda filtresi ikisinde de çalışır.
+- [x] CreateRoute + 🎲 üretici rotaları da ÖZEL başlar; servis: özel rota BAŞKASINA önerilmez.
+- [x] 👤 0015 uygulandı (canlı doğrulandı: 30 açık rota, görünürlük politikaları aktif).
 
 ### ⬜ 4.0a AÇILIR/KAPANIR DETAY PENCERESİ ★ KULLANICI İSTEĞİ (7 Tem)
 - [ ] Haritalı ekranlarda alttaki detay penceresi **açılır/kapanır** olacak — gerektiğinde

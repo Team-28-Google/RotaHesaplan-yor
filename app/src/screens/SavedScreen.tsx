@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
-import { fetchFavoriteRoutes } from "../lib/api";
+import { fetchFavoriteRoutes, fetchMyRoutes } from "../lib/api";
 import { cityInfo, getActiveCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
@@ -27,9 +27,12 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
+  const [favRoutes, setFavRoutes] = useState<RouteWithWaypoints[]>([]);
+  const [myRoutes, setMyRoutes] = useState<RouteWithWaypoints[]>([]);
+  const [tab, setTab] = useState<"saved" | "mine">("saved"); // ❤️ Kaydettiklerim | 🗺️ Rotalarım (3.13)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const routes = tab === "saved" ? favRoutes : myRoutes;
   // Detaylı filtre (3.0c v2): Tümü / 📍 Yakınımda / şehir çipleri — varsayılan aktif şehir
   const [filt, setFilt] = useState<string>("__active__"); // "all" | "near" | cityKey
   const [activeCity, setActiveCityState] = useState("Istanbul");
@@ -44,8 +47,8 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         setActiveCityState(c);
         setFilt((f) => (f === "__active__" ? c : f)); // ilk açılışta aktif şehir seçili
       });
-      fetchFavoriteRoutes()
-        .then((r) => { if (active) { setRoutes(r); setError(null); } })
+      Promise.all([fetchFavoriteRoutes(), fetchMyRoutes()])
+        .then(([f, m]) => { if (active) { setFavRoutes(f); setMyRoutes(m); setError(null); } })
         .catch((e) => { if (active) setError(e instanceof Error ? e.message : "Yüklenemedi"); })
         .finally(() => { if (active) setLoading(false); });
       return () => { active = false; };
@@ -95,7 +98,21 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
   return (
     <View style={styles.screen}>
       <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
-        <Text style={styles.headerTitle}>Kaydettiklerim</Text>
+        <Text style={styles.headerTitle}>Kayıtlı</Text>
+      </View>
+
+      {/* ❤️ Kaydettiklerim | 🗺️ Rotalarım (3.13 — kendi/kopyaladığın rotalar) */}
+      <View style={styles.tabRow}>
+        {([["saved", "❤️ Kaydettiklerim"], ["mine", "🗺️ Rotalarım"]] as const).map(([k, label]) => (
+          <TouchableOpacity
+            key={k}
+            style={[styles.tabBtn, tab === k && styles.tabBtnOn]}
+            onPress={() => { tap(); setTab(k); }}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.tabText, tab === k && styles.tabTextOn]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Filtre çubuğu: Tümü / Yakınımda / kayıtlı şehirler */}
@@ -136,9 +153,15 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         </View>
       ) : routes.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyIcon}>🤍</Text>
-          <Text style={styles.emptyTitle}>Henüz rota kaydetmedin</Text>
-          <Text style={styles.emptyText}>Bir rotayı açıp kalbe dokunarak buraya ekleyebilirsin.</Text>
+          <Text style={styles.emptyIcon}>{tab === "saved" ? "🤍" : "🗺️"}</Text>
+          <Text style={styles.emptyTitle}>
+            {tab === "saved" ? "Henüz rota kaydetmedin" : "Henüz kendi rotan yok"}
+          </Text>
+          <Text style={styles.emptyText}>
+            {tab === "saved"
+              ? "Bir rotayı açıp kalbe dokunarak buraya ekleyebilirsin."
+              : "Rota oluştur, 🎲 ürettir ya da beğendiğin bir rotaya durak ekleyip kendi kopyanı yarat."}
+          </Text>
         </View>
       ) : shown.length === 0 ? (
         <View style={styles.center}>
@@ -167,7 +190,14 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
               >
                 <View style={[styles.stripe, { backgroundColor: color }]} />
                 <View style={styles.cardBody}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={1}>{item.title}</Text>
+                    {tab === "mine" && (
+                      <Text style={styles.visBadge}>
+                        {item.is_public === false ? "🔒 Özel" : "🌍 Açık"}
+                      </Text>
+                    )}
+                  </View>
                   <View style={styles.metaRow}>
                     <Text style={styles.meta}>💰 {budgetLabel(item.budget_level)}</Text>
                     <Text style={styles.meta}>📍 {exp.length} durak</Text>
@@ -194,7 +224,16 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   back: { color: colors.primary, fontFamily: font.bold, fontSize: 16 },
   headerTitle: { fontFamily: font.extra, fontSize: 17, color: colors.text },
-  filterBar: { flexGrow: 0, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
+  tabRow: {
+    flexDirection: "row", margin: 16, marginBottom: 0, padding: 4,
+    backgroundColor: colors.surfaceAlt, borderRadius: radius.pill,
+  },
+  tabBtn: { flex: 1, paddingVertical: 9, alignItems: "center", borderRadius: radius.pill },
+  tabBtnOn: { backgroundColor: colors.primary },
+  tabText: { fontFamily: font.bold, fontSize: 13, color: colors.textMuted },
+  tabTextOn: { color: "#fff" },
+  visBadge: { fontSize: 11, fontFamily: font.bold, color: colors.textMuted },
+  filterBar: { flexGrow: 0, backgroundColor: "transparent" },
   cityFilter: {
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill,
     backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,

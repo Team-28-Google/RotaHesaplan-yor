@@ -43,6 +43,8 @@ export interface Route {
   total_duration_min: number | null;
   is_seed: boolean;
   like_count: number;
+  /** false = yalnız sahibi/collaborator görür; "🌍 Rotanı paylaş" ile herkese açılır (3.13) */
+  is_public?: boolean;
 }
 
 // Harita için: rota + sıralı waypoint'leri bir arada

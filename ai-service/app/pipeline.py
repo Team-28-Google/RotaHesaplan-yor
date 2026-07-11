@@ -367,6 +367,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         "city": city, "vibe_tags": (d.get("vibe_tags") or [])[:5],
         "weather_fit": d.get("weather_fit") if d.get("weather_fit") in ("indoor", "outdoor", "any") else "any",
         "budget_level": min(max(budget, 1), 4), "is_seed": False,
+        "is_public": False,  # 3.13: üretilen rota da ÖZEL başlar; kullanıcı paylaşınca açılır
     })[0]
     rid = route_row["id"]
     wp_rows = []
@@ -518,6 +519,9 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
         for c in candidates:
             r = get_route(env, c["route_id"])
             if not r:
+                continue
+            # 3.13: ÖZEL rota yalnız sahibine önerilebilir (service RLS bypass'ı deler; elle koru)
+            if r.get("is_public") is False and r.get("author_id") != user_id:
                 continue
             fit = r.get("weather_fit", "any")
             if allowed_fits is not None and fit not in allowed_fits:
