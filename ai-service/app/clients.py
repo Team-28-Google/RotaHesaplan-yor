@@ -202,7 +202,10 @@ def google_nav_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: f
     }
     mask = "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline"
     if travel == "TRANSIT":
-        mask += ",routes.legs.steps.transitDetails"
+        # GMaps paritesi: alternatif rotalar + adım adım talimat alanları
+        body["computeAlternativeRoutes"] = True
+        mask += (",routes.legs.steps.transitDetails,routes.legs.steps.navigationInstruction"
+                 ",routes.legs.steps.distanceMeters,routes.legs.steps.travelMode")
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
@@ -215,48 +218,84 @@ def google_nav_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: f
     routes = (r or {}).get("routes") or []
     if not routes:
         return None
-    rt = routes[0]
+
+    if travel != "TRANSIT":
+        return _nav_route_payload(routes[0])
+
+    # TRANSIT: en fazla 3 alternatif — her biri kendi geometrisi, adımları ve hat özetiyle
+    alts = [_nav_route_payload(rt, with_steps=True) for rt in routes[:3]]
+    primary = dict(alts[0])
+    primary["alternatives"] = alts
+    return primary
+
+
+_VEHICLE_EMOJI = {
+    "SUBWAY": "🚇", "METRO_RAIL": "🚇",
+    "TRAM": "🚊", "LIGHT_RAIL": "🚊",
+    "HEAVY_RAIL": "🚆", "COMMUTER_TRAIN": "🚆", "RAIL": "🚆", "HIGH_SPEED_TRAIN": "🚄",
+    "FERRY": "⛴️",
+    "FUNICULAR": "🚡", "GONDOLA_LIFT": "🚡", "CABLE_CAR": "🚋",
+    "BUS": "🚌", "INTERCITY_BUS": "🚌", "TROLLEYBUS": "🚌",
+}
+
+
+def _nav_route_payload(rt: dict, with_steps: bool = False) -> dict:
+    """Tek Routes yanıtını app'in beklediği şekle çevirir; transit'te adım listesi +
+    hat özeti ('⛴️ Vapur → 🚶') üretir — GMaps'teki gibi seçenek karşılaştırması için."""
     enc = ((rt.get("polyline") or {}).get("encodedPolyline")) or ""
     dur_s = int(str(rt.get("duration", "0s")).rstrip("s") or 0)
-
-    # TRANSIT: ilk toplu taşıma adımının hat bilgisi + araç tipi (🚇 metro / 🚊 tramvay /
-    # 🚆 tren / ⛴️ vapur / 🚌 otobüs) + aktarma sayısı
-    _VEHICLE_EMOJI = {
-        "SUBWAY": "🚇", "METRO_RAIL": "🚇",
-        "TRAM": "🚊", "LIGHT_RAIL": "🚊",
-        "HEAVY_RAIL": "🚆", "COMMUTER_TRAIN": "🚆", "RAIL": "🚆", "HIGH_SPEED_TRAIN": "🚄",
-        "FERRY": "⛴️",
-        "FUNICULAR": "🚡", "GONDOLA_LIFT": "🚡", "CABLE_CAR": "🚋",
-        "BUS": "🚌", "INTERCITY_BUS": "🚌", "TROLLEYBUS": "🚌",
-    }
-    transit = None
-    if travel == "TRANSIT":
-        transit_steps = 0
-        for leg in rt.get("legs") or []:
-            for st in leg.get("steps") or []:
-                td = st.get("transitDetails")
-                if not td:
-                    continue
-                transit_steps += 1
-                if transit is None:
-                    line = td.get("transitLine") or {}
-                    stop_details = td.get("stopDetails") or {}
-                    veh = ((line.get("vehicle") or {}).get("type") or "").upper()
-                    transit = {
-                        "line": line.get("nameShort") or line.get("name") or "hat",
-                        "board": ((stop_details.get("departureStop") or {}).get("name")),
-                        "headsign": td.get("headsign"),
-                        "vehicle": _VEHICLE_EMOJI.get(veh, "🚌"),
-                    }
-        if transit:
-            transit["transfers"] = max(0, transit_steps - 1)
-
-    return {
+    out = {
         "coords": decode_polyline(enc) if enc else [],
         "distance_m": int(rt.get("distanceMeters") or 0),
         "duration_min": max(1, round(dur_s / 60)),
-        "transit": transit,
+        "transit": None,
     }
+    if not with_steps:
+        return out
+
+    steps: list[dict] = []
+    transit = None
+    transit_steps = 0
+    summary_parts: list[str] = []
+    for leg in rt.get("legs") or []:
+        for st in leg.get("steps") or []:
+            td = st.get("transitDetails")
+            if td:
+                transit_steps += 1
+                line = td.get("transitLine") or {}
+                stop_details = td.get("stopDetails") or {}
+                veh = _VEHICLE_EMOJI.get(((line.get("vehicle") or {}).get("type") or "").upper(), "🚌")
+                name = line.get("nameShort") or line.get("name") or "hat"
+                board = (stop_details.get("departureStop") or {}).get("name")
+                alight = (stop_details.get("arrivalStop") or {}).get("name")
+                count = td.get("stopCount")
+                text = f"{veh} {name}"
+                if board:
+                    text += f" · {board}'dan bin"
+                if count:
+                    text += f" · {count} durak"
+                if alight:
+                    text += f" · {alight}'da in"
+                steps.append({"kind": "transit", "text": text})
+                summary_parts.append(f"{veh} {name}")
+                if transit is None:
+                    transit = {
+                        "line": name, "board": board,
+                        "headsign": td.get("headsign"), "vehicle": veh,
+                    }
+            else:
+                dm = int(st.get("distanceMeters") or 0)
+                if dm < 15:
+                    continue  # anlamsız mini yürüyüş adımlarını at
+                instr = ((st.get("navigationInstruction") or {}).get("instructions")) or ""
+                text = f"🚶 {dm} m yürü" + (f" — {instr}" if instr else "")
+                steps.append({"kind": "walk", "text": text})
+    if transit:
+        transit["transfers"] = max(0, transit_steps - 1)
+    out["transit"] = transit
+    out["steps"] = steps
+    out["summary"] = " → ".join(summary_parts) if summary_parts else "🚶 yürüyerek"
+    return out
 
 
 def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float):

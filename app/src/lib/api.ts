@@ -515,6 +515,12 @@ export interface WalkLeg {
     line: string; board?: string | null; headsign?: string | null;
     vehicle?: string | null; transfers?: number | null;
   } | null;
+  /** Adım adım talimatlar (yürü → bin → in) — GMaps paritesi */
+  steps?: { kind: "walk" | "transit"; text: string }[];
+  /** Hat özeti ("⛴️ Vapur → 🚶") — alternatif karşılaştırması için */
+  summary?: string;
+  /** TRANSIT: en fazla 3 alternatif rota (kendi geometri+adımlarıyla) */
+  alternatives?: WalkLeg[];
 }
 
 /** Kullanıcı konumu → hedef durak GERÇEK rota, seçilen ULAŞIM MODUNDA (4.0: 🚶🚌🚗).

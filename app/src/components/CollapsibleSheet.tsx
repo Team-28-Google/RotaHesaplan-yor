@@ -10,7 +10,7 @@ import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 
-const PEEK = 76; // kapalıyken görünen kısım: tutamak + etiket ("yukarı çek" hissi)
+const PEEK = 52; // kapalıyken görünen kısım: tutamak + kompakt etiket (sistem tuşlarının üstünde durur)
 
 /** Harita üstü panelleri AŞAĞI kaydırılıp kapatılabilir yapar (4.0a).
  *  Kapalıyken tutamak + etiket + yukarı ok görünür; sürükle ya da dokun. */
@@ -83,13 +83,13 @@ export default function CollapsibleSheet({ children, peekLabel, style, onToggle 
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  grab: { paddingTop: 10, paddingBottom: 8, alignItems: "center", minHeight: 30 },
+  grab: { paddingTop: 8, paddingBottom: 4, alignItems: "center" },
   handle: { width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border },
   peekRow: {
-    flexDirection: "row", alignItems: "center", gap: 8, marginTop: 7,
+    flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4,
     backgroundColor: colors.surface, borderRadius: radius.pill,
-    paddingHorizontal: 14, paddingVertical: 6,
+    paddingHorizontal: 12, paddingVertical: 3,
     borderWidth: 1, borderColor: colors.border, ...shadow(6),
   },
-  peekText: { color: colors.text, fontFamily: font.semibold, fontSize: 12, maxWidth: 150 },
+  peekText: { color: colors.text, fontFamily: font.semibold, fontSize: 11.5, maxWidth: 140 },
 });

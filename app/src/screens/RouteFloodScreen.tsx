@@ -392,10 +392,16 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   // seçilen ULAŞIM MODUNDA (🚶🚌🚗). Hedef/mod değişince ya da ~40m sapınca yeniden çekilir.
   const [navMode, setNavMode] = useState<"walk" | "transit" | "drive">("walk");
   const [liveLeg, setLiveLeg] = useState<WalkLeg | null>(null);
+  const [altIdx, setAltIdx] = useState(0); // transit alternatifi seçimi (GMaps paritesi)
   const legOrigin = useRef<{ lat: number; lng: number } | null>(null);
   const legBusy = useRef(false);
 
-  useEffect(() => { setLiveLeg(null); legOrigin.current = null; }, [target, journey, navMode]);
+  useEffect(() => { setLiveLeg(null); setAltIdx(0); legOrigin.current = null; }, [target, journey, navMode]);
+
+  // Seçili bacak: transit'te seçilen alternatif, diğer modlarda doğrudan yanıt
+  const selLeg = navMode === "transit" && liveLeg?.alternatives?.length
+    ? (liveLeg.alternatives[altIdx] ?? liveLeg)
+    : liveLeg;
 
   useEffect(() => {
     const t = exp[target];
@@ -513,9 +519,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const plannedPath = downsample(segmentsToPath(legSegments(exp)), 80);
 
   const targetStop = exp[target];
-  // Gerçek sokak rotası varsa onu, yoksa düz kesikli yedeği çiz
+  // Gerçek sokak rotası varsa onu (seçili alternatif!), yoksa düz kesikli yedeği çiz
   const guideLine = journey && userLoc && targetStop
-    ? (liveLeg?.coords ?? [{ lat: userLoc.lat, lng: userLoc.lng }, { lat: targetStop.lat, lng: targetStop.lng }])
+    ? (selLeg?.coords ?? [{ lat: userLoc.lat, lng: userLoc.lng }, { lat: targetStop.lat, lng: targetStop.lng }])
     : null;
 
   return (
@@ -555,8 +561,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             <Text style={styles.navTopName} numberOfLines={1}>{targetStop.name}</Text>
             {userLoc && (
               <Text style={styles.navTopMeta}>
-                {liveLeg
-                  ? `🧭 ${distText(liveLeg.distance_m)} · ~${liveLeg.duration_min} dk`
+                {selLeg
+                  ? `🧭 ${distText(selLeg.distance_m)} · ~${selLeg.duration_min} dk`
                   : `📏 ${distText(distMeters(userLoc, targetStop))} (kuş uçuşu)`}
               </Text>
             )}
@@ -803,16 +809,34 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               </TouchableOpacity>
             ))}
           </View>
-          {/* TRANSIT: hat bilgisi (Routes API transitDetails) */}
-          {navMode === "transit" && liveLeg?.transit && (
-            <Text style={styles.transitInfo} numberOfLines={1}>
-              {liveLeg.transit.vehicle ?? "🚌"} {liveLeg.transit.line}
-              {liveLeg.transit.board ? ` · ${liveLeg.transit.board}'dan bin` : ""}
-              {liveLeg.transit.headsign ? ` · yön: ${liveLeg.transit.headsign}` : ""}
-              {liveLeg.transit.transfers ? ` · ${liveLeg.transit.transfers} aktarma` : ""}
-            </Text>
+          {/* TRANSIT: alternatif rotalar (GMaps'teki seçenekler) — dokun, rota değişsin */}
+          {navMode === "transit" && (liveLeg?.alternatives?.length ?? 0) > 1 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 7 }} contentContainerStyle={{ gap: 6 }}>
+              {liveLeg!.alternatives!.map((a, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.altChip, altIdx === i && styles.altChipOn]}
+                  onPress={() => { tap(); setAltIdx(i); }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.altText, altIdx === i && styles.altTextOn]} numberOfLines={1}>
+                    {a.summary ?? `Seçenek ${i + 1}`} · ~{a.duration_min} dk
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           )}
-          {navMode === "transit" && liveLeg && !liveLeg.transit && (
+          {/* TRANSIT: adım adım talimatlar (yürü → bin → in) */}
+          {navMode === "transit" && !!selLeg?.steps?.length && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 7 }} contentContainerStyle={{ gap: 6 }}>
+              {selLeg.steps.map((s, i) => (
+                <View key={i} style={[styles.stepChip, s.kind === "transit" && styles.stepChipTransit]}>
+                  <Text style={styles.stepText} numberOfLines={1}>{i + 1}. {s.text}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+          {navMode === "transit" && selLeg && !selLeg.transit && !selLeg.steps?.length && (
             <Text style={styles.transitInfo} numberOfLines={1}>🚶 Bu mesafe için yürüme önerildi (hat gerekmedi)</Text>
           )}
           <View style={styles.jRow}>
@@ -826,9 +850,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 ) : (
                   <Text style={styles.jArrived}>🎉 Rota tamamlandı — keyfini çıkar</Text>
                 )
-              ) : liveLeg ? (
+              ) : selLeg ? (
                 <Text style={styles.jDist}>
-                  {navMode === "walk" ? "🚶" : navMode === "transit" ? "🚌" : "🚗"} {distText(liveLeg.distance_m)} · ~{liveLeg.duration_min} dk · rotayı izle
+                  {navMode === "walk" ? "🚶" : navMode === "transit" ? (selLeg.transit?.vehicle ?? "🚌") : "🚗"} {distText(selLeg.distance_m)} · ~{selLeg.duration_min} dk · rotayı izle
                 </Text>
               ) : (
                 <Text style={styles.jDist}>📍 {distText(distMeters(userLoc, targetStop))} ileride · seni takip ediyorum</Text>
@@ -1317,6 +1341,20 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   modeText: { color: "#8A93B8", fontFamily: font.bold, fontSize: 12.5 },
   modeTextOn: { color: "#fff" },
   transitInfo: { color: "#7DD3FC", fontFamily: font.bold, fontSize: 12.5, marginBottom: 6 },
+  altChip: {
+    backgroundColor: "rgba(255,255,255,0.08)", borderRadius: radius.pill,
+    paddingHorizontal: 11, paddingVertical: 6, borderWidth: 1, borderColor: "#263052",
+    maxWidth: 260,
+  },
+  altChipOn: { backgroundColor: "rgba(125,211,252,0.18)", borderColor: "#7DD3FC" },
+  altText: { color: "#8A93B8", fontFamily: font.bold, fontSize: 12 },
+  altTextOn: { color: "#7DD3FC" },
+  stepChip: {
+    backgroundColor: "rgba(255,255,255,0.06)", borderRadius: radius.md,
+    paddingHorizontal: 10, paddingVertical: 6, maxWidth: 280,
+  },
+  stepChipTransit: { backgroundColor: "rgba(125,211,252,0.14)" },
+  stepText: { color: "#C6CCE4", fontFamily: font.medium, fontSize: 12 },
   jLabel: { color: "#8A93B8", fontFamily: font.semibold, fontSize: 12 },
   jStop: { color: "#F2F4FC", fontFamily: font.extra, fontSize: 16, marginTop: 1 },
   jDist: { color: "#FFB4A5", fontFamily: font.semibold, fontSize: 12.5, marginTop: 2 },
