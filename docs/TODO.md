@@ -338,6 +338,26 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - **Kabul:** A kullanıcısı link atar → B linke tıklar → B durak ekleyip çıkarabilir,
   A değişikliği görür.
 
+### ⬜ 3.8 GERÇEK HARCAMA BİLDİRİMİ ★ KULLANICI İSTEĞİ (11 Tem)
+> "Ben bu rotada şu kadar para harcadım" — bütçe tahmini (₺/₺₺/₺₺₺) yerine gezenlerin
+> GERÇEK harcaması görünsün; rotaya bakan diğer kullanıcılar için en güvenilir bilgi.
+- [ ] Migration: `journeys.spent_try int` (opsiyonel) — yolculuk bitiş özetine
+  "💸 Ne kadar harcadın?" alanı (atlanabilir; hızlı ₺ önerileri: 0 / 100 / 250 / 500+).
+- [ ] Rota detayında sosyal kanıt: "💸 Gerçek harcama: ort. ₺X · N gezgin bildirdi"
+  (journeys'ten aggregate; view ya da RPC — ham satır sızdırmadan).
+- [ ] Rota sahibi oluştururken de kendi tahmini/harcamasını girebilir (routes.author_spent_try?
+  ya da ilk journey kaydı sayılır — tasarımda karar).
+- [ ] Paylaşım kartına opsiyonel harcama satırı ("₺350 ile harika bir gündü").
+- **Kabul:** Yolculuk bitiren harcама girebiliyor; rota detayında ortalama görünüyor.
+
+### ⬜ 3.9 ÇOK BEĞENİLENLER BÖLÜMÜ ★ KULLANICI İSTEĞİ (11 Tem)
+- [ ] Home'a ayrı "🔥 Çok Beğenilenler" yatay şeridi: aktif şehirde like_count'u en yüksek
+  rotalar (eşik: ≥1 beğeni; boşsa bölüm gizli) — "Sana özel"in altında, Popüler'in üstünde.
+- [ ] Kartlarda beğeni sayısı vurgulu (❤️ N rozeti büyük); dokununca rota detayı.
+- [ ] (Değerlendir) "Popüler Rotalar" zaten beğeniye göre sıralı — bu şerit öne çıkan İLK 5'i
+  ayrıca vurgular; isim/ayrım cihaz turunda kullanıcıyla netleşir.
+- **Kabul:** Beğeni alan rotalar Home'da ayrı bölümde parlıyor.
+
 ### ⬜ 4.0a AÇILIR/KAPANIR DETAY PENCERESİ ★ KULLANICI İSTEĞİ (7 Tem)
 - [ ] Haritalı ekranlarda alttaki detay penceresi **açılır/kapanır** olacak — gerektiğinde
   TAM harita görülebilsin: RouteFlood detay sheet'i (öncelik) + Map ekranı alt kartları.
