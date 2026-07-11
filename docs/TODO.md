@@ -404,10 +404,15 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 
 ## FAZ 5 — YAYIN & TESLİM
 
-### ⬜ 5.1 Auth açılışı 🤖+👤
-- [ ] `config.ts` → `AUTH_ENABLED = true`; dev creds'i koddan çıkar (sadece .env/dev-only).
-- [ ] 👤 Supabase → Auth → e-posta onayını demo için kapat (confirm email OFF) — testçi sürtünmesi olmasın.
-- [ ] Auth ekranından tam tur: kayıt → onboarding → plan → favori.
+### ✅ 5.1 Auth açılışı — TAMAMLANDI (11 Tem)
+- [x] `AUTH_ENABLED = true`; testçilerde kalan ORTAK dev oturumu açılışta bir kez otomatik
+  kapatılır (herkes kendi hesabına geçer); yeni profil aktif şehirle oluşur.
+- [x] **AuthScreen premium redesign** (kullanıcı isteği): koyu marka hero + tema-uyumlu form
+  kartı + Giriş/Kayıt segmenti + ikonlu inputlar + şifre göster/gizle.
+- [x] **Kayıtta doğum tarihi + cinsiyet** (opsiyonel; kullanıcı isteği): otomatik GG.AA.YYYY
+  maskesi + cinsiyet çipleri → migration 0010 (profiles.birth_date/gender) → saveProfileDetails.
+- [x] 👤 0010 uygulandı + confirm email kapatıldı (canlı doğrulandı: kayıt direkt oturum döner).
+- [x] 👤 Cihaz turu: kayıt → onboarding → içeri ("mustfkplaan_2608" profili canlı görüldü).
 
 ### ⬜ 5.2 Preview APK 👤
 - [ ] **ÖNCE 0.4 Render deploy** (6 Tem kararı: yayın anına ertelendi — testçi telefonları LAN'daki
