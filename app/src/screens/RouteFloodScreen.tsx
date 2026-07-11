@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Animated, Linking, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Animated, Linking, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { captureRef } from "react-native-view-shot";
@@ -12,11 +12,15 @@ import { captureRef } from "react-native-view-shot";
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import Skeleton from "../components/Skeleton";
 import { pop, success, tap } from "../lib/haptics";
+import AddStopSheet from "../components/AddStopSheet";
 import {
-  addComment, fetchComments, fetchCommentSummary, fetchRoute, fetchWalkRoute,
-  getFavoriteIds, sendMemoryEvent, setFavorite, uploadPhoto,
+  addComment, addStop, canEditRoute, currentUserId, fetchComments, fetchCommentSummary,
+  fetchRoute, fetchWalkRoute, getFavoriteIds, getOrCreateShareToken, refreshRouteExtras,
+  removeStop, sendMemoryEvent, setFavorite, uploadPhoto,
   type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
+import { INVITE_URL } from "../lib/config";
+import type { PlaceResult } from "../lib/types";
 import { addJourney } from "../lib/journeyLog";
 import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
@@ -115,13 +119,71 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     if (advanceTimer.current) { clearTimeout(advanceTimer.current); advanceTimer.current = null; }
   };
 
+  // Ortak düzenleme (3.7)
+  const [isOwner, setIsOwner] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
+  const [editBusy, setEditBusy] = useState(false);
+  const [addingStop, setAddingStop] = useState(false);
+
   useEffect(() => {
     fetchRoute(routeId)
-      .then(setRoute)
+      .then((r) => {
+        setRoute(r);
+        currentUserId().then((uid) => setIsOwner(!!uid && uid === r.author_id)).catch(() => {});
+        canEditRoute(routeId, r.author_id).then(setCanEdit).catch(() => {});
+      })
       .catch((e) => setError(e.message ?? "Rota yüklenemedi"));
     getFavoriteIds().then((s) => setFav(s.has(routeId))).catch(() => {});
     fetchComments(routeId).then(setComments).catch(() => {});
   }, [routeId]);
+
+  const refreshRouteState = async () => {
+    try { setRoute(await fetchRoute(routeId)); } catch { /* sessiz */ }
+  };
+
+  const onRemoveStop = async (wId: string) => {
+    if (editBusy) return;
+    tap();
+    setEditBusy(true);
+    try {
+      await removeStop(wId);
+      await refreshRouteState();
+      refreshRouteExtras(routeId).then(refreshRouteState);
+    } catch { /* RLS reddi vb. */ }
+    finally { setEditBusy(false); }
+  };
+
+  const onAddStop = async (p: PlaceResult) => {
+    setAddingStop(false);
+    if (!route || editBusy) return;
+    tap();
+    setEditBusy(true);
+    try {
+      const maxSeq = Math.max(-1, ...route.waypoints.map((w) => w.seq));
+      await addStop(route.id, p, maxSeq + 1);
+      await refreshRouteState();
+      refreshRouteExtras(routeId).then(refreshRouteState);
+    } catch { /* sessiz */ }
+    finally { setEditBusy(false); }
+  };
+
+  // Sahibi davet linki paylaşır → linke tıklayan collaborator olur (App.tsx yakalar)
+  const shareEditInvite = async () => {
+    if (!route) return;
+    tap();
+    const token = await getOrCreateShareToken(route.id);
+    if (!token) {
+      Alert.alert("Olmadı", "Davet linki üretilemedi. (Bağlantını kontrol et; migration 0012 uygulanmış olmalı.)");
+      return;
+    }
+    try {
+      await Share.share({
+        message:
+          `SANA'da "${route.title}" rotasını birlikte düzenleyelim! 🤝\n` +
+          `Linke tıkla, durak ekleyip çıkarabilirsin:\n${INVITE_URL}&join=${token}`,
+      });
+    } catch { /* iptal */ }
+  };
 
   const launchPhoto = async (src: "camera" | "library") => {
     try {
@@ -416,6 +478,16 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               ))}
             </View>
 
+            {/* 🤝 Ortak düzenleme (3.7): sahibi davet eder; davetli rozetini görür */}
+            {isOwner && (
+              <TouchableOpacity style={styles.inviteBtn} onPress={shareEditInvite} activeOpacity={0.85}>
+                <Text style={styles.inviteBtnText}>🤝 Birlikte düzenle — arkadaşını davet et</Text>
+              </TouchableOpacity>
+            )}
+            {canEdit && !isOwner && (
+              <Text style={styles.editBadge}>✏️ Bu rotayı düzenleyebilirsin — durak ekle/çıkar</Text>
+            )}
+
             {/* ✨ Topluluk ne diyor — AI yorum özeti (2.4) */}
             {communitySummary?.ok && (
               <View style={styles.community}>
@@ -463,7 +535,14 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                       </Text>
                     </View>
                   )}
-                  <Text style={styles.stopName}>{waypointIcon(w)} {w.name}</Text>
+                  <View style={styles.stopNameRow}>
+                    <Text style={[styles.stopName, { flex: 1 }]}>{waypointIcon(w)} {w.name}</Text>
+                    {canEdit && exp.length > 2 && (
+                      <TouchableOpacity onPress={() => onRemoveStop(w.id)} hitSlop={10} disabled={editBusy}>
+                        <Text style={[styles.stopRemove, editBusy && { opacity: 0.4 }]}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   {!!w.note && <Text style={styles.note}>{w.note}</Text>}
                   <View style={styles.stopFoot}>
                     {getRating(w.metadata) !== undefined && <Text style={styles.rating}>⭐ {getRating(w.metadata)}</Text>}
@@ -475,6 +554,18 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               </View>
             ))}
           </View>
+
+          {/* ＋ Durak ekle (3.7 — sahibi ya da davetli) */}
+          {canEdit && (
+            <TouchableOpacity
+              style={[styles.addStopBtn, editBusy && { opacity: 0.5 }]}
+              onPress={() => { tap(); setAddingStop(true); }}
+              disabled={editBusy}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.addStopText}>{editBusy ? "Güncelleniyor…" : "＋ Durak ekle"}</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Yakındaki pratik noktalar (rota dışı) */}
           {util.length > 0 && (
@@ -589,6 +680,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
           )}
         </Animated.View>
       )}
+
+      {/* Durak ekleme (3.7) */}
+      <AddStopSheet visible={addingStop} onClose={() => setAddingStop(false)} onPick={onAddStop} />
 
       {/* Yolculuk özeti — bottom sheet + iki paylaşım formatı (3.1) */}
       <Modal visible={!!summary} transparent animationType="slide" onRequestClose={() => setSummary(null)}>
@@ -831,6 +925,21 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   pill: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
   pillText: { fontSize: 13, color: colors.text, fontFamily: font.bold },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  // 3.7 ortak düzenleme
+  inviteBtn: {
+    marginTop: 12, paddingVertical: 11, alignItems: "center",
+    borderRadius: radius.lg, backgroundColor: colors.primarySoft,
+    borderWidth: 1, borderColor: colors.primary,
+  },
+  inviteBtnText: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 13.5 },
+  editBadge: { marginTop: 12, color: colors.primaryDark, fontFamily: font.bold, fontSize: 12.5 },
+  stopNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  stopRemove: { color: colors.danger, fontFamily: font.black, fontSize: 15, paddingHorizontal: 4 },
+  addStopBtn: {
+    marginHorizontal: 16, marginTop: 4, paddingVertical: 12, alignItems: "center",
+    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, borderStyle: "dashed",
+  },
+  addStopText: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 14 },
   tag: {
     color: colors.primaryDark, fontSize: 12.5, fontFamily: font.bold,
     backgroundColor: colors.primarySoft, paddingHorizontal: 10, paddingVertical: 4,

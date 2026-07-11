@@ -65,6 +65,36 @@ export async function addStop(routeId: string, place: PlaceResult, seq: number):
   if (error) throw error;
 }
 
+// --------------------------- Ortak düzenleme (3.7) ---------------------------
+/** Rota sahibi için davet token'ı getirir (yoksa üretir) — RLS: yalnız sahibi. */
+export async function getOrCreateShareToken(routeId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("route_share_tokens").select("token").eq("route_id", routeId).maybeSingle();
+  if (data?.token) return data.token as string;
+  const { data: ins, error } = await supabase
+    .from("route_share_tokens").insert({ route_id: routeId }).select("token").single();
+  if (error) return null;
+  return (ins?.token as string) ?? null;
+}
+
+/** Davet linkindeki token ile rotaya collaborator olarak katıl → route_id (geçersizse null). */
+export async function joinRouteByToken(token: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc("join_route", { p_token: token });
+  if (error) return null;
+  return (data as string) ?? null;
+}
+
+/** Bu rotayı düzenleyebilir miyim? (sahibi ya da collaborator) */
+export async function canEditRoute(routeId: string, authorId: string): Promise<boolean> {
+  const uid = await currentUserId();
+  if (!uid) return false;
+  if (uid === authorId) return true;
+  const { data } = await supabase
+    .from("route_collaborators").select("route_id")
+    .eq("route_id", routeId).eq("user_id", uid).maybeSingle();
+  return !!data;
+}
+
 /** Durak değişince arka planda geometri + foto/puanı tazeler (hatalar yutulur). */
 export async function refreshRouteExtras(routeId: string): Promise<void> {
   const post = (path: string) =>
@@ -88,7 +118,7 @@ export async function fetchWeeklyLeaderboard(): Promise<LeaderRow[]> {
 }
 
 // --------------------------- Favoriler ---------------------------
-async function currentUserId(): Promise<string | null> {
+export async function currentUserId(): Promise<string | null> {
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
 }

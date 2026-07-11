@@ -4,15 +4,16 @@ import {
 } from "@expo-google-fonts/inter";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
+import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { Session } from "@supabase/supabase-js";
+import * as ExpoLinking from "expo-linking";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { syncOnboardingMemory } from "./src/lib/api";
+import { joinRouteByToken, syncOnboardingMemory } from "./src/lib/api";
 import { AUTH_ENABLED, DEV_EMAIL, DEV_PASSWORD } from "./src/lib/config";
 import { ensureProfile, signIn } from "./src/lib/auth";
 import { getOnboarding, markOnboardingSynced } from "./src/lib/onboarding";
@@ -32,6 +33,7 @@ import SavedScreen from "./src/screens/SavedScreen";
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -85,6 +87,28 @@ function Root() {
     getOnboarding().then((p) => setOnboarded(!!p?.done));
   }, []);
 
+  // 3.7 Ortak düzenleme daveti: linkteki ?join=<token> yakalanır → collaborator ol → rotayı aç.
+  // Oturum yoksa bekler (giriş sonrası aynı URL ile tekrar denenir); aynı token bir kez işlenir.
+  const url = ExpoLinking.useURL();
+  const handledJoin = useRef<string | null>(null);
+  useEffect(() => {
+    if (!url || !session) return;
+    const token = ExpoLinking.parse(url).queryParams?.join;
+    if (typeof token !== "string" || !token || handledJoin.current === token) return;
+    handledJoin.current = token;
+    joinRouteByToken(token).then((routeId) => {
+      if (!routeId) return;
+      const go = (deneme = 0) => {
+        if (navigationRef.isReady()) {
+          navigationRef.navigate("RouteFlood", { routeId, title: "Ortak Rota" });
+        } else if (deneme < 5) {
+          setTimeout(() => go(deneme + 1), 600); // navigasyon hazır olana dek kısa bekleme
+        }
+      };
+      go();
+    });
+  }, [url, session]);
+
   // Tercihler AI hafızasına yazılamamışsa (servis kapalıydı vb.) açılışta tekrar dene
   useEffect(() => {
     if (!authReady) return;
@@ -128,7 +152,7 @@ function Root() {
       ) : !onboarded ? (
         <OnboardingFlow onDone={() => setOnboarded(true)} />
       ) : (
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="Tabs" component={Tabs} />
             <Stack.Screen name="RouteFlood" component={RouteFloodScreen} />
