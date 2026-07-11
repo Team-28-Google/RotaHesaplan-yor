@@ -102,6 +102,12 @@ function Root() {
         try { await signIn(DEV_EMAIL, DEV_PASSWORD); } catch { /* yoksay */ }
         data = (await supabase.auth.getSession()).data;
       }
+      // 5.1: auth açıldı — testçilerde kalan ORTAK dev oturumunu bir kez kapat ki
+      // herkes kendi hesabını açsın (yoksa update sonrası da dev hesabında kalırlar)
+      if (AUTH_ENABLED && DEV_EMAIL && data.session?.user?.email === DEV_EMAIL) {
+        await supabase.auth.signOut();
+        data = { session: null };
+      }
       setSession(data.session);
       setAuthReady(true);
     })();

@@ -1,3 +1,4 @@
+import { getActiveCity } from "./cities";
 import { supabase } from "./supabase";
 
 export async function signIn(email: string, password: string) {
@@ -22,7 +23,22 @@ export async function ensureProfile(userId: string, email: string) {
   if (data) return;
   const base = (email.split("@")[0] || "kullanici").replace(/[^a-z0-9_]/gi, "").toLowerCase() || "kullanici";
   const username = `${base}_${Math.floor(Math.random() * 9000 + 1000)}`;
-  await supabase.from("profiles").insert({ id: userId, username, home_city: "Istanbul" });
+  await supabase.from("profiles").insert({ id: userId, username, home_city: await getActiveCity() });
+}
+
+/** Kayıt sonrası opsiyonel profil detayları (doğum tarihi/cinsiyet) — 5.1.
+ *  Profil satırı yoksa önce oluşturur; hata sessizce yutulur (kayıt akışını bozmaz). */
+export async function saveProfileDetails(details: { birth_date?: string | null; gender?: string | null }) {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+    if (!user) return;
+    await ensureProfile(user.id, user.email ?? "");
+    const patch: Record<string, string> = {};
+    if (details.birth_date) patch.birth_date = details.birth_date;
+    if (details.gender) patch.gender = details.gender;
+    if (Object.keys(patch).length) await supabase.from("profiles").update(patch).eq("id", user.id);
+  } catch { /* opsiyonel alanlar — sessiz */ }
 }
 
 function cevir(msg: string): string {

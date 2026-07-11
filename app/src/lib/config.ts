@@ -10,9 +10,10 @@ export const SUPABASE_ANON_KEY = "sb_publishable_t3W_PR3kQGe-b_WfnATq6g_OqErHKGd
 // Lokal geliştirme/debug gerekirse: "http://<PC-IP>:8000" + npm run ai.
 export const AI_SERVICE_URL = "https://sana-ai-5ejj.onrender.com";
 
-// Giriş ekranı aç/kapa. false = giriş ekranı GÖSTERME, dev hesabıyla otomatik gir.
-// Demo/teslimde true yap → kullanıcılar kendi hesaplarıyla girer.
-export const AUTH_ENABLED = false;
+// Giriş ekranı aç/kapa. true = herkes kendi hesabıyla girer (5.1, 11 Tem —
+// testçiler ortak dev hesabında çakışıyordu). Lokal geliştirmede hızlı girmek
+// istersen geçici false yap (dev hesabı app/.env'den okunur), commit'leme.
+export const AUTH_ENABLED = true;
 // Dev kimlik bilgileri app/.env'den gelir (EXPO_PUBLIC_*); repo'da tutulmaz.
 export const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL ?? "";
 export const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD ?? "";
