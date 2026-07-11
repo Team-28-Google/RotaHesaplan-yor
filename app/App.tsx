@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { joinRouteByToken, syncOnboardingMemory } from "./src/lib/api";
+import { joinCollectionByToken, joinRouteByToken, syncOnboardingMemory } from "./src/lib/api";
 import { AUTH_ENABLED, DEV_EMAIL, DEV_PASSWORD } from "./src/lib/config";
 import { ensureProfile, signIn } from "./src/lib/auth";
 import { getOnboarding, markOnboardingSynced } from "./src/lib/onboarding";
@@ -26,6 +26,7 @@ import CreateRouteScreen from "./src/screens/CreateRouteScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import LeaderboardScreen from "./src/screens/LeaderboardScreen";
 import UserRoutesScreen from "./src/screens/UserRoutesScreen";
+import CollectionScreen from "./src/screens/CollectionScreen";
 import MapScreen from "./src/screens/MapScreen";
 import OnboardingScreen, { OnboardingFlow } from "./src/screens/OnboardingScreen";
 import PlanScreen from "./src/screens/PlanScreen";
@@ -89,26 +90,32 @@ function Root() {
     getOnboarding().then((p) => setOnboarded(!!p?.done));
   }, []);
 
-  // 3.7 Ortak düzenleme daveti: linkteki ?join=<token> yakalanır → collaborator ol → rotayı aç.
-  // Oturum yoksa bekler (giriş sonrası aynı URL ile tekrar denenir); aynı token bir kez işlenir.
+  // Davet linkleri (3.7 rota / 3.10 koleksiyon): ?join= ya da ?joinc= yakalanır →
+  // RPC ile üye ol → ilgili ekrana git. Oturum yoksa girişten sonra işlenir; token bir kez.
   const url = ExpoLinking.useURL();
   const handledJoin = useRef<string | null>(null);
   useEffect(() => {
     if (!url || !session) return;
-    const token = ExpoLinking.parse(url).queryParams?.join;
-    if (typeof token !== "string" || !token || handledJoin.current === token) return;
+    const q = ExpoLinking.parse(url).queryParams ?? {};
+    const routeToken = typeof q.join === "string" ? q.join : null;
+    const colToken = typeof q.joinc === "string" ? q.joinc : null;
+    const token = routeToken ?? colToken;
+    if (!token || handledJoin.current === token) return;
     handledJoin.current = token;
-    joinRouteByToken(token).then((routeId) => {
-      if (!routeId) return;
-      const go = (deneme = 0) => {
-        if (navigationRef.isReady()) {
-          navigationRef.navigate("RouteFlood", { routeId, title: "Ortak Rota" });
-        } else if (deneme < 5) {
-          setTimeout(() => go(deneme + 1), 600); // navigasyon hazır olana dek kısa bekleme
-        }
-      };
-      go();
-    });
+
+    const go = (nav: () => void, deneme = 0) => {
+      if (navigationRef.isReady()) nav();
+      else if (deneme < 5) setTimeout(() => go(nav, deneme + 1), 600);
+    };
+    if (routeToken) {
+      joinRouteByToken(routeToken).then((routeId) => {
+        if (routeId) go(() => navigationRef.navigate("RouteFlood", { routeId, title: "Ortak Rota" }));
+      });
+    } else if (colToken) {
+      joinCollectionByToken(colToken).then((collectionId) => {
+        if (collectionId) go(() => navigationRef.navigate("Collection", { collectionId, title: "Ortak Koleksiyon" }));
+      });
+    }
   }, [url, session]);
 
   // Tercihler AI hafızasına yazılamamışsa (servis kapalıydı vb.) açılışta tekrar dene
@@ -162,6 +169,7 @@ function Root() {
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Stack.Screen name="UserRoutes" component={UserRoutesScreen} />
+            <Stack.Screen name="Collection" component={CollectionScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       )}

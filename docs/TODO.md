@@ -357,18 +357,18 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
   DEĞERLENDİRME (⭐ + düşünce→yorum + 💸), sonra paylaşım kartı (kullanıcı isteği).
 - [x] Home header: profil simgesi kalktı; 🏆 liderlik + yazılı "＋ Rota Oluştur" butonu.
 
-### ⬜ 3.10 ORTAK KOLEKSİYONLAR — Instagram tarzı ★ KULLANICI İSTEĞİ (11 Tem)
-> Arkadaşınla ortak rota koleksiyonu ("Gezilecekler 🇮🇹"); ikiniz de rota ekler/çıkarır,
-> ikiniz de güncel halini görürsünüz. 3.7 altyapısının (token+RPC+deep link) üst katmanı.
-- [ ] Migration: `collections(id, owner_id, title, emoji)` + `collection_members` +
-  `collection_routes(collection_id, route_id, added_by)` + `join_collection(token)` RPC
-  (0012 deseninin aynısı; token ayrı tabloda).
-- [ ] Kayıtlı sekmesi: "Koleksiyonlar" bölümü (liste + yeni koleksiyon) → koleksiyon detay
-  ekranı (rotalar + üye avatarları + 🤝 davet + rota çıkar).
-- [ ] Rota detayına "📁 Koleksiyona ekle" (sheet: koleksiyon seç / yeni oluştur).
-- [ ] Davet linki: `INVITE_URL&joinCollection=<token>` — App.tsx'teki yakalayıcı genişler.
-- [ ] Güncellik: focus-refresh (app geneliyle aynı); (V2) Supabase Realtime ile anlık.
-- **Kabul:** A koleksiyon açar, B linkle katılır, ikisi de rota ekler — iki cihazda da görünür.
+### ✅ 3.10 ORTAK KOLEKSİYONLAR — TAMAMLANDI (12 Tem) ★ KULLANICI İSTEĞİ
+> Katılım modeli kararı: kullanıcı adıyla değil DAVET LİNKİYLE (3.7 deseni — rızalı, hatasız).
+- [x] Migration 0016: collections + members + collection_routes + token (ayrı tablo) +
+  `join_collection` RPC + `is_collection_member()` (security definer — RLS özyineleme çözümü).
+- [x] Kayıtlı 3. sekme "📁 Koleksiyon": liste (emoji + N rota · M üye) + "＋ Yeni koleksiyon"
+  sheet'i (isim + emoji seçimi) → oluştur ve aç.
+- [x] CollectionScreen: üye avatar dizisi + "🤝 Davet et" (INVITE_URL&joinc=token) +
+  rota kartları + ✕ çıkar (rota silinmez) + boş durum.
+- [x] Rota detayında "📁 Koleksiyona ekle" sheet'i (koleksiyon seç → eklendi bildirimi).
+- [x] App.tsx: ?joinc= linki yakalanır → üye ol → koleksiyona git (rota ?join= ile birleşik).
+- [x] Güncellik: focus-refresh; (V2) Realtime.
+- [ ] 👤 0016'yı SQL Editor'de çalıştır + iki hesapla test (davet → B rota ekler → A görür).
 
 ### ✅ 3.13 FORK & YAYINLAMA MODELİ — TAMAMLANDI (12 Tem) ★ KULLANICI İSTEĞİ
 > "Durak ekle başkasının rotasını DEĞİŞTİRMESİN — kendine kaydolsun; 'rotanı paylaş'

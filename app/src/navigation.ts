@@ -17,6 +17,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Leaderboard: undefined;
   UserRoutes: { userId: string; username: string; avatarUrl?: string | null };
+  Collection: { collectionId: string; title: string; emoji?: string | null };
 };
 
 // Sekme ekranları hem sekmeler arası hem de kök stack'e (RouteFlood) gidebilir.
@@ -35,3 +36,4 @@ export type CreateRouteScreenProps = NativeStackScreenProps<RootStackParamList, 
 export type OnboardingScreenProps = NativeStackScreenProps<RootStackParamList, "Onboarding">;
 export type LeaderboardScreenProps = NativeStackScreenProps<RootStackParamList, "Leaderboard">;
 export type UserRoutesScreenProps = NativeStackScreenProps<RootStackParamList, "UserRoutes">;
+export type CollectionScreenProps = NativeStackScreenProps<RootStackParamList, "Collection">;

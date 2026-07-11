@@ -139,6 +139,107 @@ export async function fetchMyRoutes(): Promise<RouteWithWaypoints[]> {
   }));
 }
 
+// --------------------------- Ortak koleksiyonlar (3.10) ---------------------------
+export interface CollectionInfo {
+  id: string;
+  owner_id: string;
+  title: string;
+  emoji: string | null;
+  route_count: number;
+  member_count: number;
+}
+export interface CollectionMember {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+/** Üyesi olduğum koleksiyonlar (rota/üye sayılarıyla). */
+export async function fetchMyCollections(): Promise<CollectionInfo[]> {
+  const { data, error } = await supabase
+    .from("collections")
+    .select("id, owner_id, title, emoji, collection_routes(count), collection_members(count)")
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  type Row = CollectionInfo & {
+    collection_routes: { count: number }[];
+    collection_members: { count: number }[];
+  };
+  return ((data ?? []) as unknown as Row[]).map((c) => ({
+    id: c.id, owner_id: c.owner_id, title: c.title, emoji: c.emoji,
+    route_count: c.collection_routes?.[0]?.count ?? 0,
+    member_count: c.collection_members?.[0]?.count ?? 0,
+  }));
+}
+
+/** Yeni koleksiyon: kaydı aç + kendini üye yaz. */
+export async function createCollection(title: string, emoji: string): Promise<string | null> {
+  const uid = await currentUserId();
+  if (!uid) return null;
+  const { data, error } = await supabase
+    .from("collections").insert({ owner_id: uid, title, emoji }).select("id").single();
+  if (error || !data) return null;
+  await supabase.from("collection_members").insert({ collection_id: data.id, user_id: uid });
+  return data.id as string;
+}
+
+/** Koleksiyon içeriği: rotalar (RLS erişilebilenler) + üyeler. */
+export async function fetchCollection(collectionId: string): Promise<{
+  routes: RouteWithWaypoints[]; members: CollectionMember[];
+}> {
+  const [routesRes, membersRes] = await Promise.all([
+    supabase.from("collection_routes")
+      .select("routes(*, waypoints(*))")
+      .eq("collection_id", collectionId)
+      .order("created_at", { ascending: false }),
+    supabase.from("collection_members")
+      .select("user_id, profiles(username, avatar_url)")
+      .eq("collection_id", collectionId),
+  ]);
+  const routes = (routesRes.data ?? [])
+    .map((r) => (r as unknown as { routes: RouteWithWaypoints }).routes)
+    .filter(Boolean)
+    .map((r) => ({ ...r, waypoints: (r.waypoints ?? []).slice().sort(bySeq) }));
+  type MRow = { user_id: string; profiles: { username: string; avatar_url: string | null } | null };
+  const members = ((membersRes.data ?? []) as unknown as MRow[]).map((m) => ({
+    user_id: m.user_id,
+    username: m.profiles?.username ?? "gezgin",
+    avatar_url: m.profiles?.avatar_url ?? null,
+  }));
+  return { routes, members };
+}
+
+export async function addRouteToCollection(collectionId: string, routeId: string): Promise<boolean> {
+  const uid = await currentUserId();
+  if (!uid) return false;
+  const { error } = await supabase.from("collection_routes")
+    .insert({ collection_id: collectionId, route_id: routeId, added_by: uid });
+  return !error || (error.code === "23505"); // zaten ekli = başarı say
+}
+
+export async function removeRouteFromCollection(collectionId: string, routeId: string): Promise<void> {
+  await supabase.from("collection_routes")
+    .delete().eq("collection_id", collectionId).eq("route_id", routeId);
+}
+
+/** Koleksiyon davet token'ı (yalnız sahibi — RLS). */
+export async function getOrCreateCollectionToken(collectionId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("collection_share_tokens").select("token").eq("collection_id", collectionId).maybeSingle();
+  if (data?.token) return data.token as string;
+  const { data: ins, error } = await supabase
+    .from("collection_share_tokens").insert({ collection_id: collectionId }).select("token").single();
+  if (error) return null;
+  return (ins?.token as string) ?? null;
+}
+
+/** Davet linkindeki token ile koleksiyona katıl → collection_id (geçersizse null). */
+export async function joinCollectionByToken(token: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc("join_collection", { p_token: token });
+  if (error) return null;
+  return (data as string) ?? null;
+}
+
 // --------------------------- Ortak düzenleme (3.7) ---------------------------
 /** Rota sahibi için davet token'ı getirir (yoksa üretir) — RLS: yalnız sahibi. */
 export async function getOrCreateShareToken(routeId: string): Promise<string | null> {

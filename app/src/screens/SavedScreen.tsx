@@ -1,12 +1,15 @@
 import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
-import { fetchFavoriteRoutes, fetchMyRoutes } from "../lib/api";
+import {
+  createCollection, fetchFavoriteRoutes, fetchMyCollections, fetchMyRoutes,
+  type CollectionInfo,
+} from "../lib/api";
 import { cityInfo, getActiveCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
@@ -29,10 +32,33 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [favRoutes, setFavRoutes] = useState<RouteWithWaypoints[]>([]);
   const [myRoutes, setMyRoutes] = useState<RouteWithWaypoints[]>([]);
-  const [tab, setTab] = useState<"saved" | "mine">("saved"); // ❤️ Kaydettiklerim | 🗺️ Rotalarım (3.13)
+  const [collections, setCollections] = useState<CollectionInfo[]>([]);
+  const [tab, setTab] = useState<"saved" | "mine" | "col">("saved"); // ❤️ | 🗺️ | 📁 (3.13/3.10)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const routes = tab === "saved" ? favRoutes : myRoutes;
+
+  // Yeni koleksiyon sheet'i (3.10)
+  const [creating, setCreating] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newEmoji, setNewEmoji] = useState("📁");
+  const [savingCol, setSavingCol] = useState(false);
+  const EMOJIS = ["📁", "🇮🇹", "🏖️", "🍽️", "🌆", "💜", "🎒", "☕"];
+
+  const doCreate = async () => {
+    const t = newTitle.trim();
+    if (!t || savingCol) return;
+    setSavingCol(true);
+    try {
+      const id = await createCollection(t, newEmoji);
+      if (id) {
+        setCreating(false);
+        setNewTitle("");
+        fetchMyCollections().then(setCollections);
+        navigation.navigate("Collection", { collectionId: id, title: t, emoji: newEmoji });
+      }
+    } finally { setSavingCol(false); }
+  };
   // Detaylı filtre (3.0c v2): Tümü / 📍 Yakınımda / şehir çipleri — varsayılan aktif şehir
   const [filt, setFilt] = useState<string>("__active__"); // "all" | "near" | cityKey
   const [activeCity, setActiveCityState] = useState("Istanbul");
@@ -47,8 +73,8 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         setActiveCityState(c);
         setFilt((f) => (f === "__active__" ? c : f)); // ilk açılışta aktif şehir seçili
       });
-      Promise.all([fetchFavoriteRoutes(), fetchMyRoutes()])
-        .then(([f, m]) => { if (active) { setFavRoutes(f); setMyRoutes(m); setError(null); } })
+      Promise.all([fetchFavoriteRoutes(), fetchMyRoutes(), fetchMyCollections()])
+        .then(([f, m, c]) => { if (active) { setFavRoutes(f); setMyRoutes(m); setCollections(c); setError(null); } })
         .catch((e) => { if (active) setError(e instanceof Error ? e.message : "Yüklenemedi"); })
         .finally(() => { if (active) setLoading(false); });
       return () => { active = false; };
@@ -101,9 +127,9 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         <Text style={styles.headerTitle}>Kayıtlı</Text>
       </View>
 
-      {/* ❤️ Kaydettiklerim | 🗺️ Rotalarım (3.13 — kendi/kopyaladığın rotalar) */}
+      {/* ❤️ Kaydettiklerim | 🗺️ Rotalarım | 📁 Koleksiyonlar (3.13/3.10) */}
       <View style={styles.tabRow}>
-        {([["saved", "❤️ Kaydettiklerim"], ["mine", "🗺️ Rotalarım"]] as const).map(([k, label]) => (
+        {([["saved", "❤️ Kayıtlı"], ["mine", "🗺️ Rotalarım"], ["col", "📁 Koleksiyon"]] as const).map(([k, label]) => (
           <TouchableOpacity
             key={k}
             style={[styles.tabBtn, tab === k && styles.tabBtnOn]}
@@ -116,7 +142,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
       </View>
 
       {/* Filtre çubuğu: Tümü / Yakınımda / kayıtlı şehirler */}
-      {routes.length > 0 && (
+      {tab !== "col" && routes.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -141,7 +167,49 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         </ScrollView>
       )}
 
-      {loading ? (
+      {tab === "col" ? (
+        /* 📁 Koleksiyonlar (3.10): ortak rota koleksiyonların */
+        <FlatList
+          data={collections}
+          keyExtractor={(c) => c.id}
+          contentContainerStyle={{ padding: 16, gap: 12, flexGrow: 1 }}
+          ListHeaderComponent={
+            <TouchableOpacity style={styles.newColBtn} onPress={() => { tap(); setCreating(true); }} activeOpacity={0.85}>
+              <Text style={styles.newColText}>＋ Yeni koleksiyon</Text>
+            </TouchableOpacity>
+          }
+          ListEmptyComponent={
+            loading ? (
+              <View style={{ gap: 12 }}>
+                {[0, 1].map((i) => <Skeleton key={i} style={{ height: 76, borderRadius: radius.lg }} />)}
+              </View>
+            ) : (
+              <View style={styles.center}>
+                <Text style={styles.emptyIcon}>📁</Text>
+                <Text style={styles.emptyTitle}>Henüz koleksiyonun yok</Text>
+                <Text style={styles.emptyText}>
+                  Bir koleksiyon aç ("Gezilecekler 🇮🇹" gibi), arkadaşını davet et — birlikte rota toplayın.
+                </Text>
+              </View>
+            )
+          }
+          renderItem={({ item }) => (
+            <PressableScale
+              style={styles.colCard}
+              onPress={() => navigation.navigate("Collection", {
+                collectionId: item.id, title: item.title, emoji: item.emoji,
+              })}
+            >
+              <Text style={styles.colEmoji}>{item.emoji ?? "📁"}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.colTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.colMeta}>{item.route_count} rota · {item.member_count} üye</Text>
+              </View>
+              <Text style={styles.colChevron}>›</Text>
+            </PressableScale>
+          )}
+        />
+      ) : loading ? (
         <View style={{ padding: 16, gap: 12 }}>
           {[0, 1, 2].map((i) => <Skeleton key={i} style={{ height: 96, borderRadius: radius.lg }} />)}
         </View>
@@ -211,6 +279,45 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
           }}
         />
       )}
+
+      {/* Yeni koleksiyon (3.10): isim + emoji */}
+      <Modal visible={creating} transparent animationType="slide" onRequestClose={() => setCreating(false)}>
+        <View style={styles.colBg}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setCreating(false)} />
+          <View style={styles.colSheet}>
+            <View style={styles.colHandle} />
+            <Text style={styles.colSheetTitle}>Yeni koleksiyon</Text>
+            <TextInput
+              style={styles.colInput}
+              value={newTitle}
+              onChangeText={setNewTitle}
+              placeholder='Adı — örn. "Gezilecekler"'
+              placeholderTextColor={colors.textFaint}
+              autoFocus
+              maxLength={40}
+            />
+            <View style={styles.emojiRow}>
+              {EMOJIS.map((e) => (
+                <TouchableOpacity
+                  key={e}
+                  style={[styles.emojiChip, newEmoji === e && styles.emojiChipOn]}
+                  onPress={() => { tap(); setNewEmoji(e); }}
+                >
+                  <Text style={{ fontSize: 20 }}>{e}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.colCreate, (!newTitle.trim() || savingCol) && { opacity: 0.5 }]}
+              onPress={doCreate}
+              disabled={!newTitle.trim() || savingCol}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.colCreateText}>{savingCol ? "Oluşturuluyor…" : "Oluştur ve aç →"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -233,6 +340,44 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   tabText: { fontFamily: font.bold, fontSize: 13, color: colors.textMuted },
   tabTextOn: { color: "#fff" },
   visBadge: { fontSize: 11, fontFamily: font.bold, color: colors.textMuted },
+  // 📁 koleksiyonlar (3.10)
+  newColBtn: {
+    paddingVertical: 13, alignItems: "center", borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.border, borderStyle: "dashed", marginBottom: 4,
+  },
+  newColText: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 14 },
+  colCard: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14,
+    borderWidth: 1, borderColor: colors.border, ...shadow(6),
+  },
+  colEmoji: { fontSize: 26 },
+  colTitle: { fontSize: 15.5, fontFamily: font.extra, color: colors.text },
+  colMeta: { fontSize: 12.5, fontFamily: font.medium, color: colors.textMuted, marginTop: 2 },
+  colChevron: { fontSize: 22, color: colors.textFaint, fontFamily: font.bold },
+  colBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  colSheet: {
+    backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+    padding: 20, paddingTop: 10,
+  },
+  colHandle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 10 },
+  colSheetTitle: { fontSize: 17, fontFamily: font.extra, color: colors.text, marginBottom: 12 },
+  colInput: {
+    height: 46, backgroundColor: colors.surfaceAlt, borderRadius: radius.md,
+    paddingHorizontal: 12, color: colors.text, fontFamily: font.regular, fontSize: 15,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  emojiRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+  emojiChip: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceAlt,
+    alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: colors.border,
+  },
+  emojiChipOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  colCreate: {
+    marginTop: 16, paddingVertical: 14, alignItems: "center",
+    borderRadius: radius.lg, backgroundColor: colors.primary, ...shadow(6),
+  },
+  colCreateText: { color: "#fff", fontFamily: font.extra, fontSize: 15 },
   filterBar: { flexGrow: 0, backgroundColor: "transparent" },
   cityFilter: {
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill,

@@ -14,11 +14,11 @@ import Skeleton from "../components/Skeleton";
 import { pop, success, tap } from "../lib/haptics";
 import AddStopSheet from "../components/AddStopSheet";
 import {
-  addComment, addStop, canEditRoute, currentUserId, fetchComments, fetchCommentSummary,
-  fetchRoute, fetchSpendStats, fetchWalkRoute, forkRoute, getFavoriteIds,
-  getOrCreateShareToken, publishRoute, refreshRouteExtras, removeStop, sendMemoryEvent,
-  setFavorite, uploadPhoto,
-  type CommentSummary, type FloodComment, type WalkLeg,
+  addComment, addRouteToCollection, addStop, canEditRoute, currentUserId, fetchComments,
+  fetchCommentSummary, fetchMyCollections, fetchRoute, fetchSpendStats, fetchWalkRoute,
+  forkRoute, getFavoriteIds, getOrCreateShareToken, publishRoute, refreshRouteExtras,
+  removeStop, sendMemoryEvent, setFavorite, uploadPhoto,
+  type CollectionInfo, type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { INVITE_URL } from "../lib/config";
 import type { PlaceResult } from "../lib/types";
@@ -190,6 +190,25 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       }
     } catch { /* sessiz */ }
     finally { setEditBusy(false); }
+  };
+
+  // 📁 Koleksiyona ekle (3.10)
+  const [colSheet, setColSheet] = useState(false);
+  const [myCols, setMyCols] = useState<CollectionInfo[]>([]);
+  const openColSheet = async () => {
+    tap();
+    setColSheet(true);
+    setMyCols(await fetchMyCollections());
+  };
+  const addToCollection = async (c: CollectionInfo) => {
+    if (!route) return;
+    tap();
+    setColSheet(false);
+    const ok = await addRouteToCollection(c.id, route.id);
+    if (ok) {
+      success();
+      Alert.alert("Eklendi 📁", `"${route.title}" → ${c.emoji ?? "📁"} ${c.title}`);
+    }
   };
 
   // 🌍 Rotanı paylaş (3.13): özel rota herkese açılır
@@ -559,6 +578,11 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               <Text style={styles.editBadge}>✏️ Bu rotayı düzenleyebilirsin — durak ekle/çıkar</Text>
             )}
 
+            {/* 📁 Koleksiyona ekle (3.10) */}
+            <TouchableOpacity style={styles.colAddBtn} onPress={openColSheet} activeOpacity={0.85}>
+              <Text style={styles.colAddText}>📁 Koleksiyona ekle</Text>
+            </TouchableOpacity>
+
             {/* ✨ Topluluk ne diyor — AI yorum özeti (2.4) */}
             {communitySummary?.ok && (
               <View style={styles.community}>
@@ -754,6 +778,35 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
 
       {/* Durak ekleme (3.7) */}
       <AddStopSheet visible={addingStop} onClose={() => setAddingStop(false)} onPick={onAddStop} />
+
+      {/* 📁 Koleksiyon seç (3.10) */}
+      <Modal visible={colSheet} transparent animationType="slide" onRequestClose={() => setColSheet(false)}>
+        <View style={styles.sumBg}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setColSheet(false)} />
+          <View style={styles.sumSheet}>
+            <View style={styles.sumHandle} />
+            <Text style={styles.sumTitle}>Koleksiyona ekle</Text>
+            <View style={{ width: "100%", marginTop: 10, gap: 8 }}>
+              {myCols.length === 0 ? (
+                <Text style={styles.colEmpty}>
+                  Henüz koleksiyonun yok — Kayıtlı sekmesi → 📁 Koleksiyon → "＋ Yeni koleksiyon".
+                </Text>
+              ) : (
+                myCols.map((c) => (
+                  <TouchableOpacity key={c.id} style={styles.colRow} onPress={() => addToCollection(c)} activeOpacity={0.85}>
+                    <Text style={{ fontSize: 20 }}>{c.emoji ?? "📁"}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.colRowTitle} numberOfLines={1}>{c.title}</Text>
+                      <Text style={styles.colRowMeta}>{c.route_count} rota · {c.member_count} üye</Text>
+                    </View>
+                    <Text style={styles.colRowAdd}>＋</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Yolculuk özeti — bottom sheet + iki paylaşım formatı (3.1) */}
       <Modal visible={!!summary} transparent animationType="slide" onRequestClose={() => setSummary(null)}>
@@ -1077,6 +1130,22 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   publishBtnText: { color: "#fff", fontFamily: font.extra, fontSize: 14.5 },
   publishBtnSub: { color: "rgba(255,255,255,0.8)", fontFamily: font.medium, fontSize: 11.5, marginTop: 2 },
+  // 3.10 koleksiyon
+  colAddBtn: {
+    marginTop: 10, paddingVertical: 10, alignItems: "center",
+    borderRadius: radius.lg, backgroundColor: colors.surfaceAlt,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  colAddText: { color: colors.text, fontFamily: font.bold, fontSize: 13.5 },
+  colEmpty: { color: colors.textMuted, fontFamily: font.medium, fontSize: 13, textAlign: "center", paddingVertical: 12 },
+  colRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, padding: 12,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  colRowTitle: { fontSize: 14.5, fontFamily: font.bold, color: colors.text },
+  colRowMeta: { fontSize: 12, fontFamily: font.medium, color: colors.textMuted, marginTop: 2 },
+  colRowAdd: { fontSize: 20, color: colors.primaryDark, fontFamily: font.black },
   // 3.7 ortak düzenleme
   inviteBtn: {
     marginTop: 12, paddingVertical: 11, alignItems: "center",
