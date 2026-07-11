@@ -10,7 +10,7 @@ import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 
-const PEEK = 52; // kapalıyken görünen kısım: tutamak + kompakt etiket (sistem tuşlarının üstünde durur)
+const PEEK = 58; // kapalıyken görünen kısım: tutamak + kompakt etiket (sistem tuşlarının üstünde durur)
 
 /** Harita üstü panelleri AŞAĞI kaydırılıp kapatılabilir yapar (4.0a).
  *  Kapalıyken tutamak + etiket + yukarı ok görünür; sürükle ya da dokun. */
@@ -83,12 +83,12 @@ export default function CollapsibleSheet({ children, peekLabel, style, onToggle 
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  grab: { paddingTop: 8, paddingBottom: 4, alignItems: "center" },
+  grab: { paddingTop: 9, paddingBottom: 4, alignItems: "center" },
   handle: { width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border },
   peekRow: {
-    flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4,
+    flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6,
     backgroundColor: colors.surface, borderRadius: radius.pill,
-    paddingHorizontal: 12, paddingVertical: 3,
+    paddingHorizontal: 12, paddingVertical: 4,
     borderWidth: 1, borderColor: colors.border, ...shadow(6),
   },
   peekText: { color: colors.text, fontFamily: font.semibold, fontSize: 11.5, maxWidth: 140 },
