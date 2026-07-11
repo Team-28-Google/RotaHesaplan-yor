@@ -348,6 +348,19 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
   ayrıca vurgular; isim/ayrım cihaz turunda kullanıcıyla netleşir.
 - **Kabul:** Beğeni alan rotalar Home'da ayrı bölümde parlıyor.
 
+### ⬜ 3.10 ORTAK KOLEKSİYONLAR — Instagram tarzı ★ KULLANICI İSTEĞİ (11 Tem)
+> Arkadaşınla ortak rota koleksiyonu ("Gezilecekler 🇮🇹"); ikiniz de rota ekler/çıkarır,
+> ikiniz de güncel halini görürsünüz. 3.7 altyapısının (token+RPC+deep link) üst katmanı.
+- [ ] Migration: `collections(id, owner_id, title, emoji)` + `collection_members` +
+  `collection_routes(collection_id, route_id, added_by)` + `join_collection(token)` RPC
+  (0012 deseninin aynısı; token ayrı tabloda).
+- [ ] Kayıtlı sekmesi: "Koleksiyonlar" bölümü (liste + yeni koleksiyon) → koleksiyon detay
+  ekranı (rotalar + üye avatarları + 🤝 davet + rota çıkar).
+- [ ] Rota detayına "📁 Koleksiyona ekle" (sheet: koleksiyon seç / yeni oluştur).
+- [ ] Davet linki: `INVITE_URL&joinCollection=<token>` — App.tsx'teki yakalayıcı genişler.
+- [ ] Güncellik: focus-refresh (app geneliyle aynı); (V2) Supabase Realtime ile anlık.
+- **Kabul:** A koleksiyon açar, B linkle katılır, ikisi de rota ekler — iki cihazda da görünür.
+
 ### ⬜ 4.0a AÇILIR/KAPANIR DETAY PENCERESİ ★ KULLANICI İSTEĞİ (7 Tem)
 - [ ] Haritalı ekranlarda alttaki detay penceresi **açılır/kapanır** olacak — gerektiğinde
   TAM harita görülebilsin: RouteFlood detay sheet'i (öncelik) + Map ekranı alt kartları.
