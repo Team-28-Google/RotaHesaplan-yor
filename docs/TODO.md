@@ -317,22 +317,16 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 
 ## FAZ 4 — JOURNEY V2
 
-### ⬜ 3.7 ORTAK ROTA DÜZENLEME — paylaşılan linkle ★ KULLANICI İSTEĞİ (11 Tem)
-> "Ben bir yol oluşturdum, linkini arkadaşıma attım — link attığım kişiler o güzergâhı
-> düzenleyebilmeli." Rota, davet linkiyle ortak düzenlemeye açılır (Google Docs hissi).
-- [ ] Migration `0010_collaborators.sql`: `routes.share_token` (rastgele, rota başına) +
-  `route_collaborators(route_id, user_id)` + RLS; waypoints/routes yazma politikası
-  "sahibi VEYA collaborator" olacak şekilde genişler.
-- [ ] Katılım: RPC `join_route(token)` (security definer — token doğruysa kullanıcıyı
-  collaborator yapar); linkteki token app açılışında yakalanır (expo-linking deep link:
-  rota detayına gider + "✏️ Artık bu rotayı düzenleyebilirsin").
-- [ ] Paylaşım: rota detayına "🤝 Birlikte düzenle" → `Share.share` ile davet linki
-  (Expo Go: exp:// deep link; APK'da sana:// scheme).
-- [ ] Düzenleme UI: 2.7b'deki durak ekle/çıkar zaten var — `editable` koşulu
-  "üretilmiş" yerine "sahibi ya da collaborator" olur; RouteFlood'a da taşınır.
-- [ ] (V2) Canlı eş-zamanlılık/çakışma çözümü YOK — son yazan kazanır (MVP kabulü).
-- **Kabul:** A kullanıcısı link atar → B linke tıklar → B durak ekleyip çıkarabilir,
-  A değişikliği görür.
+### ✅ 3.7 ORTAK ROTA DÜZENLEME — TAMAMLANDI (11 Tem) ★
+- [x] Migration `0012_collaborators.sql` (👤 uygulandı, tablolar canlı doğrulandı):
+  `route_share_tokens` (routes'tan AYRI — select_all token sızdırmasın) + `route_collaborators`
+  + `join_route(token)` RPC (security definer) + waypoints RLS "sahibi VEYA collaborator".
+- [x] RouteFlood: sahibi "🤝 Birlikte düzenle" ile davet linki paylaşır (INVITE_URL&join=token);
+  davetli "✏️ düzenleyebilirsin" rozeti + ✕ çıkar + "＋ Durak ekle" (AddStopSheet ortak bileşeni).
+- [x] App.tsx: linkteki ?join= yakalanır (expo-linking) → RPC → rota detayına navigasyon
+  (oturum yoksa girişten sonra işlenir; aynı token bir kez).
+- [x] (V2 kabulü) Canlı eş-zamanlılık yok — son yazan kazanır.
+- [ ] 👤 İki hesapla saha testi: A davet eder → B linkten düzenler → A görür.
 
 ### ⬜ 3.8 GERÇEK HARCAMA BİLDİRİMİ ★ KULLANICI İSTEĞİ (11 Tem)
 > "Ben bu rotada şu kadar para harcadım" — bütçe tahmini (₺/₺₺/₺₺₺) yerine gezenlerin
