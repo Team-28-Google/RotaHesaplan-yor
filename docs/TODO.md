@@ -402,6 +402,23 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [ ] Mod karşılaştırması (üç modun süresi yan yana) — V2.
 - [ ] Rota detayı bacaklarında mod bazlı alternatif süreler — V2.
 - [ ] (Araştır) DRIVE trafik-duyarlı süre/kota — V2.
+
+### ⬜ 4.0b TOPLU TAŞIMA — TAM GOOGLE MAPS PARİTESİ ★ KULLANICI İSTEĞİ (12 Tem)
+> "Toplu taşıma daha net göstermeli, Google Maps gibi olmalı — Maps'in özelliklerini alacağız."
+> Mevcut: alternatif çipleri + yatay adım şeridi (12 Tem) — yeterince okunur değil.
+- [ ] **Harita segment bazlı çizim**: yürüme kısımları NOKTALI/kesikli, transit kısımları
+  HAT RENGİYLE düz-kalın (Routes API step başına polyline + `transitLine.color` veriyor —
+  fieldmask: `routes.legs.steps.polyline`, `...transitLine.color`); biniş/iniş duraklarına marker.
+- [ ] **Dikey adım listesi (timeline)**: GMaps'teki gibi alt panelde satır satır —
+  🚶 yürü (mesafe/süre) → [M2] renkli hat ROZETİ (arka plan = hat rengi) · binilecek durak ·
+  N durak · inilecek durak → ... ; yatay şerit yerine açılır dikey liste.
+- [ ] **Saat bilgisi**: kalkış/varış saatleri + "sonraki sefer" (transitDetails
+  `stopDetails.departureTime/arrivalTime`, `localizedValues`) — "14:32'de Haliç'ten kalkar".
+- [ ] **Alternatif KARTLARI**: çip yerine GMaps tarzı kart — hat rozet dizisi
+  ([🚶][M2][🚆]) + toplam süre + kalkış→varış saati; dokununca seçilir.
+- [ ] Hat rozet bileşeni: renkli kutu + kısa ad (M2, 15A, MARMARAY) — timeline ve kartlarda ortak.
+- [ ] (Değerlendir) Nav modunda transit paneli yarı-açılır sheet olsun (adımlar uzun olabilir).
+- **Kabul:** Toplu taşıma deneyimi Google Maps'ten ayırt edilemez seviyede okunur.
 - **Kabul 👤:** Yolculukta mod değiştirince çizgi + süre o moda göre güncelleniyor
   (mod seçici CLOUD'a push'tan sonra telefonda çalışır — /nav-route deploy'u gerekir).
 
