@@ -251,7 +251,9 @@ GENERATOR_SYS = (
     "1. 4-6 FARKLI aday seç; koordinatlara bakarak yürüme sırasına koy (zikzak yapma).\n"
     "2. Çeşitlilik: aynı türden en fazla 2 durak (hepsi kafe olmasın).\n"
     "3. Bütçe sınırına uy; puanı yüksek adayları tercih et.\n"
-    "4. SADECE şu JSON ile dön:\n"
+    "4. BAŞLIK KURALI: Kullanıcının cümlesinde geçen şehir/yer adını başlığa KOYMA "
+    "(rota oraya kurulmuyor olabilir); başlıkta yalnız adayların bulunduğu semti kullanabilirsin.\n"
+    "5. SADECE şu JSON ile dön:\n"
     '{"title": string (kısa, davetkar; semt adı geçebilir), "description": string (1-2 cümle), '
     '"vibe_tags": string[] (3-5 kısa Türkçe etiket), "weather_fit": "indoor"|"outdoor"|"any", '
     '"budget_level": 1-4, "stops": [integer (aday index, yürüme sırasında)]}'
