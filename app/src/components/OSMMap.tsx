@@ -48,6 +48,7 @@ type Props = {
   followLocation?: LatLng | null;   // verilirse kamera bu konumu takip eder (yolculuk modu)
   followHeading?: number | null;    // hareket yönü (derece) — harita yürüdüğün yöne döner
   guideLine?: LatLng[] | null;      // konum → hedef durak rotası (2 nokta = düz kesikli; >2 = gerçek sokak rotası)
+  trackLine?: LatLng[] | null;      // yürünen GERÇEK iz (4.2) — ince turkuaz, planlanan rotanın üstünde
   showRecenter?: boolean;
   padding?: number;
   /** Haritanın altını kaplayan overlay yüksekliği (px) — fit hesapları rotayı bunun ÜSTÜNE sığdırır */
@@ -238,7 +239,7 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
 
 export default function OSMMap({
   markers = [], polylines = [], transitLines = [], onPressItem, onSelectItem, onMapPress,
-  focusId, userLocation, followLocation, followHeading, guideLine, showRecenter, padding = 40,
+  focusId, userLocation, followLocation, followHeading, guideLine, trackLine, showRecenter, padding = 40,
   overlayInsetBottom = 0, style,
 }: Props) {
   const ref = useRef<MapView>(null);
@@ -385,6 +386,18 @@ export default function OSMMap({
             lineDashPattern={[8, 8]}
             lineCap="round"
             zIndex={5}
+          />
+        )}
+
+        {/* Yürünen gerçek iz (4.2) — planlanan çizginin üstünde ince turkuaz */}
+        {trackLine && trackLine.length >= 2 && (
+          <Polyline
+            coordinates={trackLine.map(ll)}
+            strokeColor="rgba(45,212,191,0.9)"
+            strokeWidth={4}
+            lineCap="round"
+            lineJoin="round"
+            zIndex={6}
           />
         )}
 

@@ -56,6 +56,17 @@ interface JourneySummary {
   distM: number;
   durationMin: number;
   date: Date;
+  /** Yürünen gerçek GPS izi (4.2) — kart "👣 Yürüdüğüm iz" seçeneğini besler */
+  track: { lat: number; lng: number }[];
+}
+
+/** İz noktalarını en fazla max noktaya indirger (DB/kart için; uçlar korunur). */
+function downsample(pts: { lat: number; lng: number }[], max: number) {
+  if (pts.length <= max) return pts;
+  const step = Math.ceil(pts.length / max);
+  const out = pts.filter((_, i) => i % step === 0);
+  if (out[out.length - 1] !== pts[pts.length - 1]) out.push(pts[pts.length - 1]);
+  return out;
 }
 
 export default function RouteFloodScreen({ route: navRoute, navigation }: RouteFloodScreenProps) {
@@ -72,6 +83,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [arrived, setArrived] = useState(false);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const journeyStart = useRef<number | null>(null);
+  const [track, setTrack] = useState<{ lat: number; lng: number }[]>([]); // yürünen iz (4.2)
 
   // Yorumlar
   const [comments, setComments] = useState<FloodComment[]>([]);
@@ -85,6 +97,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   // Yolculuk özeti + paylaşım kartı (3.1: iki format — Kart 4:5 / Story 9:16)
   const [summary, setSummary] = useState<JourneySummary | null>(null);
   const [cardFormat, setCardFormat] = useState<"card" | "story">("card");
+  const [traceSrc, setTraceSrc] = useState<"plan" | "walked">("plan"); // 3.1b iz kaynağı
   const [sharing, setSharing] = useState(false);
   const shareCardRef = useRef<View>(null);
 
@@ -221,10 +234,21 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   // Ekrandan çıkarken bekleyen zamanlayıcıyı temizle
   useEffect(() => clearAdvance, []);
 
+  // 4.2 Gerçek iz kaydı: yolculukta konum ~10 m'den fazla değiştiyse iz'e ekle
+  useEffect(() => {
+    if (!journey || !userLoc) return;
+    setTrack((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && distMeters(last, userLoc) < 10) return prev;
+      return [...prev, { lat: userLoc.lat, lng: userLoc.lng }];
+    });
+  }, [journey, userLoc]);
+
   const startJourney = () => {
     tap();
     clearAdvance();
     journeyStart.current = Date.now();
+    setTrack(userLoc ? [{ lat: userLoc.lat, lng: userLoc.lng }] : []); // iz sıfırdan başlar
     setJourney(true);
     setTarget(0);
     setArrived(false);
@@ -272,18 +296,22 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       ? Math.max(1, Math.round((Date.now() - journeyStart.current) / 60000))
       : route.total_duration_min ?? 0;
     journeyStart.current = null;
+    const walked = downsample(track, 200); // DB/kart için makul boyut
+    setTraceSrc(walked.length >= 2 ? "walked" : "plan"); // gerçek iz varsa onu öne çıkar
     const s: JourneySummary = {
       title: route.title,
       stops: exp.length,
       distM: route.total_distance_m ?? 0,
       durationMin,
       date: new Date(),
+      track: walked,
     };
     setSummary(s);
     addJourney({
       routeId: route.id, title: route.title, city: route.city,
       distance_m: s.distM, duration_min: s.durationMin, stops: s.stops,
       date: s.date.toISOString(),
+      path: walked.length >= 2 ? walked : undefined,
     });
     sendMemoryEvent("journey", route.id); // davranış hafızası (2.2)
   };
@@ -335,6 +363,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const km = route.total_distance_m ? (route.total_distance_m / 1000).toFixed(1) : "—";
   const last = exp.length - 1;
 
+  // 3.1b: kartta "planlanan yol" — gerçek sokak kıvrımları (leg_geometry'den; ~80 nokta)
+  const plannedPath = downsample(segmentsToPath(legSegments(exp)), 80);
+
   const targetStop = exp[target];
   // Gerçek sokak rotası varsa onu, yoksa düz kesikli yedeği çiz
   const guideLine = journey && userLoc && targetStop
@@ -352,6 +383,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         followLocation={journey ? userLoc : null}
         followHeading={journey ? userLoc?.heading ?? null : null}
         guideLine={guideLine}
+        trackLine={journey ? track : null}
         showRecenter
       />
       <TouchableOpacity style={[styles.backBtn, { top: insets.top + 8 }]} onPress={() => navigation.goBack()} hitSlop={12}>
@@ -580,6 +612,26 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 ))}
               </View>
 
+              {/* İz kaynağı (3.1b) — story'de; gerçek iz yoksa yalnız planlanan */}
+              {cardFormat === "story" && (
+                <View style={styles.fmtRow}>
+                  <TouchableOpacity
+                    style={[styles.fmtChip, traceSrc === "plan" && styles.fmtChipOn]}
+                    onPress={() => { tap(); setTraceSrc("plan"); }}
+                  >
+                    <Text style={[styles.fmtChipText, traceSrc === "plan" && styles.fmtChipTextOn]}>🗺️ Planlanan yol</Text>
+                  </TouchableOpacity>
+                  {summary.track.length >= 2 && (
+                    <TouchableOpacity
+                      style={[styles.fmtChip, traceSrc === "walked" && styles.fmtChipOn]}
+                      onPress={() => { tap(); setTraceSrc("walked"); }}
+                    >
+                      <Text style={[styles.fmtChipText, traceSrc === "walked" && styles.fmtChipTextOn]}>👣 Yürüdüğüm iz</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
               {/* Önizleme — kart gerçek boyutta yerleşir, scale ile sığdırılır
                   (view-shot layout boyutunu yakalar; transform çıktıyı etkilemez) */}
               <View style={styles.previewBox}>
@@ -622,7 +674,11 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                         <Text style={styles.shareDate}>
                           {summary.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} · {route.city}
                         </Text>
-                        <RouteTrace stops={exp} />
+                        <RouteTrace
+                          stops={exp}
+                          points={traceSrc === "walked" ? summary.track : plannedPath}
+                          color={traceSrc === "walked" ? "rgba(45,212,191,0.9)" : "rgba(244,80,59,0.85)"}
+                        />
                         <ShareStats stops={summary.stops} distM={summary.distM} durationMin={summary.durationMin} />
                         <View style={styles.shareStops}>
                           {exp.slice(0, 6).map((w, i) => (
@@ -676,19 +732,27 @@ function ShareStats({ stops, distM, durationMin }: { stops: number; distM: numbe
   );
 }
 
-/** Story kartındaki stilize rota izi: duraklar nokta, aralar düz çizgi (SVG'siz —
-    çizgiler orta noktasından döndürülmüş ince View'lar; view-shot ile sorunsuz). */
-function RouteTrace({ stops }: { stops: { lat: number; lng: number }[] }) {
+/** Story kartındaki rota izi (3.1b): `points` boyunca çizgi (sokak kıvrımları YA DA
+    yürünen GPS izi), duraklar nokta olarak üstte. SVG'siz — döndürülmüş ince View'lar. */
+function RouteTrace({ stops, points, color = "rgba(244,80,59,0.85)" }: {
+  stops: { lat: number; lng: number }[];
+  points: { lat: number; lng: number }[];
+  color?: string;
+}) {
   const W = 304, H = 150, PAD = 14, DOT = 10;
-  if (stops.length < 2) return null;
-  const lats = stops.map((s) => s.lat), lngs = stops.map((s) => s.lng);
+  const path = points.length >= 2 ? points : stops;
+  if (path.length < 2) return null;
+  const all = [...path, ...stops];
+  const lats = all.map((s) => s.lat), lngs = all.map((s) => s.lng);
   const minLat = Math.min(...lats), maxLat = Math.max(...lats);
   const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
   const spanLat = Math.max(maxLat - minLat, 1e-6), spanLng = Math.max(maxLng - minLng, 1e-6);
-  const pts = stops.map((s) => ({
+  const toXY = (s: { lat: number; lng: number }) => ({
     x: PAD + ((s.lng - minLng) / spanLng) * (W - PAD * 2),
     y: PAD + ((maxLat - s.lat) / spanLat) * (H - PAD * 2), // kuzey yukarı
-  }));
+  });
+  const pts = path.map(toXY);
+  const dots = stops.map(toXY);
   return (
     <View style={{
       width: W, height: H, marginTop: 18, borderRadius: radius.lg,
@@ -697,26 +761,27 @@ function RouteTrace({ stops }: { stops: { lat: number; lng: number }[] }) {
       {pts.slice(1).map((p, i) => {
         const a = pts[i];
         const len = Math.hypot(p.x - a.x, p.y - a.y);
+        if (len < 0.5) return null;
         const deg = (Math.atan2(p.y - a.y, p.x - a.x) * 180) / Math.PI;
         return (
           <View
             key={`l${i}`}
             style={{
-              position: "absolute", width: len, height: 3, borderRadius: 2,
-              backgroundColor: "rgba(244,80,59,0.85)",
-              left: (a.x + p.x) / 2 - len / 2, top: (a.y + p.y) / 2 - 1.5,
+              position: "absolute", width: len + 1, height: 3, borderRadius: 2,
+              backgroundColor: color,
+              left: (a.x + p.x) / 2 - (len + 1) / 2, top: (a.y + p.y) / 2 - 1.5,
               transform: [{ rotate: `${deg}deg` }],
             }}
           />
         );
       })}
-      {pts.map((p, i) => (
+      {dots.map((p, i) => (
         <View
           key={`d${i}`}
           style={{
             position: "absolute", width: DOT, height: DOT, borderRadius: DOT / 2,
             left: p.x - DOT / 2, top: p.y - DOT / 2,
-            backgroundColor: i === 0 ? "#34D399" : i === pts.length - 1 ? "#F4503B" : "#F2F4FC",
+            backgroundColor: i === 0 ? "#34D399" : i === dots.length - 1 ? "#F4503B" : "#F2F4FC",
             borderWidth: 1.5, borderColor: "#0B1022",
           }}
         />

@@ -17,6 +17,8 @@ export interface JourneyEntry {
   duration_min: number;
   stops: number;
   date: string; // ISO
+  /** Yürünen gerçek GPS izi (4.2) — ≤200 nokta; eski kayıtlarda yok */
+  path?: { lat: number; lng: number }[];
 }
 
 async function readLocal(key: string): Promise<JourneyEntry[]> {
@@ -47,6 +49,7 @@ async function insertRemote(entry: JourneyEntry): Promise<boolean> {
       duration_min: Math.round(entry.duration_min),
       stops: entry.stops,
       created_at: entry.date, // kuyruktan geç gönderilse de yolculuk zamanı korunur
+      path: entry.path ?? null, // 4.2 — kolon yoksa (0011 öncesi) insert hata verir → kuyruk korur
     });
     return !error;
   } catch {
