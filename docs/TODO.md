@@ -328,17 +328,16 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [x] (V2 kabulü) Canlı eş-zamanlılık yok — son yazan kazanır.
 - [ ] 👤 İki hesapla saha testi: A davet eder → B linkten düzenler → A görür.
 
-### ⬜ 3.8 GERÇEK HARCAMA BİLDİRİMİ ★ KULLANICI İSTEĞİ (11 Tem)
-> "Ben bu rotada şu kadar para harcadım" — bütçe tahmini (₺/₺₺/₺₺₺) yerine gezenlerin
-> GERÇEK harcaması görünsün; rotaya bakan diğer kullanıcılar için en güvenilir bilgi.
-- [ ] Migration: `journeys.spent_try int` (opsiyonel) — yolculuk bitiş özetine
-  "💸 Ne kadar harcadın?" alanı (atlanabilir; hızlı ₺ önerileri: 0 / 100 / 250 / 500+).
-- [ ] Rota detayında sosyal kanıt: "💸 Gerçek harcama: ort. ₺X · N gezgin bildirdi"
-  (journeys'ten aggregate; view ya da RPC — ham satır sızdırmadan).
-- [ ] Rota sahibi oluştururken de kendi tahmini/harcamasını girebilir (routes.author_spent_try?
-  ya da ilk journey kaydı sayılır — tasarımda karar).
-- [ ] Paylaşım kartına opsiyonel harcama satırı ("₺350 ile harika bir gündü").
-- **Kabul:** Yolculuk bitiren harcама girebiliyor; rota detayında ortalama görünüyor.
+### ✅ 3.8 GERÇEK HARCAMA BİLDİRİMİ — TAMAMLANDI (12 Tem) ★
+- [x] Migration 0013 (👤 uygulandı): `journeys.spent_try` + update-own policy +
+  `route_spend_stats` RPC (yalnız ortalama+adet döner, ham satır sızmaz).
+- [x] Yolculuk bitiş sheet'i: "💸 Ne kadar harcadın?" çipleri (₺0/100/250/500/1000+, opsiyonel,
+  toggle); seçim buluta anında işlenir — kayıt çevrimdışı kuyruktaysa girdiye iliştirilir.
+- [x] Rota detayında sosyal kanıt: "💸 Gerçek harcama: ort. ₺X · N gezgin bildirdi" —
+  başkasının rotasını yapmayı düşünen gerçek maliyeti görür.
+- [x] ~~Paylaşım kartına harcama satırı~~ — İPTAL (kullanıcı kararı, 12 Tem: kart kişisel
+  kalsın; harcama yalnız rota detayında).
+- [x] Rota sahibi ayrı alan girmez — ilk yolculuk bildirimi sayılır (tasarım kararı).
 
 ### ⬜ 3.9 ÇOK BEĞENİLENLER BÖLÜMÜ ★ KULLANICI İSTEĞİ (11 Tem)
 - [ ] Home'a ayrı "🔥 Çok Beğenilenler" yatay şeridi: aktif şehirde like_count'u en yüksek

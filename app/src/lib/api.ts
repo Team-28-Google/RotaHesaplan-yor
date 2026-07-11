@@ -106,6 +106,19 @@ export async function refreshRouteExtras(routeId: string): Promise<void> {
   await Promise.all([post("/route-geometry"), post("/enrich-photos")]);
 }
 
+/** 💸 Rota harcama istatistiği (3.8): ortalama ₺ + bildiren sayısı (RPC yoksa null). */
+export async function fetchSpendStats(routeId: string): Promise<{ avg: number; reports: number } | null> {
+  try {
+    const { data, error } = await supabase.rpc("route_spend_stats", { p_route: routeId });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || !row.reports) return null;
+    return { avg: row.avg_try as number, reports: row.reports as number };
+  } catch {
+    return null;
+  }
+}
+
 /** Haftalık liderlik (3.5) — view yoksa/boşsa sessizce boş liste. */
 export async function fetchWeeklyLeaderboard(): Promise<LeaderRow[]> {
   try {

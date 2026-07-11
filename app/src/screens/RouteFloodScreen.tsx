@@ -15,13 +15,13 @@ import { pop, success, tap } from "../lib/haptics";
 import AddStopSheet from "../components/AddStopSheet";
 import {
   addComment, addStop, canEditRoute, currentUserId, fetchComments, fetchCommentSummary,
-  fetchRoute, fetchWalkRoute, getFavoriteIds, getOrCreateShareToken, refreshRouteExtras,
-  removeStop, sendMemoryEvent, setFavorite, uploadPhoto,
+  fetchRoute, fetchSpendStats, fetchWalkRoute, getFavoriteIds, getOrCreateShareToken,
+  refreshRouteExtras, removeStop, sendMemoryEvent, setFavorite, uploadPhoto,
   type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { INVITE_URL } from "../lib/config";
 import type { PlaceResult } from "../lib/types";
-import { addJourney } from "../lib/journeyLog";
+import { addJourney, setJourneySpend } from "../lib/journeyLog";
 import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
@@ -104,6 +104,10 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [traceSrc, setTraceSrc] = useState<"plan" | "walked">("plan"); // 3.1b iz kaynağı
   const [sharing, setSharing] = useState(false);
   const shareCardRef = useRef<View>(null);
+  // 💸 Harcama (3.8): özet sheet'inde seçilir; buluta kayıt id'siyle işlenir
+  const [spent, setSpent] = useState<number | null>(null);
+  const journeyRemoteId = useRef<string | null>(null);
+  const [spendStats, setSpendStats] = useState<{ avg: number; reports: number } | null>(null);
 
   // Mikro-animasyonlar
   const heartScale = useRef(new Animated.Value(1)).current;
@@ -135,6 +139,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       .catch((e) => setError(e.message ?? "Rota yüklenemedi"));
     getFavoriteIds().then((s) => setFav(s.has(routeId))).catch(() => {});
     fetchComments(routeId).then(setComments).catch(() => {});
+    fetchSpendStats(routeId).then(setSpendStats).catch(() => {}); // 💸 sosyal kanıt (3.8)
   }, [routeId]);
 
   const refreshRouteState = async () => {
@@ -369,12 +374,14 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       track: walked,
     };
     setSummary(s);
+    setSpent(null);
+    journeyRemoteId.current = null;
     addJourney({
       routeId: route.id, title: route.title, city: route.city,
       distance_m: s.distM, duration_min: s.durationMin, stops: s.stops,
       date: s.date.toISOString(),
       path: walked.length >= 2 ? walked : undefined,
-    });
+    }).then((id) => { journeyRemoteId.current = id; });
     sendMemoryEvent("journey", route.id); // davranış hafızası (2.2)
   };
 
@@ -472,6 +479,12 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               <Pill icon="📏" text={`${km} km`} />
               {!!route.total_duration_min && <Pill icon="⏱️" text={`~${route.total_duration_min} dk`} />}
             </View>
+            {/* 💸 Gerçek harcama — bütçe tahmini değil, gezenlerin bildirimi (3.8) */}
+            {spendStats && (
+              <Text style={styles.spendNote}>
+                💸 Gerçek harcama: ort. ₺{spendStats.avg} · {spendStats.reports} gezgin bildirdi
+              </Text>
+            )}
             <View style={styles.tagRow}>
               {(route.vibe_tags ?? []).map((t) => (
                 <Text key={t} style={styles.tag}>#{t}</Text>
@@ -704,6 +717,32 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                     <Text style={[styles.fmtChipText, cardFormat === f && styles.fmtChipTextOn]}>{label}</Text>
                   </TouchableOpacity>
                 ))}
+              </View>
+
+              {/* 💸 Harcama bildirimi (3.8) — opsiyonel; topluluk ortalamasını besler */}
+              <View style={styles.spendRow}>
+                <Text style={styles.spendLabel}>💸 Ne kadar harcadın?</Text>
+                <View style={styles.spendChips}>
+                  {[0, 100, 250, 500, 1000].map((v) => {
+                    const on = spent === v;
+                    return (
+                      <TouchableOpacity
+                        key={v}
+                        style={[styles.spendChip, on && styles.spendChipOn]}
+                        onPress={() => {
+                          tap();
+                          const next = on ? null : v;
+                          setSpent(next);
+                          if (next !== null) setJourneySpend(journeyRemoteId.current, next);
+                        }}
+                      >
+                        <Text style={[styles.spendChipText, on && styles.spendChipTextOn]}>
+                          {v === 0 ? "₺0" : v === 1000 ? "₺1000+" : `₺${v}`}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
               {/* İz kaynağı (3.1b) — story'de; gerçek iz yoksa yalnız planlanan */}
@@ -1085,6 +1124,18 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   shareTitle: { marginTop: 6, color: "#F2F4FC", fontFamily: font.black, fontSize: 24, lineHeight: 30 },
   shareDate: { marginTop: 4, color: "#8A93B8", fontFamily: font.medium, fontSize: 12.5 },
   shareStops: { marginTop: 16, gap: 6 },
+  // 💸 harcama (3.8)
+  spendRow: { width: "100%", marginTop: 10, gap: 8 },
+  spendLabel: { fontSize: 13.5, fontFamily: font.bold, color: colors.text },
+  spendChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  spendChip: {
+    backgroundColor: colors.surfaceAlt, borderRadius: radius.pill,
+    paddingHorizontal: 13, paddingVertical: 7, borderWidth: 1, borderColor: colors.border,
+  },
+  spendChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  spendChipText: { fontSize: 13, color: colors.textMuted, fontFamily: font.semibold },
+  spendChipTextOn: { color: "#fff", fontFamily: font.bold },
+  spendNote: { marginTop: 10, color: colors.accent, fontFamily: font.bold, fontSize: 13 },
   shareStop: { color: "#C6CCE4", fontFamily: font.medium, fontSize: 13 },
   shareFooter: { marginTop: 18, color: "#FF9F8B", fontFamily: font.bold, fontSize: 12.5, textAlign: "center" },
   sumBtns: { flexDirection: "row", gap: 10, marginTop: 14, width: "100%" },

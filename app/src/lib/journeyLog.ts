@@ -19,6 +19,8 @@ export interface JourneyEntry {
   date: string; // ISO
   /** Yürünen gerçek GPS izi (4.2) — ≤200 nokta; eski kayıtlarda yok */
   path?: { lat: number; lng: number }[];
+  /** 💸 Bu yolculukta harcanan ₺ (3.8, opsiyonel — bitiş özetinde seçilir) */
+  spent_try?: number;
 }
 
 async function readLocal(key: string): Promise<JourneyEntry[]> {
@@ -36,11 +38,12 @@ async function writeLocal(key: string, list: JourneyEntry[]): Promise<void> {
   } catch { /* yerel önbellek — sessizce yoksay */ }
 }
 
-async function insertRemote(entry: JourneyEntry): Promise<boolean> {
+/** Buluta yazar; başarılıysa kayıt id'si döner (harcama güncellemesi için), değilse null. */
+async function insertRemote(entry: JourneyEntry): Promise<string | null> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-    const { error } = await supabase.from("journeys").insert({
+    if (!user) return null;
+    const { data, error } = await supabase.from("journeys").insert({
       user_id: user.id,
       route_id: entry.routeId,
       title: entry.title,
@@ -50,10 +53,12 @@ async function insertRemote(entry: JourneyEntry): Promise<boolean> {
       stops: entry.stops,
       created_at: entry.date, // kuyruktan geç gönderilse de yolculuk zamanı korunur
       path: entry.path ?? null, // 4.2 — kolon yoksa (0011 öncesi) insert hata verir → kuyruk korur
-    });
-    return !error;
+      spent_try: entry.spent_try ?? null, // 3.8
+    }).select("id").single();
+    if (error) return null;
+    return (data?.id as string) ?? null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -68,17 +73,36 @@ export async function flushJourneyQueue(): Promise<void> {
   await writeLocal(QUEUE_KEY, remaining);
 }
 
-export async function addJourney(entry: JourneyEntry): Promise<void> {
+/** Kaydet; buluta yazılabildiyse kayıt id'sini döndürür (harcama sonradan eklenebilsin). */
+export async function addJourney(entry: JourneyEntry): Promise<string | null> {
   // Yerel önbellek her durumda güncellenir (offline'da Profil doğru kalsın)
   const all = await readLocal(KEY);
   all.unshift(entry);
   await writeLocal(KEY, all.slice(0, 200));
 
-  if (!(await insertRemote(entry))) {
+  const remoteId = await insertRemote(entry);
+  if (!remoteId) {
     const q = await readLocal(QUEUE_KEY);
     q.push(entry);
     await writeLocal(QUEUE_KEY, q);
   }
+  return remoteId;
+}
+
+/** 💸 Harcamayı yolculuğa işler (3.8): buluttaysa günceller, kuyruktaysa girdiye ekler. */
+export async function setJourneySpend(remoteId: string | null, spent: number): Promise<void> {
+  try {
+    if (remoteId) {
+      await supabase.from("journeys").update({ spent_try: spent }).eq("id", remoteId);
+      return;
+    }
+    // Kuyrukta bekleyen son kayda ekle — flush edildiğinde harcamayla birlikte gider
+    const q = await readLocal(QUEUE_KEY);
+    if (q.length) {
+      q[q.length - 1] = { ...q[q.length - 1], spent_try: spent };
+      await writeLocal(QUEUE_KEY, q);
+    }
+  } catch { /* opsiyonel alan — sessiz */ }
 }
 
 export async function getJourneys(): Promise<JourneyEntry[]> {
