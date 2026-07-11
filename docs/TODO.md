@@ -261,17 +261,13 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [ ] (Polish, dev build sonrası) MapView `takeSnapshot` arka planı + QR bandı.
 - **Kontrol 👤:** Story Instagram'da tam ekran, kırpılmadan görünüyor mu?
 
-### ⬜ 3.1b PAYLAŞIM İZİ — Strava tarzı ★ KULLANICI İSTEĞİ (7 Tem)
-> Karttaki çizgi şu an stilize (duraklar arası düz çizgi). Kullanıcı Strava'daki gibi istiyor;
-> Strava'nın paylaşım videosu/animasyonu da ilham (rota izinin çizilerek aktığı replay).
-- [ ] Kartta **iz kaynağı seçimi**: "🗺️ Planlanan sokak yolu" / "👣 Gerçekten yürüdüğüm iz".
-- [ ] Planlanan yol: `leg_geometry` (DB'de hazır, Google Routes) → RouteTrace sokak kıvrımlarını
-  çizsin (nokta sayısı ~60-80'e örneklenir; düz çizgi yedeği geometri yoksa kalır).
-- [ ] Yürünen iz: **4.2'ye bağlı** (journey sırasında GPS izi kaydı) — iz varsa seçenek aktifleşir,
-  yoksa yalnız planlanan gösterilir.
-- [ ] (Stretch, video sonrası) Strava tarzı animasyonlu replay — izin çizilerek aktığı kısa video/GIF
-  paylaşımı; dev build + ekran kaydı yaklaşımıyla araştırılacak.
-- **Kabul:** Yolculuk bitiminde kartta iki iz seçeneği; Strava hissi.
+### ✅ 3.1b PAYLAŞIM İZİ — Strava tarzı — TAMAMLANDI (11 Tem) ★
+- [x] Story kartında iz kaynağı çipleri: "🗺️ Planlanan yol" / "👣 Yürüdüğüm iz" (iz varsa
+  varsayılan yürünen — turkuaz; yoksa çip görünmez, planlanan mercan).
+- [x] Planlanan yol artık gerçek sokak kıvrımları (leg_geometry → segmentsToPath, ~80 nokta);
+  RouteTrace `points` üzerinden çizer, duraklar nokta olarak üstte.
+- [ ] (Stretch, video sonrası) Strava tarzı animasyonlu replay — izin çizilerek aktığı video/GIF.
+- [ ] 👤 Saha doğrulaması: gerçek yürüyüşte iz + kartta iki seçenek.
 
 ### ✅ 3.2a Places API zenginleştirme — TAMAMLANDI (6 Tem)
 - [x] `google_place_lookup` (Text Search, koordinat bias, tek sonuç) + `google_photo_url`
@@ -387,11 +383,12 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [ ] Gerçek rotada (örn. Moda) yolculuk modu: takip kamerası, 30m eşiği, auto-advance, rehber çizgi.
 - [ ] Bulguları not et → eşik/zoom/`distanceInterval` ayarları 🤖.
 
-### ⬜ 4.2 Gerçek iz kaydı 🤖 (3.1b paylaşım izinin ön koşulu — önceliği arttı, 7 Tem)
-- [ ] `RouteFlood`: journey sırasında `userLoc` değişimlerini `trackRef: LatLng[]`e biriktir (min 10m aralık).
-- [ ] Haritada yürünen iz: ince yarı saydam ikinci polyline.
-- [ ] `finishJourney`: iz'i journey kaydına ekle (3.4 sonrası DB'ye `path jsonb`).
-- **Kontrol:** Kartta/haritada planlanan vs yürünen ayrımı görünüyor.
+### ✅ 4.2 Gerçek iz kaydı — TAMAMLANDI (11 Tem)
+- [x] Journey'de konum 10 m filtreyle `track`e biriktirilir (başlangıçta sıfırlanır).
+- [x] Haritada canlı yürünen iz: ince turkuaz polyline (OSMMap `trackLine` prop'u), planlananın üstünde.
+- [x] Bitişte iz ≤200 noktaya örneklenip karta (summary.track) + DB'ye yazılır
+  (migration 0011 `journeys.path` — 👤 uygulandı, kolon canlı doğrulandı).
+- **Kontrol 👤:** Sahada: haritada planlanan vs yürünen ayrımı + kartta iki iz.
 
 ### ⬜ 4.3 Keep awake 🤖
 - [ ] `npx expo install expo-keep-awake` → journey aktifken `useKeepAwake()` (koşullu bileşen olarak).
