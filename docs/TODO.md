@@ -73,9 +73,7 @@
 - [x] 🤖 `render.yaml` blueprint hazır (repo kökü): rootDir ai-service, health check, tüm env'ler sync:false.
 - [x] 🤖 Kritik fix: `load_env()` artık `.env` dosyası olmayan ortamda os.environ'dan okuyor
   (bu olmadan Render'da TÜM anahtarlar boş kalırdı).
-- [ ] 👤 render.com → New → **Blueprint** → repo'yu seç → env değerlerini gir (ai-service/.env'deki değerler).
-- [ ] 🤖 Deploy sonrası: `config.ts` → `AI_SERVICE_URL = "https://sana-ai.onrender.com"` (+ dev'de LAN fallback).
-- [ ] Test: mobil veriyle (Wi-Fi kapalı) Planla + canlı navigasyon çalışıyor.
+- [ ] 👤 Test: mobil veriyle (Wi-Fi kapalı) Planla + canlı navigasyon çalışıyor.
 - **Not:** Render free tier uykuya geçer (ilk istek ~30 sn); demo öncesi bir istek atıp uyandır. Gerekirse
   planRoute timeout'u zaten 90 sn.
 - **Kontrol:** `npm run ai` olmadan telefon her yerden plan alabiliyor.
@@ -213,12 +211,12 @@
 
 ---
 
-### 🐛 BUG: beğeni sayacı 0 kalıyor (7 Tem, kullanıcı raporu) — FİX HAZIR, 👤 BEKLİYOR
+### ✅ BUG: beğeni sayacı 0 kalıyor — ÇÖZÜLDÜ (7 Tem; 0009 uygulandı, ❤️ canlı doğrulandı)
 - Teşhis: beğeniler `route_favorites`'a YAZILIYOR (3 satır) ama `routes.like_count` hep 0 —
   `bump_like_count()` SECURITY DEFINER değildi → routes RLS'i (update yalnız sahibi) trigger'ın
   sayaç güncellemesini sessizce 0 satıra düşürüyordu.
 - [x] 🤖 `0009_fix_like_count.sql` yazıldı: security definer + mevcut beğenilerden sayaç backfill.
-- [ ] 👤 SQL Editor'de çalıştır → Home'da kalpler gerçek sayıyı gösterecek.
+- [x] 👤 SQL Editor'de çalıştırıldı → kalpler gerçek sayıyı gösteriyor.
 
 ## FAZ 3 — SOSYAL & VİRAL
 
@@ -285,7 +283,7 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [x] Bonus: main.py'de mükerrer `SearchRequest` tanımı temizlendi.
 - **CANLI TEST:** geçici rota → Ayasofya foto+⭐4.8, Galata Kulesi foto+⭐4.6, kapak otomatik; rota silindi.
 
-### 🟡 3.2 Foto yükleme — YORUM TARAFI TAMAM (7 Tem); 👤 migration bekliyor
+### ✅ 3.2 Foto yükleme — TAMAMLANDI (7 Tem; 0008 uygulandı, kamera seçeneği + profil fotoğrafı dahil)
 - [x] Migration `0008_storage.sql` yazıldı: photos bucket + RLS (kendi uid/ klasörüne insert, public select).
 - [x] `expo-image-picker` kuruldu; yorum formunda 📷 → önizleme/kaldır → `uploadPhoto`
   (ArrayBuffer, başarısızsa yorum fotosuz gider) → yorumda thumbnail.
@@ -322,6 +320,23 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 ---
 
 ## FAZ 4 — JOURNEY V2
+
+### ⬜ 3.7 ORTAK ROTA DÜZENLEME — paylaşılan linkle ★ KULLANICI İSTEĞİ (11 Tem)
+> "Ben bir yol oluşturdum, linkini arkadaşıma attım — link attığım kişiler o güzergâhı
+> düzenleyebilmeli." Rota, davet linkiyle ortak düzenlemeye açılır (Google Docs hissi).
+- [ ] Migration `0010_collaborators.sql`: `routes.share_token` (rastgele, rota başına) +
+  `route_collaborators(route_id, user_id)` + RLS; waypoints/routes yazma politikası
+  "sahibi VEYA collaborator" olacak şekilde genişler.
+- [ ] Katılım: RPC `join_route(token)` (security definer — token doğruysa kullanıcıyı
+  collaborator yapar); linkteki token app açılışında yakalanır (expo-linking deep link:
+  rota detayına gider + "✏️ Artık bu rotayı düzenleyebilirsin").
+- [ ] Paylaşım: rota detayına "🤝 Birlikte düzenle" → `Share.share` ile davet linki
+  (Expo Go: exp:// deep link; APK'da sana:// scheme).
+- [ ] Düzenleme UI: 2.7b'deki durak ekle/çıkar zaten var — `editable` koşulu
+  "üretilmiş" yerine "sahibi ya da collaborator" olur; RouteFlood'a da taşınır.
+- [ ] (V2) Canlı eş-zamanlılık/çakışma çözümü YOK — son yazan kazanır (MVP kabulü).
+- **Kabul:** A kullanıcısı link atar → B linke tıklar → B durak ekleyip çıkarabilir,
+  A değişikliği görür.
 
 ### ⬜ 4.0a AÇILIR/KAPANIR DETAY PENCERESİ ★ KULLANICI İSTEĞİ (7 Tem)
 - [ ] Haritalı ekranlarda alttaki detay penceresi **açılır/kapanır** olacak — gerektiğinde
