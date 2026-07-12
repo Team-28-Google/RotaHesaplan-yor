@@ -20,6 +20,7 @@ import { success, tap } from "../lib/haptics";
 import { getJourneys, type JourneyEntry } from "../lib/journeyLog";
 import { supabase } from "../lib/supabase";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
+import { fmtDuration } from "../lib/ui";
 import { useTheme } from "../lib/themeContext";
 import type { ProfileScreenProps } from "../navigation";
 
@@ -319,7 +320,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             <View style={{ flex: 1 }}>
               <Text style={styles.journeyTitle} numberOfLines={1}>{j.title}</Text>
               <Text style={styles.journeyMeta}>
-                {new Date(j.date).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · {(j.distance_m / 1000).toFixed(1)} km · {j.stops} durak · {j.duration_min} dk
+                {new Date(j.date).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · {(j.distance_m / 1000).toFixed(1)} km · {j.stops} durak · {fmtDuration(j.duration_min)}
               </Text>
             </View>
           </View>

@@ -45,6 +45,16 @@ const TRANSPORT_LABEL: Record<TransportMode, string> = {
 };
 export const transportLabel = (m: TransportMode) => TRANSPORT_LABEL[m] ?? "Ulaşım";
 
+/** Dakikayı okunur süreye çevirir: 45 → "45 dk", 287 → "4 sa 47 dk", 120 → "2 sa". */
+export function fmtDuration(min: number | null | undefined): string {
+  if (!min || min <= 0) return "—";
+  const m = Math.round(min);
+  if (m < 60) return `${m} dk`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest ? `${h} sa ${rest} dk` : `${h} sa`;
+}
+
 // Waypoint kategori/kind → ikon
 export function waypointIcon(w: Waypoint): string {
   if (w.kind === "utility") {

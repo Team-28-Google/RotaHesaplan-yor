@@ -202,10 +202,12 @@ def google_nav_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: f
     }
     mask = "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline"
     if travel == "TRANSIT":
-        # GMaps paritesi: alternatif rotalar + adım adım talimat alanları
+        # GMaps paritesi (4.0b): alternatifler + adım talimatları + ADIM GEOMETRİSİ
+        # (haritada yürüme=noktalı, transit=hat renginde çizim için)
         body["computeAlternativeRoutes"] = True
         mask += (",routes.legs.steps.transitDetails,routes.legs.steps.navigationInstruction"
-                 ",routes.legs.steps.distanceMeters,routes.legs.steps.travelMode")
+                 ",routes.legs.steps.distanceMeters,routes.legs.steps.travelMode"
+                 ",routes.legs.steps.polyline.encodedPolyline")
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
@@ -254,29 +256,43 @@ def _nav_route_payload(rt: dict, with_steps: bool = False) -> dict:
         return out
 
     steps: list[dict] = []
+    segments: list[dict] = []   # harita çizimi: yürüme=noktalı, transit=hat renginde (4.0b)
     transit = None
     transit_steps = 0
     summary_parts: list[str] = []
+    dep_first = None
+    arr_last = None
     for leg in rt.get("legs") or []:
         for st in leg.get("steps") or []:
+            s_enc = ((st.get("polyline") or {}).get("encodedPolyline")) or ""
+            coords = decode_polyline(s_enc) if s_enc else []
             td = st.get("transitDetails")
             if td:
                 transit_steps += 1
                 line = td.get("transitLine") or {}
                 stop_details = td.get("stopDetails") or {}
+                lv = td.get("localizedValues") or {}
                 veh = _VEHICLE_EMOJI.get(((line.get("vehicle") or {}).get("type") or "").upper(), "🚌")
                 name = line.get("nameShort") or line.get("name") or "hat"
+                color = line.get("color")           # hat rengi (rozet + harita çizgisi)
+                text_color = line.get("textColor")
                 board = (stop_details.get("departureStop") or {}).get("name")
                 alight = (stop_details.get("arrivalStop") or {}).get("name")
                 count = td.get("stopCount")
-                text = f"{veh} {name}"
-                if board:
-                    text += f" · {board}'dan bin"
-                if count:
-                    text += f" · {count} durak"
-                if alight:
-                    text += f" · {alight}'da in"
-                steps.append({"kind": "transit", "text": text})
+                dep_t = ((lv.get("departureTime") or {}).get("time") or {}).get("text")
+                arr_t = ((lv.get("arrivalTime") or {}).get("time") or {}).get("text")
+                if dep_first is None:
+                    dep_first = dep_t
+                if arr_t:
+                    arr_last = arr_t
+                steps.append({
+                    "kind": "transit", "line": name, "vehicle": veh,
+                    "color": color, "text_color": text_color,
+                    "board": board, "alight": alight, "stop_count": count,
+                    "dep": dep_t, "arr": arr_t, "headsign": td.get("headsign"),
+                })
+                if len(coords) >= 2:
+                    segments.append({"kind": "transit", "color": color, "coords": coords})
                 summary_parts.append(f"{veh} {name}")
                 if transit is None:
                     transit = {
@@ -285,16 +301,20 @@ def _nav_route_payload(rt: dict, with_steps: bool = False) -> dict:
                     }
             else:
                 dm = int(st.get("distanceMeters") or 0)
-                if dm < 15:
-                    continue  # anlamsız mini yürüyüş adımlarını at
                 instr = ((st.get("navigationInstruction") or {}).get("instructions")) or ""
-                text = f"🚶 {dm} m yürü" + (f" — {instr}" if instr else "")
-                steps.append({"kind": "walk", "text": text})
+                if len(coords) >= 2:
+                    segments.append({"kind": "walk", "coords": coords})
+                if dm < 15:
+                    continue  # anlamsız mini yürüyüş adımlarını timeline'a alma (çizgide dursun)
+                steps.append({"kind": "walk", "dist_m": dm, "text": instr})
     if transit:
         transit["transfers"] = max(0, transit_steps - 1)
     out["transit"] = transit
     out["steps"] = steps
+    out["segments"] = segments
     out["summary"] = " → ".join(summary_parts) if summary_parts else "🚶 yürüyerek"
+    out["dep"] = dep_first
+    out["arr"] = arr_last
     return out
 
 

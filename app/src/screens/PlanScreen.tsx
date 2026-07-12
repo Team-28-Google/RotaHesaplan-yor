@@ -15,6 +15,7 @@ import {
 } from "../lib/api";
 import { cityInfo, getActiveCity } from "../lib/cities";
 import { pop, tap } from "../lib/haptics";
+import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { PlaceResult, PlanResponse, Waypoint } from "../lib/types";
@@ -302,6 +303,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [saved, setSaved] = useState(false);
+  const planUserLoc = useUserLocation(); // canlı "buradasın" noktası (kullanıcı isteği)
   // 2.7b: üretilen rota düzenlenebilir → route yerel state'te yaşar
   const [route, setRoute] = useState(result.route);
   useEffect(() => { setRoute(result.route); }, [result.route]);
@@ -401,7 +403,8 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
     <View style={styles.container}>
       <OSMMap
         polylines={polylines} markers={markers} padding={48}
-        style={styles.map} overlayInsetBottom={SHEET_H - 60} showRecenter
+        style={styles.map} overlayInsetBottom={SHEET_H - 60}
+        userLocation={planUserLoc} showRecenter
       />
       {/* 4.0a: plan sonucu paneli de aşağı kaydırılıp kapanır — tam harita görünür */}
       <CollapsibleSheet style={styles.sheet} peekLabel="Plan detayı">

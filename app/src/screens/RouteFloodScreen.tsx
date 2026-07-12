@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator, Alert, Animated, Dimensions, Linking, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
@@ -28,7 +28,7 @@ import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
-import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
+import { budgetLabel, fmtDuration, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
 import type { RouteFloodScreenProps } from "../navigation";
 
 // 4.0a: detay paneli tam ekran haritanın üstünde, ekranın ~%58'i (aşağı kaydırılıp kapanır)
@@ -403,9 +403,17 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     ? (liveLeg.alternatives[altIdx] ?? liveLeg)
     : liveLeg;
 
+  // Şehirlerarası (>100 km): yürüme/toplu anlamsız → otomatik 🚗 arabaya geç
   useEffect(() => {
     const t = exp[target];
     if (!journey || !userLoc || !t) return;
+    if (distMeters(userLoc, t) > 100_000 && navMode !== "drive") setNavMode("drive");
+  }, [journey, userLoc, target, exp, navMode]);
+
+  useEffect(() => {
+    const t = exp[target];
+    if (!journey || !userLoc || !t) return;
+    if (distMeters(userLoc, t) > 100_000 && navMode !== "drive") return; // uzakta yalnız araba
     const stale = !legOrigin.current || distMeters(userLoc, legOrigin.current) > 40;
     if (!stale || legBusy.current) return;
     legBusy.current = true;
@@ -430,6 +438,16 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
 
   // Yolculuğu kapat → özet + paylaşım kartı göster, yerel günlüğe yaz (Profil istatistikleri)
   const finishJourney = () => {
+    // Dürüstlük korumasi: HİÇBİR durağa GPS ile varılmadıysa "tamamlandı" YOK —
+    // kutlama/özet çıkmaz, kayıt oluşmaz (kullanıcı isteği; 3.11'in sert hali)
+    if (visitedRef.current.size === 0) {
+      Alert.alert(
+        "Rota tamamlanmadı",
+        "Hiçbir durağa varmadın — yolculuk sayılmadı. Rotayı gerçekten yürüdüğünde duraklara yaklaştıkça otomatik işaretlenir.",
+        [{ text: "Tamam", onPress: cancelJourney }],
+      );
+      return;
+    }
     clearAdvance();
     setJourney(false);
     setArrived(false);
@@ -519,9 +537,14 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const plannedPath = downsample(segmentsToPath(legSegments(exp)), 80);
 
   const targetStop = exp[target];
-  // Gerçek sokak rotası varsa onu (seçili alternatif!), yoksa düz kesikli yedeği çiz
+  // Şehirlerarası (>100 km): yürüme/toplu taşıma kilitli (veri yok/anlamsız), yalnız 🚗;
+  // yaklaşınca kilit otomatik açılır. Uzaktayken düz kesikli yedek ÇİZİLMEZ (saçma görünür).
+  const FAR_M = 100_000;
+  const farAway = !!(journey && userLoc && targetStop && distMeters(userLoc, targetStop) > FAR_M);
   const guideLine = journey && userLoc && targetStop
-    ? (selLeg?.coords ?? [{ lat: userLoc.lat, lng: userLoc.lng }, { lat: targetStop.lat, lng: targetStop.lng }])
+    ? farAway
+      ? (navMode === "drive" ? selLeg?.coords ?? null : null)
+      : (selLeg?.coords ?? [{ lat: userLoc.lat, lng: userLoc.lng }, { lat: targetStop.lat, lng: targetStop.lng }])
     : null;
 
   return (
@@ -535,7 +558,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         userLocation={userLoc}
         followLocation={journey ? userLoc : null}
         followHeading={journey ? userLoc?.heading ?? null : null}
-        guideLine={guideLine}
+        guideLine={navMode === "transit" && selLeg?.segments?.length ? null : guideLine}
+        navSegments={journey && navMode === "transit" ? selLeg?.segments ?? null : null}
         trackLine={journey ? track : null}
         showRecenter
       />
@@ -562,8 +586,10 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             {userLoc && (
               <Text style={styles.navTopMeta}>
                 {selLeg
-                  ? `🧭 ${distText(selLeg.distance_m)} · ~${selLeg.duration_min} dk`
-                  : `📏 ${distText(distMeters(userLoc, targetStop))} (kuş uçuşu)`}
+                  ? `${farAway ? "🚗" : "🧭"} ${distText(selLeg.distance_m)} · ~${fmtDuration(selLeg.duration_min)}`
+                  : farAway
+                    ? `🛣️ ${distText(distMeters(userLoc, targetStop))} uzakta — araba rotası hesaplanıyor…`
+                    : `📏 ${distText(distMeters(userLoc, targetStop))} (kuş uçuşu)`}
               </Text>
             )}
           </View>
@@ -589,7 +615,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               <Pill icon="💰" text={budgetLabel(route.budget_level)} />
               <Pill icon="📍" text={`${exp.length} durak`} />
               <Pill icon="📏" text={`${km} km`} />
-              {!!route.total_duration_min && <Pill icon="⏱️" text={`~${route.total_duration_min} dk`} />}
+              {!!route.total_duration_min && <Pill icon="⏱️" text={`~${fmtDuration(route.total_duration_min)}`} />}
             </View>
             {/* 💸 Gerçek harcama — bütçe tahmini değil, gezenlerin bildirimi (3.8) */}
             {spendStats && (
@@ -675,7 +701,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                     <View style={styles.legPill}>
                       <Text style={styles.legText}>
                         {transportIcon(w.transport_mode)} {transportLabel(w.transport_mode)}
-                        {w.leg_duration_min ? ` · ~${w.leg_duration_min} dk` : ""}
+                        {w.leg_duration_min ? ` · ~${fmtDuration(w.leg_duration_min)}` : ""}
                         {w.transport_note ? ` · ${w.transport_note}` : ""}
                       </Text>
                     </View>
@@ -796,47 +822,97 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
 
       {journey && (
         <Animated.View style={[styles.journeyBar, { paddingBottom: insets.bottom + 10, transform: [{ translateY: jBarY }] }]}>
-          {/* 4.0: mod seçici — 🚶 Yürü · 🚌 Toplu · 🚗 Araba (Routes API canlı) */}
+          {/* Şehirlerarası: araba yolu gösterilir; yürüme/toplu yaklaşınca açılır */}
+          {farAway && (
+            <Text style={styles.farInfo}>
+              🛣️ Rota {userLoc && targetStop ? distText(distMeters(userLoc, targetStop)) : ""} uzakta — araba yolu gösteriliyor.
+              🚶 Yürüme ve 🚌 toplu taşıma rotaya yaklaşınca açılır.
+            </Text>
+          )}
+          {/* 4.0: mod seçici — 🚶 Yürü · 🚌 Toplu · 🚗 Araba (uzaktayken yalnız araba) */}
           <View style={styles.modeRow}>
-            {([["walk", "🚶 Yürü"], ["transit", "🚌 Toplu"], ["drive", "🚗 Araba"]] as const).map(([m, label]) => (
-              <TouchableOpacity
-                key={m}
-                style={[styles.modeChip, navMode === m && styles.modeChipOn]}
-                onPress={() => { tap(); setNavMode(m); }}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.modeText, navMode === m && styles.modeTextOn]}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {/* TRANSIT: alternatif rotalar (GMaps'teki seçenekler) — dokun, rota değişsin */}
-          {navMode === "transit" && (liveLeg?.alternatives?.length ?? 0) > 1 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 7 }} contentContainerStyle={{ gap: 6 }}>
-              {liveLeg!.alternatives!.map((a, i) => (
+            {([["walk", "🚶 Yürü"], ["transit", "🚌 Toplu"], ["drive", "🚗 Araba"]] as const).map(([m, label]) => {
+              const locked = farAway && m !== "drive";
+              return (
                 <TouchableOpacity
-                  key={i}
-                  style={[styles.altChip, altIdx === i && styles.altChipOn]}
-                  onPress={() => { tap(); setAltIdx(i); }}
+                  key={m}
+                  style={[styles.modeChip, navMode === m && styles.modeChipOn, locked && { opacity: 0.35 }]}
+                  onPress={() => { if (locked) return; tap(); setNavMode(m); }}
+                  disabled={locked}
                   activeOpacity={0.85}
                 >
-                  <Text style={[styles.altText, altIdx === i && styles.altTextOn]} numberOfLines={1}>
-                    {a.summary ?? `Seçenek ${i + 1}`} · ~{a.duration_min} dk
+                  <Text style={[styles.modeText, navMode === m && styles.modeTextOn]}>
+                    {locked ? "🔒 " : ""}{label}
                   </Text>
                 </TouchableOpacity>
-              ))}
+              );
+            })}
+          </View>
+          {/* TRANSIT alternatif KARTLARI (4.0b GMaps): rozet dizisi + süre + saat aralığı */}
+          {navMode === "transit" && (liveLeg?.alternatives?.length ?? 0) > 1 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 8 }}>
+              {liveLeg!.alternatives!.map((a, i) => {
+                const on = altIdx === i;
+                const tSteps = (a.steps ?? []).filter((s) => s.kind === "transit");
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={[styles.altCard, on && styles.altCardOn]}
+                    onPress={() => { tap(); setAltIdx(i); }}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.altBadges}>
+                      {tSteps.length === 0 ? (
+                        <Text style={styles.altWalk}>🚶 yürüyerek</Text>
+                      ) : (
+                        tSteps.slice(0, 4).map((s, j) => (
+                          <Fragment key={j}>
+                            {j > 0 && <Text style={styles.altArrow}>›</Text>}
+                            <LineBadge line={s.line ?? "?"} color={s.color} vehicle={s.vehicle} small />
+                          </Fragment>
+                        ))
+                      )}
+                    </View>
+                    <Text style={[styles.altDur, on && { color: "#7DD3FC" }]}>
+                      ~{fmtDuration(a.duration_min)}{a.dep && a.arr ? `  ·  ${a.dep} → ${a.arr}` : ""}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           )}
-          {/* TRANSIT: adım adım talimatlar (yürü → bin → in) */}
+          {/* TRANSIT dikey timeline (4.0b): yürü → renkli hat rozetiyle bin → in */}
           {navMode === "transit" && !!selLeg?.steps?.length && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 7 }} contentContainerStyle={{ gap: 6 }}>
+            <ScrollView style={styles.tlBox} nestedScrollEnabled showsVerticalScrollIndicator={false}>
               {selLeg.steps.map((s, i) => (
-                <View key={i} style={[styles.stepChip, s.kind === "transit" && styles.stepChipTransit]}>
-                  <Text style={styles.stepText} numberOfLines={1}>{i + 1}. {s.text}</Text>
+                <View key={i} style={styles.tlRow}>
+                  {s.kind === "transit" ? (
+                    <>
+                      <LineBadge line={s.line ?? "?"} color={s.color} vehicle={s.vehicle} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.tlTitle} numberOfLines={1}>
+                          {s.board ?? "Durak"}'tan bin{s.dep ? ` · ${s.dep}` : ""}
+                        </Text>
+                        <Text style={styles.tlSub} numberOfLines={1}>
+                          {s.stop_count ? `${s.stop_count} durak → ` : "→ "}
+                          {s.alight ?? "?"}'da in{s.arr ? ` · ${s.arr}` : ""}
+                        </Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.tlWalkIcon}><Text style={{ fontSize: 13 }}>🚶</Text></View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.tlTitle} numberOfLines={1}>{s.dist_m} m yürü</Text>
+                        {!!s.text && <Text style={styles.tlSub} numberOfLines={1}>{s.text}</Text>}
+                      </View>
+                    </>
+                  )}
                 </View>
               ))}
             </ScrollView>
           )}
-          {navMode === "transit" && selLeg && !selLeg.transit && !selLeg.steps?.length && (
+          {navMode === "transit" && selLeg && !selLeg.steps?.length && (
             <Text style={styles.transitInfo} numberOfLines={1}>🚶 Bu mesafe için yürüme önerildi (hat gerekmedi)</Text>
           )}
           <View style={styles.jRow}>
@@ -852,7 +928,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 )
               ) : selLeg ? (
                 <Text style={styles.jDist}>
-                  {navMode === "walk" ? "🚶" : navMode === "transit" ? (selLeg.transit?.vehicle ?? "🚌") : "🚗"} {distText(selLeg.distance_m)} · ~{selLeg.duration_min} dk · rotayı izle
+                  {navMode === "walk" ? "🚶" : navMode === "transit" ? (selLeg.transit?.vehicle ?? "🚌") : "🚗"} {distText(selLeg.distance_m)} · ~{fmtDuration(selLeg.duration_min)} · rotayı izle
                 </Text>
               ) : (
                 <Text style={styles.jDist}>📍 {distText(distMeters(userLoc, targetStop))} ileride · seni takip ediyorum</Text>
@@ -861,7 +937,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               <Text style={styles.jLabel}>📍 Konum bekleniyor…</Text>
             )}
           </View>
-          {target < last ? (
+          {/* Uzaktayken Sonraki/Bitir anlamsız — gizle (çıkış sol üst ✕ ile) */}
+          {!farAway && (target < last ? (
             <TouchableOpacity style={styles.jNext} onPress={() => { clearAdvance(); setArrived(false); setTarget(target + 1); }}>
               <Text style={styles.jNextText}>Sonraki ›</Text>
             </TouchableOpacity>
@@ -869,7 +946,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             <TouchableOpacity style={styles.jNext} onPress={finishJourney}>
               <Text style={styles.jNextText}>Bitir</Text>
             </TouchableOpacity>
-          )}
+          ))}
           </View>
         </Animated.View>
       )}
@@ -1180,6 +1257,24 @@ function RouteTrace({ stops, points, color = "rgba(244,80,59,0.85)" }: {
   );
 }
 
+/** Renkli hat rozeti (4.0b GMaps): arka plan = hattın gerçek rengi, metin = kısa ad. */
+function LineBadge({ line, color, vehicle, small }: {
+  line: string; color?: string | null; vehicle?: string | null; small?: boolean;
+}) {
+  return (
+    <View style={{
+      flexDirection: "row", alignItems: "center", gap: 3,
+      backgroundColor: color || "#1A73E8", borderRadius: 5,
+      paddingHorizontal: small ? 6 : 8, paddingVertical: small ? 2 : 4,
+    }}>
+      <Text style={{ fontSize: small ? 10 : 12 }}>{vehicle ?? "🚌"}</Text>
+      <Text style={{
+        color: "#fff", fontFamily: font.extra, fontSize: small ? 10.5 : 12.5, maxWidth: 110,
+      }} numberOfLines={1}>{line}</Text>
+    </View>
+  );
+}
+
 function Pill({ icon, text }: { icon: string; text: string }) {
   const { colors } = useTheme();
   return (
@@ -1341,20 +1436,29 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   modeText: { color: "#8A93B8", fontFamily: font.bold, fontSize: 12.5 },
   modeTextOn: { color: "#fff" },
   transitInfo: { color: "#7DD3FC", fontFamily: font.bold, fontSize: 12.5, marginBottom: 6 },
-  altChip: {
-    backgroundColor: "rgba(255,255,255,0.08)", borderRadius: radius.pill,
-    paddingHorizontal: 11, paddingVertical: 6, borderWidth: 1, borderColor: "#263052",
-    maxWidth: 260,
-  },
-  altChipOn: { backgroundColor: "rgba(125,211,252,0.18)", borderColor: "#7DD3FC" },
-  altText: { color: "#8A93B8", fontFamily: font.bold, fontSize: 12 },
-  altTextOn: { color: "#7DD3FC" },
-  stepChip: {
+  farInfo: { color: "#F5B26B", fontFamily: font.medium, fontSize: 12.5, lineHeight: 18, marginBottom: 8 },
+  // 4.0b GMaps transit: alternatif kartları + dikey timeline
+  altCard: {
     backgroundColor: "rgba(255,255,255,0.06)", borderRadius: radius.md,
-    paddingHorizontal: 10, paddingVertical: 6, maxWidth: 280,
+    paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: "#263052",
+    gap: 5, minWidth: 150,
   },
-  stepChipTransit: { backgroundColor: "rgba(125,211,252,0.14)" },
-  stepText: { color: "#C6CCE4", fontFamily: font.medium, fontSize: 12 },
+  altCardOn: { backgroundColor: "rgba(125,211,252,0.12)", borderColor: "#7DD3FC" },
+  altBadges: { flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" },
+  altArrow: { color: "#8A93B8", fontSize: 11, fontFamily: font.bold },
+  altWalk: { color: "#C6CCE4", fontFamily: font.bold, fontSize: 11.5 },
+  altDur: { color: "#8A93B8", fontFamily: font.bold, fontSize: 11.5 },
+  tlBox: { maxHeight: 150, marginBottom: 8 },
+  tlRow: {
+    flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6,
+    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+  },
+  tlWalkIcon: {
+    width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center", justifyContent: "center",
+  },
+  tlTitle: { color: "#F2F4FC", fontFamily: font.bold, fontSize: 12.5 },
+  tlSub: { color: "#8A93B8", fontFamily: font.medium, fontSize: 11.5, marginTop: 1 },
   jLabel: { color: "#8A93B8", fontFamily: font.semibold, fontSize: 12 },
   jStop: { color: "#F2F4FC", fontFamily: font.extra, fontSize: 16, marginTop: 1 },
   jDist: { color: "#FFB4A5", fontFamily: font.semibold, fontSize: 12.5, marginTop: 2 },

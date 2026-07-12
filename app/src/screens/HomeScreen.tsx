@@ -18,7 +18,7 @@ import { getOnboarding } from "../lib/onboarding";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { LeaderRow, RouteWithWaypoints } from "../lib/types";
-import { routeColor, waypointIcon } from "../lib/ui";
+import { fmtDuration, routeColor, waypointIcon } from "../lib/ui";
 import type { HomeScreenProps } from "../navigation";
 
 // Kapaklar yüklenirken gösterilecek yumuşak bulanık yer tutucu
@@ -37,12 +37,7 @@ const VIBE_MATCH: Record<string, string[]> = {
   yuruyus: ["acik-hava", "kesif"],
 };
 
-const fmtDur = (min: number | null) => {
-  if (!min) return null;
-  const h = Math.floor(min / 60);
-  const m = Math.round(min % 60);
-  return h ? `${h}s ${m}dk` : `${m}dk`;
-};
+const fmtDur = (min: number | null) => (min ? fmtDuration(min) : null);
 
 /** Foto üzerinde okunacak açık renkli meta (koyu gradyan şeridin üstünde durur). */
 function MetaLight({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {

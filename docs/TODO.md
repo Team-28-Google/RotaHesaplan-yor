@@ -403,24 +403,31 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [ ] Rota detayı bacaklarında mod bazlı alternatif süreler — V2.
 - [ ] (Araştır) DRIVE trafik-duyarlı süre/kota — V2.
 
-### ⬜ 4.0b TOPLU TAŞIMA — TAM GOOGLE MAPS PARİTESİ ★ KULLANICI İSTEĞİ (12 Tem)
-> "Toplu taşıma daha net göstermeli, Google Maps gibi olmalı — Maps'in özelliklerini alacağız."
-> Mevcut: alternatif çipleri + yatay adım şeridi (12 Tem) — yeterince okunur değil.
-- [ ] **Harita segment bazlı çizim**: yürüme kısımları NOKTALI/kesikli, transit kısımları
-  HAT RENGİYLE düz-kalın (Routes API step başına polyline + `transitLine.color` veriyor —
-  fieldmask: `routes.legs.steps.polyline`, `...transitLine.color`); biniş/iniş duraklarına marker.
-- [ ] **Dikey adım listesi (timeline)**: GMaps'teki gibi alt panelde satır satır —
-  🚶 yürü (mesafe/süre) → [M2] renkli hat ROZETİ (arka plan = hat rengi) · binilecek durak ·
-  N durak · inilecek durak → ... ; yatay şerit yerine açılır dikey liste.
-- [ ] **Saat bilgisi**: kalkış/varış saatleri + "sonraki sefer" (transitDetails
-  `stopDetails.departureTime/arrivalTime`, `localizedValues`) — "14:32'de Haliç'ten kalkar".
-- [ ] **Alternatif KARTLARI**: çip yerine GMaps tarzı kart — hat rozet dizisi
-  ([🚶][M2][🚆]) + toplam süre + kalkış→varış saati; dokununca seçilir.
-- [ ] Hat rozet bileşeni: renkli kutu + kısa ad (M2, 15A, MARMARAY) — timeline ve kartlarda ortak.
-- [ ] (Değerlendir) Nav modunda transit paneli yarı-açılır sheet olsun (adımlar uzun olabilir).
-- **Kabul:** Toplu taşıma deneyimi Google Maps'ten ayırt edilemez seviyede okunur.
+### ✅ 4.0b TOPLU TAŞIMA — GOOGLE MAPS PARİTESİ TAMAM (12 Tem) ★
+- [x] Harita segment bazlı: yürüme NOKTALI açık mavi, hatlar KENDİ RENGİNDE beyaz zarflı kalın
+  çizgi (step polyline + transitLine.color; OSMMap `navSegments`).
+- [x] Dikey timeline: 🚶 yürü (mesafe+talimat) → [M2] renkli ROZET · binilecek durak+saat ·
+  N durak · inilecek durak+saat (LineBadge ortak bileşeni).
+- [x] Saatler: kalkış/varış (localizedValues) — kartlarda "15:54 → 16:30".
+- [x] Alternatif KARTLARI: rozet dizisi ([🚌 28]›[⛴️ Vapur]) + süre + saat aralığı; dokun→seç.
+- [x] **Şehirlerarası akıl** (kullanıcı, 12 Tem): >100 km'de yalnız 🚗 araba rotası; 🚶/🚌 kilitli
+  ("yaklaşınca açılır"); Sonraki/Bitir gizli; hiç durağa varmadan Bitir → "tamamlandı" YOK,
+  kayıt oluşmaz (dürüstlük). Canlı konum noktası fix (tracksViewChanges donması) + Plan
+  haritasına konum eklendi; süreler "4 sa 47 dk" formatına geçti (fmtDuration).
+- [ ] (Polish) Biniş/iniş duraklarına mini marker + timeline'ı yarı-açılır panele taşı.
 - **Kabul 👤:** Yolculukta mod değiştirince çizgi + süre o moda göre güncelleniyor
   (mod seçici CLOUD'a push'tan sonra telefonda çalışır — /nav-route deploy'u gerekir).
+
+### ⬜ 4.0c GOOGLE API GENİŞLEMESİ 👤(aktifleştir) + 🤖(entegre) — kullanıcı onayı 12 Tem
+> "Bizi geliştirecek API varsa aktif edelim, ücretsiz zaten, kaçınmayalım."
+> 👤 Cloud Console → API'yi Enable + anahtarın API restrictions listesine ekle; sonra 🤖 entegrasyon.
+- [ ] **Maps Static API** ★ — paylaşım kartına GERÇEK harita arka planı (rota polyline'lı PNG,
+  sunucudan üretilir; 3.1 polish'i dev build BEKLEMEDEN çözer).
+- [ ] **Geocoding API** ★ — konumdan otomatik şehir tespiti (3.0c V2: "İzmir'e indin → app İzmir'e geçsin").
+- [ ] **Roads API** — yürünen GPS izini yola oturtma (snap-to-road): Strava izi pürüzsüzleşir.
+- [ ] **Air Quality API** — plana hava kalitesi sinyali ("hava kalitesi düşük → kapalı mekân önerisi").
+- [ ] **Elevation API** (ops.) — rota zorluk rozeti ("⛰️ tırmanışlı rota").
+- **Not:** Autocomplete zaten Places (New) kapsamında mevcut anahtarla kullanılabilir.
 
 ### ⬜ 4.1 Saha testi 👤 (kritik — kod değil, yürüyüş)
 - [ ] Gerçek rotada (örn. Moda) yolculuk modu: takip kamerası, 30m eşiği, auto-advance, rehber çizgi.

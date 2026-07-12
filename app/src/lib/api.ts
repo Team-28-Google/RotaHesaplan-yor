@@ -515,10 +515,23 @@ export interface WalkLeg {
     line: string; board?: string | null; headsign?: string | null;
     vehicle?: string | null; transfers?: number | null;
   } | null;
-  /** Adım adım talimatlar (yürü → bin → in) — GMaps paritesi */
-  steps?: { kind: "walk" | "transit"; text: string }[];
+  /** Adım adım talimatlar (4.0b): yürüme adımı ya da hat rozetli transit adımı */
+  steps?: {
+    kind: "walk" | "transit";
+    text?: string; dist_m?: number;                       // walk
+    line?: string; vehicle?: string;                       // transit
+    color?: string | null; text_color?: string | null;     // hat rengi (rozet+çizgi)
+    board?: string | null; alight?: string | null;
+    stop_count?: number | null; dep?: string | null; arr?: string | null;
+    headsign?: string | null;
+  }[];
+  /** Harita çizimi (4.0b): yürüme=noktalı, transit=hat renginde segmentler */
+  segments?: { kind: "walk" | "transit"; color?: string | null; coords: { lat: number; lng: number }[] }[];
   /** Hat özeti ("⛴️ Vapur → 🚶") — alternatif karşılaştırması için */
   summary?: string;
+  /** Toplam kalkış → varış saati (ilk biniş / son iniş) */
+  dep?: string | null;
+  arr?: string | null;
   /** TRANSIT: en fazla 3 alternatif rota (kendi geometri+adımlarıyla) */
   alternatives?: WalkLeg[];
 }

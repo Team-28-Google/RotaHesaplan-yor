@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Image, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View,
   type StyleProp, type ViewStyle,
@@ -49,6 +49,8 @@ type Props = {
   followHeading?: number | null;    // hareket yönü (derece) — harita yürüdüğün yöne döner
   guideLine?: LatLng[] | null;      // konum → hedef durak rotası (2 nokta = düz kesikli; >2 = gerçek sokak rotası)
   trackLine?: LatLng[] | null;      // yürünen GERÇEK iz (4.2) — ince turkuaz, planlanan rotanın üstünde
+  /** 4.0b GMaps paritesi: transit navigasyonu — yürüme NOKTALI, hatlar KENDİ RENGİNDE çizilir */
+  navSegments?: { kind: "walk" | "transit"; color?: string | null; coords: LatLng[] }[] | null;
   showRecenter?: boolean;
   padding?: number;
   /** Haritanın altını kaplayan overlay yüksekliği (px) — fit hesapları rotayı bunun ÜSTÜNE sığdırır */
@@ -239,7 +241,7 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
 
 export default function OSMMap({
   markers = [], polylines = [], transitLines = [], onPressItem, onSelectItem, onMapPress,
-  focusId, userLocation, followLocation, followHeading, guideLine, trackLine, showRecenter, padding = 40,
+  focusId, userLocation, followLocation, followHeading, guideLine, trackLine, navSegments, showRecenter, padding = 40,
   overlayInsetBottom = 0, style,
 }: Props) {
   const ref = useRef<MapView>(null);
@@ -389,6 +391,26 @@ export default function OSMMap({
           />
         )}
 
+        {/* 4.0b transit navigasyonu: yürüme noktalı mavi, hatlar kendi renginde (beyaz zarflı) */}
+        {navSegments?.map((s, i) => {
+          if (s.coords.length < 2) return null;
+          const pts = s.coords.map(ll);
+          if (s.kind === "walk") {
+            return (
+              <Polyline
+                key={`ns${i}`} coordinates={pts} strokeColor="#8AB4F8" strokeWidth={5}
+                lineDashPattern={[1, 12]} lineCap="round" zIndex={5}
+              />
+            );
+          }
+          return (
+            <Fragment key={`ns${i}`}>
+              <Polyline coordinates={pts} strokeColor="rgba(255,255,255,0.95)" strokeWidth={9} lineCap="round" lineJoin="round" zIndex={4} />
+              <Polyline coordinates={pts} strokeColor={s.color || "#1A73E8"} strokeWidth={6} lineCap="round" lineJoin="round" zIndex={5} />
+            </Fragment>
+          );
+        })}
+
         {/* Yürünen gerçek iz (4.2) — planlanan çizginin üstünde ince turkuaz */}
         {trackLine && trackLine.length >= 2 && (
           <Polyline
@@ -408,8 +430,15 @@ export default function OSMMap({
           />
         ))}
 
+        {/* CANLI konum: tracksViewChanges AÇIK — kapalıyken Android çeyrek-render bug'ı
+            mavi noktayı boş/yarım donduruyordu ("haritada konumum yok" vakası) */}
         {userLocation && (
-          <Marker coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
+          <Marker
+            coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges
+            zIndex={10}
+          >
             <View style={styles.udotRing}><View style={styles.udot} /></View>
           </Marker>
         )}
@@ -459,8 +488,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   numText: { color: "#fff", fontWeight: "800", fontSize: 14 },
 
-  udotRing: { width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(37,99,235,0.25)", alignItems: "center", justifyContent: "center" },
-  udot: { width: 14, height: 14, borderRadius: 7, backgroundColor: "#2563EB", borderWidth: 2.5, borderColor: "#fff" },
+  udotRing: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(37,99,235,0.22)", alignItems: "center", justifyContent: "center" },
+  udot: { width: 16, height: 16, borderRadius: 8, backgroundColor: "#1A73E8", borderWidth: 3, borderColor: "#fff" },
 
   recenter: {
     position: "absolute", right: 12, bottom: 12, width: 42, height: 42, borderRadius: 21,
