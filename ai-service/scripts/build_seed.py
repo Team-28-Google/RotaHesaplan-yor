@@ -321,6 +321,64 @@ TEMPLATES = [
             {"q": "halka açık tuvalet Kültürpark", "category": "public_toilet", "kind": "utility", "note": "Park içi ücretsiz WC."},
         ],
     },
+    # ==================== MUĞLA (3.0c ek — Datça vakası çözümü) ====================
+    {
+        "title": "Bodrum Kale ve Marina Turu",
+        "city": "Mugla",
+        "vibe_tags": ["deniz", "tarih", "sosyal"],
+        "weather_fit": "any",
+        "ll": "@37.0344,27.4292,15z",
+        "stops": [
+            {"q": "Bodrum Kalesi", "category": "historical_site", "kind": "experience", "note": "Sualtı arkeoloji müzeli kalede güne başla."},
+            {"q": "Bodrum Marina", "category": "waterfront", "kind": "experience", "note": "Yatların arasında sahil yürüyüşü."},
+            {"q": "Bodrum Çarşısı", "category": "bazaar", "kind": "experience", "note": "Beyaz sokaklarda begonviller altında dolan."},
+            {"q": "kafe Bodrum marina", "category": "cafe", "kind": "experience", "note": "Deniz kenarında bir kahve molası."},
+            {"q": "halka açık tuvalet Bodrum", "category": "public_toilet", "kind": "utility", "note": "Marina civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Marmaris Sahil Yürüyüşü",
+        "city": "Mugla",
+        "vibe_tags": ["deniz", "yuruyus", "manzara"],
+        "weather_fit": "outdoor",
+        "ll": "@36.8552,28.2742,15z",
+        "stops": [
+            {"q": "Marmaris Kalesi", "category": "historical_site", "kind": "experience", "note": "Eski şehrin tepesinden körfeze bak."},
+            {"q": "Marmaris sahili", "category": "waterfront", "kind": "experience", "note": "Palmiyeli kordonda uzun bir yürüyüş."},
+            {"q": "Netsel Marina", "category": "waterfront", "kind": "experience", "note": "Marina çarşısında vitrinlere göz at."},
+            {"q": "kafe Marmaris sahil", "category": "cafe", "kind": "experience", "note": "Deniz manzarasına karşı soluklan."},
+            {"q": "halka açık tuvalet Marmaris", "category": "public_toilet", "kind": "utility", "note": "Sahil civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Datça Sakin Koylar",
+        "city": "Mugla",
+        "vibe_tags": ["sakin", "deniz", "kafa-dinleme"],
+        "weather_fit": "outdoor",
+        "ll": "@36.7276,27.6873,15z",
+        "stops": [
+            {"q": "Datça Limanı", "category": "waterfront", "kind": "experience", "note": "Tekne seslerinin sakinliğiyle başla."},
+            {"q": "Eski Datça", "category": "historical_site", "kind": "experience", "note": "Taş evli arnavut kaldırımlı sokaklarda kaybol."},
+            {"q": "Kumluk Plajı Datça", "category": "waterfront", "kind": "experience", "note": "Merkezin plajında denize karşı otur."},
+            {"q": "kafe Eski Datça", "category": "cafe", "kind": "experience", "note": "Badem ağaçları altında kahve."},
+            {"q": "halka açık tuvalet Datça", "category": "public_toilet", "kind": "utility", "note": "Liman civarı ücretsiz WC."},
+        ],
+    },
+    {
+        "title": "Fethiye Kordon ve Kaya Mezarları",
+        "city": "Mugla",
+        "vibe_tags": ["deniz", "tarih", "fotograf"],
+        "weather_fit": "any",
+        "ll": "@36.6550,29.1263,15z",
+        "stops": [
+            {"q": "Fethiye Kordon", "category": "waterfront", "kind": "experience", "note": "Körfez boyunca sahil yürüyüşü."},
+            {"q": "Paspatur Çarşısı Fethiye", "category": "bazaar", "kind": "experience", "note": "Eski şehrin daracık çarşı sokakları."},
+            {"q": "Amyntas Kaya Mezarları", "category": "historical_site", "kind": "experience", "note": "Likya'nın kayaya oyulmuş mirası."},
+            {"q": "kafe Paspatur Fethiye", "category": "cafe", "kind": "experience", "note": "Çarşı avlusunda bir mola."},
+            {"q": "halka açık tuvalet Fethiye", "category": "public_toilet", "kind": "utility", "note": "Kordon civarı ücretsiz WC."},
+        ],
+    },
+
     {
         "title": "Cumalıkızık Köy Sabahı",
         "city": "Bursa",
@@ -385,7 +443,7 @@ def build_route(env: dict, tpl: dict) -> dict | None:
 
     exp_names = ", ".join(w["name"] for w in exp)
     _CITY_TR = {"Istanbul": "İstanbul'da", "Ankara": "Ankara'da", "Gaziantep": "Gaziantep'te",
-                "Izmir": "İzmir'de", "Bursa": "Bursa'da"}
+                "Izmir": "İzmir'de", "Bursa": "Bursa'da", "Mugla": "Muğla'da"}
     description = f"{_CITY_TR.get(tpl['city'], tpl['city'] + chr(39) + 'da')} tematik bir gün: {exp_names}."
     cover = next((w["photo_urls"][0] for w in waypoints if w.get("photo_urls")), None)
 

@@ -2375,6 +2375,474 @@
     ]
   },
   {
+    "title": "Bodrum Kale ve Marina Turu",
+    "description": "Muğla'da tematik bir gün: Bodrum kalesi, Bodrum marina, Çarşı, Espressolab Bodrum Marina.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "deniz",
+      "tarih",
+      "sosyal"
+    ],
+    "budget_level": 4,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFWPgXKAf4jjsPFJZpZGjInImxNHP2YsCfXEqprvtzMPy46_utzQJ4wFLLs2ePKPvUr8WZhvkwdQQNM7XZa3CRufeCSu01WYNmHtmdBJJcZtdLaHrJC1KZk9dKDEI9i_NFUHeA=w1000-h1000-c-n",
+    "total_distance_m": 2644,
+    "total_duration_min": 33,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Bodrum kalesi",
+        "place_id": "ChIJN2AI8zhtvhQRfO3RUOAfwqE",
+        "lat": 37.032052199999995,
+        "lng": 27.4287611,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Sualtı arkeoloji müzeli kalede güne başla.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFWPgXKAf4jjsPFJZpZGjInImxNHP2YsCfXEqprvtzMPy46_utzQJ4wFLLs2ePKPvUr8WZhvkwdQQNM7XZa3CRufeCSu01WYNmHtmdBJJcZtdLaHrJC1KZk9dKDEI9i_NFUHeA=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Çarşı, Kale Cd. No:43, 48400 Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Bodrum marina",
+        "place_id": "ChIJR65WVrFtvhQRROyiNFDA4w8",
+        "lat": 37.0319285,
+        "lng": 27.4261308,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Yatların arasında sahil yürüyüşü.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAG89ngv77YRURE-c_R_fbRtPkcwyomlwqOY89kFPa-uu2F7egyxZMFtSJCpjtj8zBCBULVLZlLxp9K6PUerV_a3b2He6-SwijeJPIBqDX_dUtdJ7oOBXAlCj27GzGFIIlzMI3Wx3g=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Bodrum Neyzen Tevfik Caddesi No :9, D:3, 48400 Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Çarşı",
+        "place_id": "ChIJd9_mLEBsvhQR6pGYjxFgJ0o",
+        "lat": 37.0355643,
+        "lng": 27.4336137,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Beyaz sokaklarda begonviller altında dolan.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWl49U6ERN2VFP1dM7qEQsZm4duuwjSduaygEr4xCRqsUrs6eFDzLtGpfV71mmXbH38jyV-HsIwwsGNg8LU-KJIGtWYyeH-fHTSDHZB1h338LscdPll2GjxciC137WZaZa_LQnUU=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Espressolab Bodrum Marina",
+        "place_id": "ChIJlQHC_kxtvhQRyyoLTkqYW_Q",
+        "lat": 37.0356302,
+        "lng": 27.4226961,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 4,
+        "note": "Deniz kenarında bir kahve molası.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAG2sWnmOcKQ2mXoI6QxZHxM_8C2oCCdPLKzH_QLcbIlCJ-kIyTaqqCWiCoBfigne5Zydbm0Y70yZdf5HuQqovwuXmb66awyTmEK01KZQ6cCih5heFH0jL5wrUJIB5qesxv7tRHwfSc6hbca=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Eskiçeşme, Neyzen Tevfik Cd. No: 142/1, 48400 Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Toilet Wc Tuvalet",
+        "place_id": "ChIJcT9ZPDFtvhQR5jPu9ZAB9uI",
+        "lat": 37.034647299999996,
+        "lng": 27.4300867,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Marina civarı ücretsiz WC.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmD_f5oUm9nJD6QTyWgmsJ_cYE8bkPBXpdZdxx9Hx7jQsKkYG-IFMKTHx6nso_lBLUd1sQqbe0_HfULZ9OLbIGKPPASABv83ZKFc6o76ySEDKoy1IViecMsG7TSdXUzSw7ywlPDezwumxUu=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Marmaris Sahil Yürüyüşü",
+    "description": "Muğla'da tematik bir gün: Marmaris Kalesi ve Arkeoloji Müzesi, Marmaris Halk Plajı, Netsel Marina, Panaroma Manzara Kafe.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "deniz",
+      "yuruyus",
+      "manzara"
+    ],
+    "budget_level": 2,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkf5OHfyORFvtpiOUJ0thnY9m6x-KFAsTiXHnjgYEeAzpDyREzaH8jR2Ip2yEOF6ZVii_EkDniddu_HVCy2KPSIuUY9f3A8FQ-G3prIkBHfQtw31NviLG_Gu1n96lsxK84Xew=w1000-h1000-c-n",
+    "total_distance_m": 3220,
+    "total_duration_min": 40,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Marmaris Kalesi ve Arkeoloji Müzesi",
+        "place_id": "ChIJgaHLoN29vxQR2YBWDNbMgXE",
+        "lat": 36.8505514,
+        "lng": 28.2742787,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Eski şehrin tepesinden körfeze bak.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkf5OHfyORFvtpiOUJ0thnY9m6x-KFAsTiXHnjgYEeAzpDyREzaH8jR2Ip2yEOF6ZVii_EkDniddu_HVCy2KPSIuUY9f3A8FQ-G3prIkBHfQtw31NviLG_Gu1n96lsxK84Xew=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Tepe, 30. Sk No:54, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Marmaris Halk Plajı",
+        "place_id": "ChIJ7ey9C9e9vxQRyBUJJxUZnEU",
+        "lat": 36.8511878,
+        "lng": 28.2659311,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Palmiyeli kordonda uzun bir yürüyüş.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGok5qcx299-SKNPZKBuVHlN-SDWWMrVmSXckb-MllS6BoZ7jF2IkZoMaxS9Xs2JAHtiyPiMnXwzUPi9dEl1BTzZw0TYFy13GLoiMNJtKV0kxzgo4TxaM_TKjbN5drve1aWFq7Pvg=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.1,
+          "address": "Kemeraltı, 105. Sk. No:23, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Netsel Marina",
+        "place_id": "ChIJsWQYMua9vxQR3rIzvpS7of0",
+        "lat": 36.851115,
+        "lng": 28.2813303,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Marina çarşısında vitrinlere göz at.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlphBrKg0istdqNP1L8oYpweduNnCU3M8HjlwfqAb2wCQuXDRY04O7gSvAJRr241miu0ZcFwx801yPBVshSEgtd9vX9DOt-U5CH4qthehYbp5QN_F02wjITg1SqiXFG_yqm0kEty-hnnqKR=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Sarıana, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Panaroma Manzara Kafe",
+        "place_id": "ChIJMTMN5Qe9vxQR5Zo90dtOwew",
+        "lat": 36.8507902,
+        "lng": 28.274842399999997,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Deniz manzarasına karşı soluklan.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnqCsCsNAJoWps0wVlRY8EqZHX9L-d7OarGVwAkPUdPLGb8WBOWlkwbTy8E0iS7KDRSnPOKCldSEY6Rxxr8P54gbWFHVMe6pOc1qdAjnVnxMoSkwkmj08zm3h2SjMBjXU1Ota2N=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Tepe, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Emre Ustanın Meşhur Public Toiletı",
+        "place_id": "ChIJRznBcgC9vxQRh9wcKGTtUiA",
+        "lat": 36.8532133,
+        "lng": 28.2697595,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Sahil civarı ücretsiz WC.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFyBQP5kS1iUSJpb6S3ykLATC3x2Ic5D42m9QyLG05fXWuNWslBkZE7weMY6BBXa6ZjTgL99eYsY9mWVDtEufE80MNk5gn2cumeOCMjlxUoyTU2A5OSA85ISwIH_M4ir692X6GOUrELvns=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Datça Sakin Koylar",
+    "description": "Muğla'da tematik bir gün: Datça Liman Başkanlığı, Eski Datça, Kumluk Plajı, Eski Ev Cafe Bistro.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "sakin",
+      "deniz",
+      "kafa-dinleme"
+    ],
+    "budget_level": 3,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmMTRbxm06hdRB7t1wKmp1bXCHKQg-9rLnsCiLX8A1pGjqibmdX986pGmPYfN6msfPCv6FVWOAZHw0Cv20yKADOybyLYbw9LjPYe_sVtvUnXiC-nQXtkathRs-xwz6-0WxqhfHD=w1000-h1000-c-n",
+    "total_distance_m": 10620,
+    "total_duration_min": 132,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Datça Liman Başkanlığı",
+        "place_id": "ChIJq3kv3eMkvhQRKPkhAJQ2Hek",
+        "lat": 36.7221623,
+        "lng": 27.690679799999998,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Tekne seslerinin sakinliğiyle başla.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmMTRbxm06hdRB7t1wKmp1bXCHKQg-9rLnsCiLX8A1pGjqibmdX986pGmPYfN6msfPCv6FVWOAZHw0Cv20yKADOybyLYbw9LjPYe_sVtvUnXiC-nQXtkathRs-xwz6-0WxqhfHD=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "İskele, Atatürk Cd. No:112, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Eski Datça",
+        "place_id": "ChIJsb9C-b8kvhQRiL2XG6I_QQM",
+        "lat": 36.740021,
+        "lng": 27.666636399999998,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Taş evli arnavut kaldırımlı sokaklarda kaybol.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkf08hh1HEroHX_vSbtkfi7hWZwQ17WdzIRGNkXixLc_Qs7It81vq30684Q1Pl6WFbcMyY1JliEMS58oANBemNKSyrPyXJ-i3Tg78B_u9YVK6W2g5ZAkZSAslDmm8URFzytgK8d2A=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Datça, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Kumluk Plajı",
+        "place_id": "ChIJl-NVXTElvhQRZQp9hn_DASQ",
+        "lat": 36.7249779,
+        "lng": 27.6863472,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Merkezin plajında denize karşı otur.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlS36YyBD4xULQul0VqawqGC7GlSNJxJvKjEixRLFeYQRdgtRhnPe6eS3W7ZSB0ygg6BxpWvxC9dB4D-eVsT1pADm3Hgfd0eESdlhVE-LxxOgNB8FngR-NbUFGDH_srb7VcHn18twrNvgax=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "İskele, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Eski Ev Cafe Bistro",
+        "place_id": "ChIJd9IqrIolvhQREl0T5qtylq0",
+        "lat": 36.739648599999995,
+        "lng": 27.6646234,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Badem ağaçları altında kahve.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkeB1RwpvO_RHwCzJFhG73KguUcdQSHcyONxv1zpRsT4rKDOG69ebhVlPPqNfrDx3I5aNQ3lhss7LGINp4eiWA347QoRSo9esn-WQJkNwY4SFrY7VBjqvmQQy_DxRx4KthW7VdD4Q=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Datça, Dere Sk. No:10, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Tuvalet & Duş & Çamaşırhane & bebek bakım odası",
+        "place_id": "ChIJqwJLu84lvhQR_OIkFlfib6k",
+        "lat": 36.7229892,
+        "lng": 27.6873251,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Liman civarı ücretsiz WC.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkCg4FErEz_tW19tm9x_sMYm1jXhFdkE8I0FpjdPAIAr7WZyNIkRQ6mITeuXKqsk_PJ85wfSgW8GLlJITu37STvo24VeWYNuX7Qz88P3NQMJCQV_KrghuyuEs36ldllH1lbLJSe7Q=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Fethiye Kordon ve Kaya Mezarları",
+    "description": "Muğla'da tematik bir gün: Fethiye Kordon, Paspatur Old Town (Eski Şehir), Amintas Kaya Mezarları, Understone Coffee Fethiye.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "deniz",
+      "tarih",
+      "fotograf"
+    ],
+    "budget_level": 3,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmBADwaS8wc_jamNACxsoHz1Pig3LuDWUF4VHPj5XQErh9x4fKzR6RytUPQ0x7u4nipsGzOz5ErNuzr5olsvkLQgwEOYlJ3rTqsgp-FBk31qQWVf7kS-vmYjD_DcqaF-48NhKk=w1000-h1000-c-n",
+    "total_distance_m": 8999,
+    "total_duration_min": 112,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Fethiye Kordon",
+        "place_id": "ChIJ4Qzuz_ZDwBQRddn2DQwVvi8",
+        "lat": 36.6321782,
+        "lng": 29.1189502,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Körfez boyunca sahil yürüyüşü.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmBADwaS8wc_jamNACxsoHz1Pig3LuDWUF4VHPj5XQErh9x4fKzR6RytUPQ0x7u4nipsGzOz5ErNuzr5olsvkLQgwEOYlJ3rTqsgp-FBk31qQWVf7kS-vmYjD_DcqaF-48NhKk=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Babataşı, 48300 Fethiye/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Paspatur Old Town (Eski Şehir)",
+        "place_id": "ChIJY-PU5g1BwBQRkyD49-FLIcY",
+        "lat": 36.620272199999995,
+        "lng": 29.1093142,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Eski şehrin daracık çarşı sokakları.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlNWHsGc2nIWwAXVgc2zOnsJIycdjd2ovcBoys6TGPDphyZGXEzAVi4213QTY5mXmm7Z8NAH0ymtWtP8Nw6k3Sdl1nfk-ZR6dxq4CsPx4OAlmQWpycabhnNgMfDXG-i0H6NPN0xLASwbqeU=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Cumhuriyet Mah Çarşı Caddesi No:48/B Fethiye, 48300 Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Amintas Kaya Mezarları",
+        "place_id": "ChIJT2INUF5BwBQROqI6I92vvII",
+        "lat": 36.6189981,
+        "lng": 29.118323999999998,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Likya'nın kayaya oyulmuş mirası.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWluliitvSzppTtvxDMcggnpjM-fCAZAasuNe97Wyu7BY83t1r0Zt37mCmAHMAwH_N2DVAZB6rxOyvuMxSgTYrCubb4YbSkYbBh155hf5hSq_7BL9PuxXrbvtNz58jtVpdPYd2o=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Kesikkapı, 117. Sk. No:3, 48300 Fethiye/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Understone Coffee Fethiye",
+        "place_id": "ChIJrQlQJIhDwBQRSku_dmmEHRo",
+        "lat": 36.659551,
+        "lng": 29.120155999999998,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Çarşı avlusunda bir mola.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkQql1WoIQwdnjIRJHkeWoRQgiTH9UORldkG_NTz796XGTQ91zukRzmFHASMpcTc2YeR9YXVYjUqMFdBqX9lH-W9NPyWgYO3nXtzlhaaK8jOcBARWHn1tnUut5Fa0phF-scxVIe0BSS6PUn=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Foça, Yerguzlar Cd. 53A, 48300 Fethiye/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Umumi Tuvalet",
+        "place_id": "ChIJt9JCU-tDwBQRrQpjuiNHSlg",
+        "lat": 36.640737099999996,
+        "lng": 29.1211728,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Kordon civarı ücretsiz WC.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnhXGTFITcN5ZzZgXAaWmub9Flg5J7lN90gYa-R81GqKuWz6OgR0ALoJ5YuwymkZKPNt_Z-LdgqVvDbXNuPFBSWjd4Q-Wu9WKZwa9qPA46LtI4F0iVC_c43mkn-DqFBrrwD1gAGOA=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
     "title": "Cumalıkızık Köy Sabahı",
     "description": "Bursa'da tematik bir gün: Cumalıkızık, Cumalıkızık Doğa Köy Kahvaltısı, Cumalıkız Köy Müzesi.",
     "city": "Bursa",

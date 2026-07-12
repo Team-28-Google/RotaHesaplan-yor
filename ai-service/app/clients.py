@@ -427,6 +427,7 @@ _CITY_COORDS = {
     "gaziantep": (37.0662, 37.3833),
     "izmir": (38.4192, 27.1287),
     "bursa": (40.1885, 29.0610),
+    "mugla": (36.9000, 28.0500),  # il geneli merkez (Bodrum-Fethiye hattının ortası)
 }
 
 

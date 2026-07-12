@@ -200,11 +200,24 @@ _DISTRICTS: dict[str, list[dict]] = {
         {"name": "Kültürpark", "lat": 40.1900, "lng": 29.0500,
          "vibes": ["yesil", "sakin", "yuruyus", "kafa-dinleme"]},
     ],
+    "Mugla": [
+        {"name": "Bodrum", "lat": 37.0344, "lng": 27.4305,
+         "vibes": ["deniz", "gece", "sosyal", "manzara", "tarih"]},
+        {"name": "Marmaris", "lat": 36.8552, "lng": 28.2742,
+         "vibes": ["deniz", "yuruyus", "manzara", "doga"]},
+        {"name": "Datça", "lat": 36.7276, "lng": 27.6873,
+         "vibes": ["sakin", "deniz", "kafa-dinleme", "doga"]},
+        {"name": "Fethiye", "lat": 36.6550, "lng": 29.1263,
+         "vibes": ["deniz", "manzara", "fotograf", "tarih"]},
+        {"name": "Akyaka", "lat": 37.0540, "lng": 28.3260,
+         "vibes": ["sakin", "deniz", "yesil", "kafa-dinleme"]},
+    ],
 }
 
 
 def norm_city(raw: str | None) -> str | None:
-    """Serbest şehir metnini DB'deki ASCII kanonik ada çevirir (İzmir→Izmir vb.)."""
+    """Serbest şehir metnini DB'deki ASCII kanonik ada çevirir (İzmir→Izmir vb.).
+    İlçe adları da iline çözülür (Datça→Mugla) — 'Datça vakası' kalıcı çözümü."""
     if not raw:
         return None
     c = raw.casefold()
@@ -218,6 +231,8 @@ def norm_city(raw: str | None) -> str | None:
         return "Izmir"
     if "bursa" in c:
         return "Bursa"
+    if any(x in c for x in ("muğla", "mugla", "datça", "datca", "bodrum", "marmaris", "fethiye", "akyaka")):
+        return "Mugla"
     return raw.strip().title()
 
 _VIBE_QUERIES = {
