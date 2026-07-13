@@ -15,8 +15,8 @@ import random
 
 from app.clients import (
     _CITY_COORDS, city_coords, get_route, get_weather, google_photo_url, google_place_lookup,
-    google_places_search, google_reverse_geocode_city, google_walk_leg, load_env, match_routes,
-    nvidia_chat, nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select,
+    google_places_search, google_reverse_geocode_city, google_search_city, google_walk_leg,
+    load_env, match_routes, nvidia_chat, nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select,
 )
 
 # --------------------------- Prompt'lar ---------------------------
@@ -344,18 +344,17 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     Merkez önceliği: kullanıcı konumu > seçilen semt > AI semt seçimi (2.7b; 3.0c şehir-bazlı)."""
     if gen_center:
         district = {"name": "konumunun çevresi", "lat": gen_center[0], "lng": gen_center[1], "vibes": []}
-        # Tüm-Türkiye: KONUMDAN üretimde şehir de konumdan türetilir — app'in aktif
-        # şehri başka ilde kalmış olabilir (Antalya'da üretilen rota İstanbul'a yazılmasın)
+        # Şehir de KONUMDAN türetilir (tüm dünya) — app'in aktif şehri başka yerde
+        # kalmış olabilir (Antalya'da üretilen rota İstanbul'a yazılmasın)
         detected = norm_city(google_reverse_geocode_city(env, gen_center[0], gen_center[1]))
         wanted = norm_city(intent.get("city"))
-        if wanted in _TR_PROVINCES and detected in _TR_PROVINCES and wanted != detected:
-            # Cümlede AÇIKÇA başka il var ("Antalya'da...") ama kullanıcı İstanbul'da
-            # "Konumum"u seçmiş — ileri tarihli uzak plan: CÜMLEDEKİ İL kazanır,
-            # üretim o ilin merkezinde yapılır (konum yok sayılır)
-            city = wanted
+        if wanted and wanted == city and detected and detected != wanted:
+            # Cümlede AÇIKÇA şehir var ("Antalya'da...", "Berlin'de...") ama konum başka
+            # yerde — ileri tarihli uzak plan: CÜMLEDEKİ ŞEHİR kazanır, üretim onun
+            # merkezinde yapılır (konum yok sayılır)
             lat, lng = city_coords(env, city)
             district = {"name": f"{city} merkezi", "lat": lat, "lng": lng, "vibes": []}
-        elif detected in _TR_PROVINCES and detected != city:
+        elif detected and detected != city:
             city = detected
     elif gen_district:
         district = next((d for d in _DISTRICTS.get(city, []) if d["name"] == gen_district), None) \
@@ -492,12 +491,15 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     # Şehir çözümü (3.0c): cümlede AÇIKÇA İstanbul-dışı BİLİNEN bir şehir geçiyorsa o kazanır;
     # yoksa app'in aktif şehri; en son Istanbul. Bilinmeyen ad = LLM halüsinasyonu sayılır
     # (örn. "çarşıda"yı şehir sanabiliyor) ve yok sayılır.
+    # Şehir doğrulama (tüm dünya): app'ten gelen şehir KULLANICI SEÇİMİDİR (arama/konum
+    # geocode'ludur) → aynen güvenilir. LLM'den gelen şehir halüsinasyon olabilir →
+    # TR ili değilse Geocoding'de gerçek şehir/il olarak bulunmalı ("çarşıda" elenir,
+    # "Berlin" geçer).
     intent_city = norm_city(intent.get("city"))
-    if intent_city not in _TR_PROVINCES:  # gerçek il değilse LLM halüsinasyonu say
-        intent_city = None
+    if intent_city and intent_city not in _TR_PROVINCES:
+        if not google_search_city(env, intent_city, limit=1):
+            intent_city = None
     app_city_n = norm_city(app_city)
-    if app_city_n not in _TR_PROVINCES:
-        app_city_n = None
     if intent_city and intent_city != "Istanbul":
         city = intent_city
     else:

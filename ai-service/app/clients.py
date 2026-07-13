@@ -514,8 +514,8 @@ _GEO_CACHE: dict[str, tuple[float, float]] = {}
 
 
 def city_coords(env: dict, city: str) -> tuple[float, float]:
-    """Şehir → (lat, lng). Önce sabit tablo, yoksa Geocoding ile il merkezi bulunur
-    (tüm-Türkiye desteği) ve süreç boyunca cache'lenir. Hatada Istanbul'a düşer."""
+    """Şehir → (lat, lng). Önce sabit tablo, yoksa Geocoding ile merkez bulunur
+    (tüm dünya: 'Berlin' de çözülür; TR bias'ı korunur) ve cache'lenir. Hatada Istanbul."""
     c = (city or "istanbul").casefold()
     if c in _CITY_COORDS:
         return _CITY_COORDS[c]
@@ -524,7 +524,7 @@ def city_coords(env: dict, city: str) -> tuple[float, float]:
     key = _google_server_key(env)
     if key:
         url = ("https://maps.googleapis.com/maps/api/geocode/json?"
-               + urllib.parse.urlencode({"address": f"{city}, Türkiye", "region": "tr",
+               + urllib.parse.urlencode({"address": city, "region": "tr",
                                          "language": "tr", "key": key}))
         try:
             r = _req(url, timeout=15)
@@ -537,27 +537,72 @@ def city_coords(env: dict, city: str) -> tuple[float, float]:
     return _CITY_COORDS["istanbul"]
 
 
-def google_reverse_geocode_city(env: dict, lat: float, lng: float) -> str | None:
-    """Koordinattan il adı (Geocoding API, administrative_area_level_1, TR dili).
-    'Muğla' gibi serbest ad döner — kanonikleştirme çağıranda (pipeline.norm_city)."""
+def google_reverse_geocode_place(env: dict, lat: float, lng: float) -> dict | None:
+    """Koordinattan yer: TR'de İL (admin_area_1), dünyada ŞEHİR (locality).
+    → {"name": "Muğla"|"Berlin", "country_code": "TR"|"DE"} — kanonikleştirme çağıranda."""
     key = _google_server_key(env)
     if not key:
         return None
     url = ("https://maps.googleapis.com/maps/api/geocode/json?"
            + urllib.parse.urlencode({
                "latlng": f"{lat:.6f},{lng:.6f}",
-               "result_type": "administrative_area_level_1",
+               "result_type": "locality|administrative_area_level_1",
                "language": "tr", "key": key,
            }))
     try:
         r = _req(url, timeout=15)
     except Exception:
         return None
+    locality = admin1 = country = None
     for res in (r or {}).get("results") or []:
         for comp in res.get("address_components") or []:
-            if "administrative_area_level_1" in (comp.get("types") or []):
-                return comp.get("long_name")
-    return None
+            t = set(comp.get("types") or [])
+            if "locality" in t and not locality:
+                locality = comp.get("long_name")
+            if "administrative_area_level_1" in t and not admin1:
+                admin1 = comp.get("long_name")
+            if "country" in t and not country:
+                country = comp.get("short_name")
+    name = admin1 if country == "TR" else (locality or admin1)  # TR=il, dünya=şehir
+    return {"name": name, "country_code": country} if name else None
+
+
+def google_reverse_geocode_city(env: dict, lat: float, lng: float) -> str | None:
+    """Geriye uyumluluk: yalnız yer adını döner (TR'de il, dünyada şehir)."""
+    p = google_reverse_geocode_place(env, lat, lng)
+    return p["name"] if p else None
+
+
+def google_search_city(env: dict, q: str, limit: int = 5) -> list[dict]:
+    """DÜNYA geneli şehir arama (Geocoding forward): yalnız şehir/il tipindeki
+    sonuçlar → [{name, country, lat, lng}]. LLM şehir doğrulamasında da kullanılır."""
+    key = _google_server_key(env)
+    if not key or not q.strip():
+        return []
+    url = ("https://maps.googleapis.com/maps/api/geocode/json?"
+           + urllib.parse.urlencode({"address": q.strip(), "language": "tr", "key": key}))
+    try:
+        r = _req(url, timeout=15)
+    except Exception:
+        return []
+    out = []
+    for res in (r or {}).get("results") or []:
+        types = set(res.get("types") or [])
+        if not (types & {"locality", "administrative_area_level_1"}):
+            continue  # sokak/POI sonuçları şehir sayılmaz (halüsinasyon koruması)
+        loc = (res.get("geometry") or {}).get("location") or {}
+        name = country = None
+        for comp in res.get("address_components") or []:
+            t = set(comp.get("types") or [])
+            if not name and (t & {"locality", "administrative_area_level_1"}):
+                name = comp.get("long_name")
+            if "country" in t and not country:
+                country = comp.get("long_name")
+        if name and loc.get("lat") is not None:
+            out.append({"name": name, "country": country, "lat": loc["lat"], "lng": loc["lng"]})
+        if len(out) >= limit:
+            break
+    return out
 
 
 # --------------------------- Hava durumu ---------------------------

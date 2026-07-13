@@ -14,8 +14,9 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import (google_nav_leg, google_reverse_geocode_city, google_snap_to_roads,
-                         google_static_map, google_walk_leg, load_env, nvidia_embed)
+from app.clients import (google_nav_leg, google_reverse_geocode_place, google_search_city,
+                         google_snap_to_roads, google_static_map, google_walk_leg, load_env,
+                         nvidia_embed)
 from app.pipeline import _TR_PROVINCES, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
@@ -105,6 +106,10 @@ class SnapTrackRequest(BaseModel):
 class DetectCityRequest(BaseModel):
     lat: float
     lng: float
+
+
+class CitySearchRequest(BaseModel):
+    q: str = Field(..., min_length=2)
 
 
 @app.get("/health")
@@ -241,10 +246,23 @@ def static_map(path: str, w: int = 608, h: int = 300, line: str = "coral") -> Re
 
 @app.post("/detect-city")
 def detect_city(req: DetectCityRequest) -> dict:
-    """Konumdan şehir algılama (Geocoding): il adı → kanonik şehir (Datça→Mugla).
-    81 ilin hepsi geçerli (tüm-Türkiye); il çözülemezse city:null → app elle seçtirir."""
-    raw = google_reverse_geocode_city(load_env(), req.lat, req.lng)
-    city = norm_city(raw)
-    if city not in _TR_PROVINCES:
-        city = None
-    return {"ok": raw is not None, "province": raw, "city": city}
+    """Konumdan şehir algılama (Geocoding, TÜM DÜNYA): TR'de il → kanonik ad
+    (Datça→Mugla); yurtdışında şehir adı aynen (Berlin). Çözülemezse city:null."""
+    place = google_reverse_geocode_place(load_env(), req.lat, req.lng)
+    if not place:
+        return {"ok": False, "province": None, "city": None, "country": None}
+    if place.get("country_code") == "TR":
+        city = norm_city(place["name"])
+        if city not in _TR_PROVINCES:
+            city = None
+    else:
+        city = norm_city(place["name"])  # dünya: ASCII kanonik (Münih→Munih) — app'le aynı
+    return {"ok": True, "province": place["name"], "city": city,
+            "country": place.get("country_code")}
+
+
+@app.post("/search-city")
+def search_city(req: CitySearchRequest) -> dict:
+    """DÜNYA şehir araması (Geocoding forward) — app'in şehir seçicisindeki arama
+    kutusunu besler; yalnız şehir/il tipi sonuçlar döner."""
+    return {"results": google_search_city(load_env(), req.q)}
