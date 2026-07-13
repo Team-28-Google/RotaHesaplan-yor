@@ -14,7 +14,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import google_nav_leg, google_walk_leg, load_env, nvidia_embed
+from app.clients import (google_nav_leg, google_reverse_geocode_city, google_snap_to_roads,
+                         google_walk_leg, load_env, nvidia_embed)
+from app.pipeline import _DISTRICTS, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
 from app.pipeline import enrich_route as run_enrich_route
@@ -89,6 +91,20 @@ class EmbedRouteRequest(BaseModel):
 class SearchRequest(BaseModel):
     q: str = Field(..., min_length=1)
     city: str | None = None  # 3.0c: arama aktif şehir merkezine bias'lanır
+
+
+class TrackPoint(BaseModel):
+    lat: float
+    lng: float
+
+
+class SnapTrackRequest(BaseModel):
+    points: list[TrackPoint] = Field(..., min_length=2)
+
+
+class DetectCityRequest(BaseModel):
+    lat: float
+    lng: float
 
 
 @app.get("/health")
@@ -198,3 +214,21 @@ def route_geometry(req: EmbedRouteRequest) -> dict:
 def search_place(req: SearchRequest) -> dict:
     """Mekan araması — Google Places (New), aktif şehre bias'lı (SerpApi yedek)."""
     return {"results": run_search_places(req.q, req.city)}
+
+
+@app.post("/snap-track")
+def snap_track(req: SnapTrackRequest) -> dict:
+    """Yürünen GPS izini yola oturtur (4.0c Roads). Hatada ok:false → app ham izi kullanır."""
+    snapped = google_snap_to_roads(load_env(), [p.model_dump() for p in req.points])
+    return {"ok": len(snapped) >= 2, "points": snapped}
+
+
+@app.post("/detect-city")
+def detect_city(req: DetectCityRequest) -> dict:
+    """Konumdan şehir algılama (4.0c Geocoding): il adı → kanonik şehir (Datça→Mugla).
+    Desteklenmeyen ildeyse city:null döner — app seçiciyi elle gösterir."""
+    raw = google_reverse_geocode_city(load_env(), req.lat, req.lng)
+    city = norm_city(raw)
+    if city not in _DISTRICTS:  # norm_city bilinmeyeni title-case aynen döndürür → null'a çevir
+        city = None
+    return {"ok": raw is not None, "province": raw, "city": city}

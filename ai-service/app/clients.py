@@ -417,6 +417,57 @@ def google_places_search(env: dict, query: str, lat: float, lng: float,
     return out
 
 
+# --------------------------- Roads + Geocoding (4.0c) ---------------------------
+def google_snap_to_roads(env: dict, points: list[dict]) -> list[dict]:
+    """Ham GPS izini yola oturtur (Roads API snapToRoads, interpolate=true).
+    API limiti istek başına 100 nokta → uzun izler eşit aralıkla 100'e indirilir.
+    Hata/anahtar yoksa [] döner — çağıran ham izi kullanmaya devam eder."""
+    key = _google_server_key(env)
+    if not key or len(points) < 2:
+        return []
+    pts = points
+    if len(pts) > 100:
+        step = (len(pts) - 1) / 99.0
+        pts = [points[round(i * step)] for i in range(100)]
+    path = "|".join(f"{p['lat']:.6f},{p['lng']:.6f}" for p in pts)
+    url = ("https://roads.googleapis.com/v1/snapToRoads?"
+           + urllib.parse.urlencode({"path": path, "interpolate": "true", "key": key}))
+    try:
+        r = _req(url, timeout=20)
+    except Exception:
+        return []
+    out = []
+    for sp in (r or {}).get("snappedPoints") or []:
+        loc = sp.get("location") or {}
+        if loc.get("latitude") is None:
+            continue
+        out.append({"lat": loc["latitude"], "lng": loc["longitude"]})
+    return out
+
+
+def google_reverse_geocode_city(env: dict, lat: float, lng: float) -> str | None:
+    """Koordinattan il adı (Geocoding API, administrative_area_level_1, TR dili).
+    'Muğla' gibi serbest ad döner — kanonikleştirme çağıranda (pipeline.norm_city)."""
+    key = _google_server_key(env)
+    if not key:
+        return None
+    url = ("https://maps.googleapis.com/maps/api/geocode/json?"
+           + urllib.parse.urlencode({
+               "latlng": f"{lat:.6f},{lng:.6f}",
+               "result_type": "administrative_area_level_1",
+               "language": "tr", "key": key,
+           }))
+    try:
+        r = _req(url, timeout=15)
+    except Exception:
+        return None
+    for res in (r or {}).get("results") or []:
+        for comp in res.get("address_components") or []:
+            if "administrative_area_level_1" in (comp.get("types") or []):
+                return comp.get("long_name")
+    return None
+
+
 # --------------------------- Hava durumu ---------------------------
 # Öncelik: Google Weather API (GOOGLE_WEATHER_API_KEY varsa) → OpenWeather (yedek).
 # İkisi de aynı şekle döner: {temp, desc, rainy, bias}.
