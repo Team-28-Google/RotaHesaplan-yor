@@ -38,7 +38,9 @@ app/
 | `POST /plan-route` | Deterministik pipeline; `force_generate` ile AI üretici, `city` ile aktif şehir (81 il) |
 | `POST /nav-route` | Çok modlu canlı navigasyon (walk/transit/drive) — transit adımları, hat renkleri, alternatifler |
 | `POST /walk-route` | Eski istemciler için yürüme kısayolu |
-| `POST /detect-city` | Koordinat → il (Geocoding, tüm Türkiye; Datça→Mugla gibi kanonikleştirme) |
+| `POST /detect-city` | Koordinat → şehir (Geocoding, TÜM DÜNYA; TR'de il — Datça→Mugla) |
+| `POST /search-city` | Dünya şehir araması (yalnız şehir/il tipi sonuçlar) |
+| `GET /static-map` | Rota izli koyu tema harita PNG'si (paylaşım kartı arka planı) |
 | `POST /snap-track` | Ham GPS izini yola oturtur (Roads) |
 | `POST /search-place` | Mekan araması (Places New, aktif şehre bias'lı) |
 | `POST /enrich-route` | Kullanıcı duraklarına başlık/etiket/anlatı |

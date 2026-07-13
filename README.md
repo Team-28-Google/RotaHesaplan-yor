@@ -43,8 +43,9 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 - **Gerçek Sokaklardan Geçen Rotalar** — Duraklar arası yollar harita üzerinde kuş uçuşu düz çizgiyle değil, gerçekten yürüyeceğin sokaklar ve tahmini yürüme süreleriyle gösterilir.
 - **Adım Adım Canlı Yürüyüş** — Yolculuk sırasında bulunduğun yerden sıradaki durağa giden yol çizilir; sen ilerledikçe rota kendini günceller, harita yürüdüğün yöne döner ve varış süresi anlık değişir. Tıpkı bir navigasyon uygulaması gibi, ama şehri keşfetmek için.
 - **Havaya Göre Uyum** — Yağmur varsa uygulama planını yeniden düşünür ve sana kapalı mekân alternatifleri önerir. Planın hava koşullarıyla uyumlu kalır.
-- **Yepyeni Rota Üretimi** — Havuzda sana uygun rota yoksa (ya da istersen) yapay zekâ, Google Places'tan topladığı gerçek mekânlardan sıfırdan rota kurar. **Türkiye'nin 81 ilinin hepsinde** çalışır; il için önceden veri girilmesi gerekmez.
-- **Konumdan Şehir Tespiti** — "Konumumdan bul" ile hangi ildeysen uygulama o ile geçer; rotalar, harita ve planlama oraya göre çalışır.
+- **Yepyeni Rota Üretimi** — Havuzda sana uygun rota yoksa (ya da istersen) yapay zekâ, Google Places'tan topladığı gerçek mekânlardan sıfırdan rota kurar. **Türkiye'nin 81 ilinin hepsinde ve dünyanın şehirlerinde** çalışır; şehir için önceden veri girilmesi gerekmez.
+- **Şehir Arama — Türkiye + Dünya** — Seçicideki kutuya yaz: 81 il çevrimdışı listeden anında, dünya şehirleri (Berlin, Münih…) Geocoding'den gelir. Seçilen şehir kalıcı listeye eklenir, istenirse silinir.
+- **Konumdan Şehir Tespiti** — "Konumumdan bul" ile hangi şehirdeysen (yurtdışı dahil) uygulama oraya geçer; rotalar, harita ve planlama oraya göre çalışır.
 - **Çok Modlu Canlı Navigasyon** — Yürüme, toplu taşıma ve araba modları. Toplu taşımada hatlar kendi renginde çizilir; biniş/iniş durakları, adım adım plan ve saatli alternatif kartları gösterilir. Rota 100 km'den uzaksa önce araba yolu önerilir.
 - **Fork ve Yayınlama** — Başkasının rotasına durak eklediğinde orijinal bozulmaz; kendi özel kopyan oluşur. "Rotanı paylaş" dediğinde herkese açılır.
 - **Ortak Koleksiyonlar ve Birlikte Düzenleme** — Davet linkiyle arkadaşını ekle; birlikte rota toplayın ya da aynı rotayı birlikte düzenleyin.
@@ -54,7 +55,7 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 - **Kendi Rotanı Oluştur** — Haritaya kendi duraklarını eklersin; uygulama rotana başlık, etiket ve akıcı bir hikâye yazarak sana yardımcı olur. Oluşturduğun rota kaydedilir ve başkalarıyla paylaşılabilir.
 - **Topluluk Deneyimi ve Yorumlar** — Rotalara yorum yapabilir, puan verebilirsin. Yeterince yorum biriktiğinde, o rotayı gezenlerin ortak izlenimlerini özetleyen kısa bir topluluk değerlendirmesi görürsün.
 - **Favoriler, İstatistikler ve Rozetler** — Beğendiğin rotaları kaydeder, tamamladığın yolculukların istatistiklerini ve kazandığın rozetleri profilinde bir arada görürsün.
-- **Paylaşılabilir Yolculuk Kartı** — Bitirdiğin bir yolculuk, sosyal medyada paylaşabileceğin şık ve özet bir görsele dönüşür.
+- **Paylaşılabilir Yolculuk Kartı** — Bitirdiğin yolculuk, rota izinin koyu temalı GERÇEK harita üzerinde çizildiği (Maps Static), sosyal medyada paylaşabileceğin şık bir görsele dönüşür.
 - **Koyu ve Açık Tema** — Harita dahil tüm arayüzü göz zevkine göre koyu ya da açık temaya alabilirsin; tercihin hatırlanır.
 
 ## Hedef Kitle
@@ -63,7 +64,7 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 - Keşif ve deneyim odaklı gezginler
 - Rutinden uzaklaşmak, spontane plan yapmak isteyen 15–40 yaş arası şehir sakinleri
 - Gezdiği yerleri sosyal olarak paylaşmayı seven kullanıcılar
-- Türkiye'nin **81 ilinde** çalışır: hazır rota havuzu İstanbul + Ankara, İzmir, Bursa, Gaziantep, Muğla ile başlar; diğer illerde yapay zekâ rotayı anında üretir
+- Türkiye'nin **81 ilinde ve dünya şehirlerinde** çalışır: hazır rota havuzu İstanbul + Ankara, İzmir, Bursa, Gaziantep, Muğla ile başlar; diğer her yerde yapay zekâ rotayı anında üretir
 
 ## Product Backlog
 
@@ -102,6 +103,7 @@ SANA, yapay zekâ öncelikli üç katmanlı bir mimariye sahiptir. Kimlik doğru
     NVIDIA llama-3.1-8b-instruct   NVIDIA nv-embedqa-e5-v5      Google API'ler
        (sohbet: niyet + anlatı)      (embedding, 1024 boyut)      Routes v2 · Places (New)
                                                                   Weather · Geocoding · Roads
+                                                                  Static Maps (paylaşım kartı)
 ```
 
 ### Yapay Zekâ Pipeline'ı
@@ -110,7 +112,8 @@ Plan üretimi, her aşaması ölçülen ve kullanıcıya gösterilen altı adım
 
 ```
 1. Niyet Çözümleme    Serbest metin, yapılandırılmış JSON'a çevrilir; şehir adı 81 il
-                      listesine karşı doğrulanır (halüsinasyon koruması)
+                      listesi + Geocoding'e karşı doğrulanır (dünya şehirleri geçer,
+                      uydurma adlar elenir)
 2. Hafıza Tarama      Kullanıcının onboarding profili ve son davranışları okunur
 3. Hava Kontrolü      Google Weather API (yağış durumunda kapalı mekân eğilimi)
 4. Rota Eşleştirme    NVIDIA embedding, pgvector kosinüs benzerliği (match_routes)
@@ -130,7 +133,7 @@ Plan üretimi, her aşaması ölçülen ve kullanıcıya gösterilen altı adım
 | Katman | Teknoloji |
 |---|---|
 | Mobil | React Native, Expo SDK 54, TypeScript, React Navigation, expo-image, expo-haptics, expo-location, expo-linking (davet deep link'leri) |
-| Harita | react-native-maps (Google), Routes v2 (çok modlu navigasyon + transit hatları), Weather, Geocoding (il tespiti), Roads (iz düzeltme) |
+| Harita | react-native-maps (Google), Routes v2 (çok modlu navigasyon + transit hatları), Weather, Geocoding (şehir tespiti/araması — dünya geneli), Roads (iz düzeltme), Static Maps (kart arka planı) |
 | Backend | Supabase — PostgreSQL, pgvector (HNSW), Row Level Security, security-definer RPC'ler, Auth, Storage |
 | AI Servis | Python, FastAPI, deterministik pipeline (stdlib istemciler), Render blueprint |
 | Dil Modelleri | NVIDIA NIM — llama-3.1-8b-instruct (sohbet), nv-embedqa-e5-v5 (embedding) |
