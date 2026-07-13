@@ -445,6 +445,33 @@ def google_snap_to_roads(env: dict, points: list[dict]) -> list[dict]:
     return out
 
 
+_GEO_CACHE: dict[str, tuple[float, float]] = {}
+
+
+def city_coords(env: dict, city: str) -> tuple[float, float]:
+    """Şehir → (lat, lng). Önce sabit tablo, yoksa Geocoding ile il merkezi bulunur
+    (tüm-Türkiye desteği) ve süreç boyunca cache'lenir. Hatada Istanbul'a düşer."""
+    c = (city or "istanbul").casefold()
+    if c in _CITY_COORDS:
+        return _CITY_COORDS[c]
+    if c in _GEO_CACHE:
+        return _GEO_CACHE[c]
+    key = _google_server_key(env)
+    if key:
+        url = ("https://maps.googleapis.com/maps/api/geocode/json?"
+               + urllib.parse.urlencode({"address": f"{city}, Türkiye", "region": "tr",
+                                         "language": "tr", "key": key}))
+        try:
+            r = _req(url, timeout=15)
+            loc = (((r or {}).get("results") or [{}])[0].get("geometry") or {}).get("location") or {}
+            if loc.get("lat") is not None:
+                _GEO_CACHE[c] = (loc["lat"], loc["lng"])
+                return _GEO_CACHE[c]
+        except Exception:
+            pass
+    return _CITY_COORDS["istanbul"]
+
+
 def google_reverse_geocode_city(env: dict, lat: float, lng: float) -> str | None:
     """Koordinattan il adı (Geocoding API, administrative_area_level_1, TR dili).
     'Muğla' gibi serbest ad döner — kanonikleştirme çağıranda (pipeline.norm_city)."""
@@ -486,7 +513,7 @@ def _weather_google(env: dict, city: str):
     key = _google_server_key(env)
     if not key:
         return None
-    lat, lng = _CITY_COORDS.get(city.lower(), _CITY_COORDS["istanbul"])
+    lat, lng = city_coords(env, city)
     q = urllib.parse.urlencode({
         "key": key,
         "location.latitude": lat,

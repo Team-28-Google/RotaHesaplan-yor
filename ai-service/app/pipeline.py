@@ -14,7 +14,7 @@ import time
 import random
 
 from app.clients import (
-    _CITY_COORDS, get_route, get_weather, google_photo_url, google_place_lookup,
+    _CITY_COORDS, city_coords, get_route, get_weather, google_photo_url, google_place_lookup,
     google_places_search, google_walk_leg, load_env, match_routes, nvidia_chat,
     nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select,
 )
@@ -215,25 +215,51 @@ _DISTRICTS: dict[str, list[dict]] = {
 }
 
 
+# Tüm-Türkiye desteği: 81 ilin ASCII kanonik adları. plan_route/detect-city şehir
+# doğrulamasını buna karşı yapar — LLM halüsinasyonu ("çarşıda"→şehir) yine elenir,
+# ama artık her gerçek il geçer (havuzda rota yoksa AI orada üretir).
+_TR_PROVINCES = {
+    "Adana", "Adiyaman", "Afyonkarahisar", "Agri", "Amasya", "Ankara", "Antalya", "Artvin",
+    "Aydin", "Balikesir", "Bilecik", "Bingol", "Bitlis", "Bolu", "Burdur", "Bursa",
+    "Canakkale", "Cankiri", "Corum", "Denizli", "Diyarbakir", "Edirne", "Elazig",
+    "Erzincan", "Erzurum", "Eskisehir", "Gaziantep", "Giresun", "Gumushane", "Hakkari",
+    "Hatay", "Isparta", "Mersin", "Istanbul", "Izmir", "Kars", "Kastamonu", "Kayseri",
+    "Kirklareli", "Kirsehir", "Kocaeli", "Konya", "Kutahya", "Malatya", "Manisa",
+    "Kahramanmaras", "Mardin", "Mugla", "Mus", "Nevsehir", "Nigde", "Ordu", "Rize",
+    "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas", "Tekirdag", "Tokat", "Trabzon",
+    "Tunceli", "Sanliurfa", "Usak", "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt",
+    "Karaman", "Kirikkale", "Batman", "Sirnak", "Bartin", "Ardahan", "Igdir", "Yalova",
+    "Karabuk", "Kilis", "Osmaniye", "Duzce",
+}
+
+_TR_ASCII = str.maketrans("çğıöşüÇĞİÖŞÜâî", "cgiosuCGIOSUai")
+
+
 def norm_city(raw: str | None) -> str | None:
-    """Serbest şehir metnini DB'deki ASCII kanonik ada çevirir (İzmir→Izmir vb.).
-    İlçe adları da iline çözülür (Datça→Mugla) — 'Datça vakası' kalıcı çözümü."""
+    """Serbest şehir metnini DB'deki ASCII kanonik ada çevirir (İzmir→Izmir,
+    Çanakkale→Canakkale). İlçe adları ve yaygın kısaltmalar iline çözülür
+    (Datça→Mugla, Urfa→Sanliurfa) — 'Datça vakası' kalıcı çözümü."""
     if not raw:
         return None
     c = raw.casefold()
     if "stanbul" in c:
         return "Istanbul"
-    if "ankara" in c:
-        return "Ankara"
     if "antep" in c:
         return "Gaziantep"
     if "zmir" in c:
         return "Izmir"
-    if "bursa" in c:
-        return "Bursa"
     if any(x in c for x in ("muğla", "mugla", "datça", "datca", "bodrum", "marmaris", "fethiye", "akyaka")):
         return "Mugla"
-    return raw.strip().title()
+    if "afyon" in c:
+        return "Afyonkarahisar"
+    if "urfa" in c:
+        return "Sanliurfa"
+    if "maraş" in c or "maras" in c:
+        return "Kahramanmaras"
+    if "içel" in c or "icel" in c:
+        return "Mersin"
+    base = raw.strip().split("'")[0].split("’")[0].strip()  # "Çanakkale'de" → "Çanakkale"
+    return base.title().translate(_TR_ASCII) if base else None
 
 _VIBE_QUERIES = {
     "sakin": ["sakin park", "manzaralı çay bahçesi"],
@@ -321,6 +347,11 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     elif gen_district:
         district = next((d for d in _DISTRICTS.get(city, []) if d["name"] == gen_district), None) \
             or _pick_district(city, intent.get("vibe_tags") or [], intent.get("mood") or "")
+    elif city not in _DISTRICTS:
+        # Tüm-Türkiye: semt haritası olmayan ilde merkez Geocoding'den bulunur —
+        # seed/elle şehir ekleme gerekmez, AI her ilde üretebilir
+        lat, lng = city_coords(env, city)
+        district = {"name": f"{city} merkezi", "lat": lat, "lng": lng, "vibes": []}
     else:
         district = _pick_district(city, intent.get("vibe_tags") or [], intent.get("mood") or "")
     cands = _gather_candidates(env, district, intent.get("vibe_tags") or [], intent.get("mood") or "")
@@ -423,7 +454,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         "budget_note": BUDGET_LABELS.get(chosen.get("budget_level"), "uygun"),
         "stops": [{"seq": i, "name": w["name"], "narrative": w.get("note") or ""}
                   for i, w in enumerate(exp)],
-        "social_signal": "✨ Bu rota az önce senin için üretildi — ilk yürüyen sen olabilirsin.",
+        "social_signal": "Bu rota az önce senin için üretildi — ilk yürüyen sen olabilirsin.",
     }
     return {"route": chosen, "ai": ai}
 
@@ -449,10 +480,10 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     # yoksa app'in aktif şehri; en son Istanbul. Bilinmeyen ad = LLM halüsinasyonu sayılır
     # (örn. "çarşıda"yı şehir sanabiliyor) ve yok sayılır.
     intent_city = norm_city(intent.get("city"))
-    if intent_city not in _DISTRICTS:
+    if intent_city not in _TR_PROVINCES:  # gerçek il değilse LLM halüsinasyonu say
         intent_city = None
     app_city_n = norm_city(app_city)
-    if app_city_n not in _DISTRICTS:
+    if app_city_n not in _TR_PROVINCES:
         app_city_n = None
     if intent_city and intent_city != "Istanbul":
         city = intent_city
@@ -746,7 +777,7 @@ def search_places(q: str, city: str | None = None) -> list[dict]:
     (Eski hali Photon/SerpApi + sabit İstanbul merkeziydi: Ankara'da 'Anıtkabir' saçmalıyordu.)"""
     env = load_env()
     c = norm_city(city) or "Istanbul"
-    lat, lng = _CITY_COORDS.get(c.lower(), _CITY_COORDS["istanbul"])
+    lat, lng = city_coords(env, c)  # bilinmeyen il → Geocoding il merkezi (tüm-Türkiye)
     out = []
     for p in google_places_search(env, q, lat, lng, radius_m=25000.0, limit=6):
         out.append({

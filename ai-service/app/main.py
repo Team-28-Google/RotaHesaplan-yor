@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from app.clients import (google_nav_leg, google_reverse_geocode_city, google_snap_to_roads,
                          google_walk_leg, load_env, nvidia_embed)
-from app.pipeline import _DISTRICTS, norm_city
+from app.pipeline import _TR_PROVINCES, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
 from app.pipeline import enrich_route as run_enrich_route
@@ -225,10 +225,10 @@ def snap_track(req: SnapTrackRequest) -> dict:
 
 @app.post("/detect-city")
 def detect_city(req: DetectCityRequest) -> dict:
-    """Konumdan şehir algılama (4.0c Geocoding): il adı → kanonik şehir (Datça→Mugla).
-    Desteklenmeyen ildeyse city:null döner — app seçiciyi elle gösterir."""
+    """Konumdan şehir algılama (Geocoding): il adı → kanonik şehir (Datça→Mugla).
+    81 ilin hepsi geçerli (tüm-Türkiye); il çözülemezse city:null → app elle seçtirir."""
     raw = google_reverse_geocode_city(load_env(), req.lat, req.lng)
     city = norm_city(raw)
-    if city not in _DISTRICTS:  # norm_city bilinmeyeni title-case aynen döndürür → null'a çevir
+    if city not in _TR_PROVINCES:
         city = None
     return {"ok": raw is not None, "province": raw, "city": city}
