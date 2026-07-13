@@ -142,6 +142,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         onSelectItem={selectOnMap}
         onMapPress={() => setSelectedId(null)}
         focusId={selectedId}
+        homeRegion={cityInfo(city).region}
         userLocation={userLoc}
         padding={64}
         overlayInsetBottom={225 + insets.bottom}

@@ -53,6 +53,9 @@ type Props = {
   /** 4.0b GMaps paritesi: transit navigasyonu — yürüme NOKTALI, hatlar KENDİ RENGİNDE çizilir */
   navSegments?: { kind: "walk" | "transit"; color?: string | null; coords: LatLng[] }[] | null;
   showRecenter?: boolean;
+  /** Aktif şehrin bölgesi: hiç marker yoksa harita buraya odaklanır (Berlin'i seçince
+      rota olmasa da harita Berlin'e gider); şehir değişince yeniden sığdırılır */
+  homeRegion?: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number } | null;
   padding?: number;
   /** Haritanın altını kaplayan overlay yüksekliği (px) — fit hesapları rotayı bunun ÜSTÜNE sığdırır */
   overlayInsetBottom?: number;
@@ -246,7 +249,7 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
 
 export default function OSMMap({
   markers = [], polylines = [], transitLines = [], onPressItem, onSelectItem, onMapPress,
-  focusId, userLocation, followLocation, followHeading, guideLine, trackLine, navSegments, showRecenter, padding = 40,
+  focusId, userLocation, followLocation, followHeading, guideLine, trackLine, navSegments, showRecenter, homeRegion, padding = 40,
   overlayInsetBottom = 0, style,
 }: Props) {
   const ref = useRef<MapView>(null);
@@ -284,12 +287,16 @@ export default function OSMMap({
       });
     } else if (allCoords.length === 1) {
       ref.current?.animateToRegion({ ...allCoords[0], latitudeDelta: 0.02, longitudeDelta: 0.02 }, 300);
+    } else if (homeRegion) {
+      // Şehirde hiç rota yok → şehir merkezine git (Berlin seçildi ama havuz boş vakası)
+      ref.current?.animateToRegion(homeRegion, 400);
     }
   };
 
-  // Marker sayısı değişince genel bakışa sığdır — ama bir rota ODAKTAYKEN karışma
-  // (odaklı rotanın durak marker'ları eklenince kamera genel bakışa kaçmasın)
-  useEffect(() => { if (ready && !focusId) fitAll(); /* eslint-disable-next-line */ }, [ready, markers.length]);
+  // Marker sayısı YA DA şehir bölgesi değişince genel bakışa sığdır — ama bir rota
+  // ODAKTAYKEN karışma (odaklı rotanın durakları eklenince kamera kaçmasın)
+  useEffect(() => { if (ready && !focusId) fitAll(); /* eslint-disable-next-line */ },
+    [ready, markers.length, homeRegion?.latitude, homeRegion?.longitude]);
 
   // Odak değişimi: seçili rotaya uç (alt overlay'in ÜSTÜNE sığdır); seçim kalkınca genel bakışa dön
   const prevFocus = useRef<string | null | undefined>(undefined);
