@@ -579,6 +579,43 @@ export async function fetchWalkRoute(
   return fetchNavRoute(from, to, "walk");
 }
 
+/** Yürünen GPS izini yola oturtur (4.0c Roads API). Servis/anahtar hazır değilse
+ *  ya da sonuç anlamsızsa null — çağıran ham izi kullanmaya devam eder. */
+export async function snapTrack(
+  points: { lat: number; lng: number }[],
+): Promise<{ lat: number; lng: number }[] | null> {
+  if (points.length < 2) return null;
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/snap-track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ points }),
+    }, 8_000);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.ok && Array.isArray(j.points) && j.points.length >= 2 ? j.points : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Konumdan ili algılar (Geocoding, tüm-Türkiye): kanonik anahtar + Türkçe etiket
+ *  (ör. Datça → {key:"Mugla", label:"Muğla"}). Servise ulaşılamazsa/il çözülemezse null. */
+export async function detectCity(lat: number, lng: number): Promise<{ key: string; label: string } | null> {
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/detect-city`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lat, lng }),
+    }, 10_000);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.city ? { key: j.city, label: j.province ?? j.city } : null;
+  } catch {
+    return null;
+  }
+}
+
 // --------------------------- AI hafıza (onboarding) ---------------------------
 /** Onboarding tercihlerini AI hafızasına yazar (kişiselleştirilmiş plan için).
  *  Başarısızsa sessizce false döner — app akışını asla bloklamaz; sonraki açılışta tekrar denenir. */

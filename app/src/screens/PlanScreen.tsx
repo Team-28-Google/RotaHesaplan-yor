@@ -19,7 +19,8 @@ import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { PlaceResult, PlanResponse, Waypoint } from "../lib/types";
-import { budgetLabel, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
+import Icon from "../components/Icon";
+import { budgetLabel, legSegments, segmentsToPath, transportLabel, waypointIcon } from "../lib/ui";
 import type { PlanScreenProps } from "../navigation";
 
 // 4.0a: sonuç paneli tam ekran haritanın üstünde (aşağı kaydırılıp kapanır)
@@ -34,20 +35,20 @@ const SUGGESTIONS = [
 
 // Pipeline'ın GERÇEK aşamaları (servis bunları aynı sırayla yürütür; bekleme ekranı akışı)
 const AGENT_STEPS = [
-  { icon: "🧠", label: "Niyet çözümleniyor" },
-  { icon: "💾", label: "Hafızan taranıyor" },
-  { icon: "🌤️", label: "Hava kontrol ediliyor" },
-  { icon: "🗺️", label: "Rotalar eşleştiriliyor" },
-  { icon: "✍️", label: "Anlatı yazılıyor" },
+  { label: "Niyet çözümleniyor" },
+  { label: "Hafızan taranıyor" },
+  { label: "Hava kontrol ediliyor" },
+  { label: "Rotalar eşleştiriliyor" },
+  { label: "Anlatı yazılıyor" },
 ];
 
-// 🎲 Üretim modunun aşamaları (2.7) — daha uzun sürer, adımlar farklı akar
+// Üretim modunun aşamaları (2.7) — daha uzun sürer, adımlar farklı akar
 const GEN_STEPS = [
-  { icon: "🧠", label: "Niyet çözümleniyor" },
-  { icon: "🌤️", label: "Hava kontrol ediliyor" },
-  { icon: "📍", label: "Gerçek mekânlar aranıyor" },
-  { icon: "🧩", label: "Yepyeni rota kuruluyor" },
-  { icon: "📸", label: "Foto + sokak geometrisi ekleniyor" },
+  { label: "Niyet çözümleniyor" },
+  { label: "Hava kontrol ediliyor" },
+  { label: "Gerçek mekânlar aranıyor" },
+  { label: "Yepyeni rota kuruluyor" },
+  { label: "Foto + sokak geometrisi ekleniyor" },
 ];
 
 /** Plan beklerken agent adımlarını akıtan gösterge — orkestrasyonu görünür kılar (2.6). */
@@ -78,7 +79,7 @@ function AgentProgress({ generating }: { generating?: boolean }) {
             i < idx && styles.agentLabelDone,
             i > idx && styles.agentLabelPending,
           ]}>
-            {s.icon} {s.label}
+            {s.label}
           </Text>
         </View>
       ))}
@@ -198,7 +199,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
             onPress={() => { tap(); setMode("match"); }}
           >
             <Text style={[styles.modeText, mode === "match" && styles.modeTextOn]}>
-              {mode === "match" ? "✓ " : ""}📚 Kayıtlı rotalardan
+              Kayıtlı rotalardan
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -206,7 +207,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
             onPress={() => { tap(); setMode("generate"); }}
           >
             <Text style={[styles.modeText, mode === "generate" && styles.modeTextOn]}>
-              {mode === "generate" ? "✓ " : ""}🎲 Yepyeni üret
+              Yepyeni üret
             </Text>
           </TouchableOpacity>
         </View>
@@ -221,7 +222,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
                 onPress={() => { tap(); setLoc("ai"); }}
               >
                 <Text style={[styles.locChipText, loc === "ai" && styles.locChipTextOn]}>
-                  {loc === "ai" ? "✓ " : ""}✨ AI seçsin
+                  AI seçsin
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -229,7 +230,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
                 onPress={pickMyLocation}
               >
                 <Text style={[styles.locChipText, loc === "me" && styles.locChipTextOn]}>
-                  {loc === "me" ? "✓ " : ""}📍 Konumum{loc === "me" && !myLoc ? " (alınıyor…)" : ""}
+                  Konumum{loc === "me" && !myLoc ? " (alınıyor…)" : ""}
                 </Text>
               </TouchableOpacity>
               {districts.map((d) => (
@@ -239,7 +240,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
                   onPress={() => { tap(); setLoc(d); }}
                 >
                   <Text style={[styles.locChipText, loc === d && styles.locChipTextOn]}>
-                    {loc === d ? "✓ " : ""}{d}
+                    {d}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -265,13 +266,13 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
                 style={[styles.locChip, on && styles.locChipOn]}
                 onPress={() => { tap(); setText(on ? "" : s); }}
               >
-                <Text style={[styles.locChipText, on && styles.locChipTextOn]}>{on ? "✓ " : ""}{s}</Text>
+                <Text style={[styles.locChipText, on && styles.locChipTextOn]}>{s}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {error && <Text style={styles.error}>⚠️ {error}</Text>}
+        {error && <Text style={styles.error}>{error}</Text>}
 
         <TouchableOpacity
           style={[styles.btn, (!text.trim() || loading) && styles.btnDisabled]}
@@ -282,12 +283,12 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.btnText}>{mode === "generate" ? "🎲 Rota Üret" : "✨ Planla"}</Text>
+            <Text style={styles.btnText}>{mode === "generate" ? "Rota Üret" : "Planla"}</Text>
           )}
         </TouchableOpacity>
             {loading && <AgentProgress generating={genMode} />}
             {loading && genMode && (
-              <Text style={styles.genHint}>🎲 Yepyeni bir rota kuruluyor — bu, hazır eşleştirmeden biraz uzun sürer.</Text>
+              <Text style={styles.genHint}>Yepyeni bir rota kuruluyor — bu, hazır eşleştirmeden biraz uzun sürer.</Text>
             )}
           </ScrollView>
         </KeyboardAvoidingView>
@@ -377,7 +378,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
         photo: w.photo_urls?.[0], popup: w.name,
         variant: (i === 0 ? "start" : i === exp.length - 1 ? "end" : "stop") as "start" | "end" | "stop",
       })),
-      ...util.map((w) => ({ id: w.id, lat: w.lat, lng: w.lng, color: colors.utility, emoji: waypointIcon(w) })),
+      ...util.map((w) => ({ id: w.id, lat: w.lat, lng: w.lng, color: colors.utility, icon: waypointIcon(w) })),
     ],
     [exp, util],
   );
@@ -385,7 +386,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
   if (!result.ok || !route) {
     return (
       <View style={styles.center}>
-        <Text style={styles.h1}>Uygun rota bulamadım 😔</Text>
+        <Text style={styles.h1}>Uygun rota bulamadım</Text>
         <Text style={styles.h2}>Farklı bir ifadeyle tekrar dener misin?</Text>
         {!!result.reason && <Text style={styles.reason}>{result.reason}</Text>}
         <TouchableOpacity style={styles.btn} onPress={onReset}><Text style={styles.btnText}>← Yeni plan</Text></TouchableOpacity>
@@ -412,8 +413,8 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
           <View style={styles.hero}>
             <Text style={styles.aiTag}>
               {result.generated
-                ? "🎲 Az önce senin için ÜRETİLDİ — yepyeni rota"
-                : result.personalized ? "🧠 Sana özel · hafızandan" : "✨ Sana özel"}
+                ? "Az önce senin için ÜRETİLDİ — yepyeni rota"
+                : result.personalized ? "Sana özel · hafızandan" : "Sana özel"}
             </Text>
             <Text style={styles.title}>{ai.title ?? route.title}</Text>
             {!!ai.summary && <Text style={styles.summary}>{ai.summary}</Text>}
@@ -424,7 +425,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
             )}
             {!!result.steps?.length && (
               <View style={styles.stepsBox}>
-                <Text style={styles.stepsTitle}>⚙️ AGENT ADIMLARI</Text>
+                <Text style={styles.stepsTitle}>AGENT ADIMLARI</Text>
                 {/* Süreler bilinçli gizli (premium his) — s.ms API'de duruyor, gerekirse geri açılır */}
                 {result.steps.map((s) => (
                   <Text key={s.name} style={styles.stepLine}>
@@ -434,20 +435,20 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               </View>
             )}
             <View style={styles.pills}>
-              <Text style={styles.pill}>💰 {budgetLabel(route.budget_level)}</Text>
-              <Text style={styles.pill}>📍 {exp.length} durak</Text>
+              <Text style={styles.pill}>{budgetLabel(route.budget_level)}</Text>
+              <Text style={styles.pill}>{exp.length} durak</Text>
               {result.weather?.temp != null && (
-                <Text style={styles.pill}>🌤️ {result.weather.temp}° {result.weather.desc}</Text>
+                <Text style={styles.pill}>{result.weather.temp}° {result.weather.desc}</Text>
               )}
             </View>
-            {!!ai.weather_note && <Text style={styles.note}>🌦️ {ai.weather_note}</Text>}
-            {!!ai.budget_note && <Text style={styles.note}>💸 {ai.budget_note}</Text>}
+            {!!ai.weather_note && <Text style={styles.note}>{ai.weather_note}</Text>}
+            {!!ai.budget_note && <Text style={styles.note}>{ai.budget_note}</Text>}
 
-            {/* ☔ Yağmur uyarısı + kapalı alternatif (2.5) */}
+            {/* Yağmur uyarısı + kapalı alternatif (2.5) */}
             {result.weather?.rainy && route.weather_fit !== "indoor" && !result.forced_fit && (
               <View style={styles.rainBand}>
                 <Text style={styles.rainText}>
-                  ☔ Bugün hava yağışlı{result.weather.desc ? ` (${result.weather.desc})` : ""} — bu rota açık hava ağırlıklı.
+                  Bugün hava yağışlı{result.weather.desc ? ` (${result.weather.desc})` : ""} — bu rota açık hava ağırlıklı.
                 </Text>
                 <TouchableOpacity style={styles.rainBtn} onPress={onIndoor} activeOpacity={0.85}>
                   <Text style={styles.rainBtnText}>Kapalı mekân alternatifi öner</Text>
@@ -455,7 +456,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               </View>
             )}
             {!!result.forced_fit && (
-              <Text style={styles.note}>☂️ Kapalı mekân tercihinle yeniden planlandı.</Text>
+              <Text style={styles.note}>Kapalı mekân tercihinle yeniden planlandı.</Text>
             )}
           </View>
 
@@ -471,13 +472,13 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
                   {w.transport_mode !== "start" && (
                     <View style={styles.legPill}>
                       <Text style={styles.legText}>
-                        {transportIcon(w.transport_mode)} {transportLabel(w.transport_mode)}
+                        {transportLabel(w.transport_mode)}
                         {w.transport_note ? ` · ${w.transport_note}` : ""}
                       </Text>
                     </View>
                   )}
                   <View style={styles.stopHead}>
-                    <Text style={[styles.stopName, { flex: 1 }]}>{waypointIcon(w)} {w.name}</Text>
+                    <Text style={[styles.stopName, { flex: 1 }]}>{w.name}</Text>
                     {editable && exp.length > 2 && (
                       <TouchableOpacity onPress={() => onRemoveStop(w)} hitSlop={10} disabled={editBusy}>
                         <Text style={[styles.stopRemove, editBusy && { opacity: 0.4 }]}>✕</Text>
@@ -507,7 +508,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               <Text style={styles.nearbyTitle}>Yakında pratik noktalar</Text>
               {util.map((w) => (
                 <View key={w.id} style={styles.amenity}>
-                  <Text style={{ fontSize: 20 }}>{waypointIcon(w)}</Text>
+                  <Icon name={waypointIcon(w)} size={18} color={colors.textMuted} />
                   <Text style={styles.amenityName}>{w.name}</Text>
                   <Text style={styles.amenityBadge}>ücretsiz</Text>
                 </View>
@@ -517,7 +518,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
 
           {!!ai.social_signal && (
             <View style={styles.social}>
-              <Text style={styles.socialText}>👋 {ai.social_signal}</Text>
+              <Text style={styles.socialText}>{ai.social_signal}</Text>
             </View>
           )}
 
@@ -530,7 +531,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               activeOpacity={0.85}
             >
               <Text style={[styles.saveBtnText, saved && { color: colors.primaryDark }]}>
-                {saved ? "✓ Kaydedildi" : "🤍 Kaydet"}
+                {saved ? "✓ Kaydedildi" : "Kaydet"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -538,13 +539,13 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               onPress={() => { tap(); onOpenRoute(route.id, ai.title ?? route.title); }}
               activeOpacity={0.9}
             >
-              <Text style={styles.goBtnText}>🧭 Yolculuğa Başla</Text>
+              <Text style={styles.goBtnText}>Yolculuğa Başla</Text>
             </TouchableOpacity>
           </View>
 
           {/* 🎲 Beğenmediysen: havuz yerine gerçek mekânlardan yepyeni rota (2.7) */}
           <TouchableOpacity style={styles.genBtn} onPress={() => { tap(); onGenerate(); }} activeOpacity={0.85}>
-            <Text style={styles.genBtnText}>🎲 Bana yeni rota üret</Text>
+            <Text style={styles.genBtnText}>Bana yeni rota üret</Text>
             <Text style={styles.genBtnSub}>Kayıtlılardan değil — gerçek mekânlardan sıfırdan kurar</Text>
           </TouchableOpacity>
 

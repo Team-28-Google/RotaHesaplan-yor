@@ -1,17 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect, useMemo, useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import * as Location from "expo-location";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Animated, Modal, PanResponder, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { CITIES } from "../lib/cities";
+import { detectCity } from "../lib/api";
+import { CITIES, dynCities, registerCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { supabase } from "../lib/supabase";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
-
-// Şehir kimliği: küçük bir simge + semt önizlemesi (3.0c şehir seçici)
-const CITY_EMOJI: Record<string, string> = {
-  Istanbul: "🌉", Ankara: "🏛️", Gaziantep: "🏺", Izmir: "🌊", Bursa: "🌳",
-};
 
 export default function CityPicker({ visible, current, onClose, onSelect }: {
   visible: boolean;
@@ -22,6 +19,47 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [locating, setLocating] = useState(false);
+
+  // Geocoding: konumdan il algıla (tüm-Türkiye) — bilinmeyen il kalıcı kayda alınır,
+  // AI o ilde de rota üretir; elle şehir eklemek gerekmez
+  const findByLocation = async () => {
+    tap();
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Konum izni gerekli", "Şehrini otomatik bulmak için konum izni vermelisin — ya da listeden seç.");
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const d = await detectCity(pos.coords.latitude, pos.coords.longitude);
+      if (d) {
+        await registerCity(d.key, d.label, pos.coords.latitude, pos.coords.longitude);
+        onSelect(d.key);
+      } else {
+        Alert.alert("Şu an bulunamadı", "Konum servisine ulaşılamadı ya da il çözülemedi — tekrar dene ya da listeden seç.");
+      }
+    } catch {
+      Alert.alert("Konum alınamadı", "Tekrar dene ya da listeden seç.");
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  // Aşağı kaydırınca kapat (tutamak/başlık bölgesinden sürükle)
+  const dragY = useRef(new Animated.Value(0)).current;
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 6,
+      onPanResponderMove: (_, g) => dragY.setValue(Math.max(0, g.dy)),
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 80 || g.vy > 0.5) onClose();
+        else Animated.spring(dragY, { toValue: 0, speed: 18, bounciness: 6, useNativeDriver: true }).start();
+      },
+    }),
+  ).current;
+  useEffect(() => { if (visible) dragY.setValue(0); }, [visible, dragY]);
 
   // Şehir başına rota sayısı — sheet açılınca tek hafif sorgu (yalnızca city kolonu)
   useEffect(() => {
@@ -37,12 +75,34 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.bg}>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Hangi şehirdesin?</Text>
-          <Text style={styles.sub}>Rotalar, harita ve AI planlama bu şehre göre çalışır.</Text>
+        <Animated.View style={[styles.sheet, { transform: [{ translateY: dragY }] }]}>
+          <View {...pan.panHandlers}>
+            <View style={styles.handle} />
+            <View style={styles.headRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>Hangi şehirdesin?</Text>
+                <Text style={styles.sub}>Rotalar, harita ve AI planlama bu şehre göre çalışır.</Text>
+              </View>
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={8}>
+                <Ionicons name="close" size={19} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-          {CITIES.map((c) => {
+          <TouchableOpacity style={[styles.row, styles.locRow]} onPress={findByLocation} disabled={locating} activeOpacity={0.85}>
+            <View style={styles.iconWrap}><Ionicons name="locate-outline" size={20} color={colors.primary} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.name, { color: colors.primaryDark }]}>
+                {locating ? "Konum alınıyor…" : "Konumumdan bul"}
+              </Text>
+              <Text style={styles.districts}>Türkiye'nin her ilinde çalışır — AI orada rota üretir</Text>
+            </View>
+            {locating
+              ? <ActivityIndicator size="small" color={colors.primary} />
+              : <Ionicons name="navigate" size={18} color={colors.primary} />}
+          </TouchableOpacity>
+
+          {[...CITIES, ...dynCities()].map((c) => {
             const on = c.key === current;
             return (
               <TouchableOpacity
@@ -52,12 +112,12 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 onPress={() => { tap(); onSelect(c.key); }}
               >
                 <View style={[styles.iconWrap, on && styles.iconWrapOn]}>
-                  <Text style={styles.icon}>{CITY_EMOJI[c.key] ?? "📍"}</Text>
+                  <Ionicons name="location-outline" size={20} color={on ? colors.primary : colors.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.name, on && styles.nameOn]}>{c.label}</Text>
                   <Text style={styles.districts} numberOfLines={1}>
-                    {c.districts.slice(0, 3).join(" · ")}
+                    {c.districts.length ? c.districts.slice(0, 3).join(" · ") : "AI bu şehirde senin için üretir"}
                   </Text>
                 </View>
                 {counts[c.key] != null && (
@@ -73,7 +133,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -86,6 +146,11 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 18, paddingTop: 10, paddingBottom: 30, gap: 10, ...shadow(14),
   },
   handle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 4 },
+  headRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  closeBtn: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surfaceAlt,
+    alignItems: "center", justifyContent: "center", marginTop: 2,
+  },
   title: { fontSize: 19, fontFamily: font.extra, color: colors.text },
   sub: { fontSize: 12.5, fontFamily: font.regular, color: colors.textMuted, marginBottom: 4 },
   row: {
@@ -95,6 +160,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.border,
   },
   rowOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  locRow: { borderStyle: "dashed", borderColor: colors.primary, backgroundColor: colors.primarySoft },
   iconWrap: {
     width: 42, height: 42, borderRadius: 21, backgroundColor: colors.surface,
     alignItems: "center", justifyContent: "center",

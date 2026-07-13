@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import Icon from "../components/Icon";
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
 import {
@@ -119,7 +120,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
   }, [routes, filt, myLoc]);
 
   const chipLabel = (key: string) =>
-    key === "all" ? "Tümü" : key === "near" ? `📍 Yakınımda${filt === "near" && !myLoc ? " (alınıyor…)" : ""}` : cityInfo(key).label;
+    key === "all" ? "Tümü" : key === "near" ? `Yakınımda${filt === "near" && !myLoc ? " (alınıyor…)" : ""}` : cityInfo(key).label;
 
   return (
     <View style={styles.screen}>
@@ -129,7 +130,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
 
       {/* ❤️ Kaydettiklerim | 🗺️ Rotalarım | 📁 Koleksiyonlar (3.13/3.10) */}
       <View style={styles.tabRow}>
-        {([["saved", "❤️ Kayıtlı"], ["mine", "🗺️ Rotalarım"], ["col", "📁 Koleksiyon"]] as const).map(([k, label]) => (
+        {([["saved", "Kayıtlı"], ["mine", "Rotalarım"], ["col", "Koleksiyon"]] as const).map(([k, label]) => (
           <TouchableOpacity
             key={k}
             style={[styles.tabBtn, tab === k && styles.tabBtnOn]}
@@ -159,7 +160,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
                 activeOpacity={0.85}
               >
                 <Text style={[styles.cityFilterText, on && styles.cityFilterTextOn]}>
-                  {on && key !== "near" ? "✓ " : ""}{chipLabel(key)}
+                  {chipLabel(key)}
                 </Text>
               </TouchableOpacity>
             );
@@ -172,6 +173,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         <FlatList
           data={collections}
           keyExtractor={(c) => c.id}
+          style={{ flex: 1 }}
           contentContainerStyle={{ padding: 16, gap: 12, flexGrow: 1 }}
           ListHeaderComponent={
             <TouchableOpacity style={styles.newColBtn} onPress={() => { tap(); setCreating(true); }} activeOpacity={0.85}>
@@ -185,10 +187,10 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
               </View>
             ) : (
               <View style={styles.center}>
-                <Text style={styles.emptyIcon}>📁</Text>
+                <Icon name="folder-open-outline" size={40} color={colors.textFaint} />
                 <Text style={styles.emptyTitle}>Henüz koleksiyonun yok</Text>
                 <Text style={styles.emptyText}>
-                  Bir koleksiyon aç ("Gezilecekler 🇮🇹" gibi), arkadaşını davet et — birlikte rota toplayın.
+                  Bir koleksiyon aç ("Gezilecekler" gibi), arkadaşını davet et — birlikte rota toplayın.
                 </Text>
               </View>
             )
@@ -200,7 +202,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
                 collectionId: item.id, title: item.title, emoji: item.emoji,
               })}
             >
-              <Text style={styles.colEmoji}>{item.emoji ?? "📁"}</Text>
+              {item.emoji ? <Text style={styles.colEmoji}>{item.emoji}</Text> : <Icon name="folder-outline" size={24} color={colors.textMuted} />}
               <View style={{ flex: 1 }}>
                 <Text style={styles.colTitle} numberOfLines={1}>{item.title}</Text>
                 <Text style={styles.colMeta}>{item.route_count} rota · {item.member_count} üye</Text>
@@ -215,25 +217,25 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.emptyIcon}>⚠️</Text>
+          <Icon name="alert-circle-outline" size={40} color={colors.textFaint} />
           <Text style={styles.emptyTitle}>Kaydettiklerin yüklenemedi</Text>
           <Text style={styles.emptyText}>{error}</Text>
         </View>
       ) : routes.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyIcon}>{tab === "saved" ? "🤍" : "🗺️"}</Text>
+          <Icon name={tab === "saved" ? "heart-outline" : "map-outline"} size={40} color={colors.textFaint} />
           <Text style={styles.emptyTitle}>
             {tab === "saved" ? "Henüz rota kaydetmedin" : "Henüz kendi rotan yok"}
           </Text>
           <Text style={styles.emptyText}>
             {tab === "saved"
               ? "Bir rotayı açıp kalbe dokunarak buraya ekleyebilirsin."
-              : "Rota oluştur, 🎲 ürettir ya da beğendiğin bir rotaya durak ekleyip kendi kopyanı yarat."}
+              : "Rota oluştur, AI'a ürettir ya da beğendiğin bir rotaya durak ekleyip kendi kopyanı yarat."}
           </Text>
         </View>
       ) : shown.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyIcon}>📍</Text>
+          <Icon name="location-outline" size={40} color={colors.textFaint} />
           <Text style={styles.emptyTitle}>Bu filtrede kayıt yok</Text>
           <Text style={styles.emptyText}>
             Toplam {routes.length} kaydın var — üstteki çiplerden "Tümü"ne geçebilirsin.
@@ -243,6 +245,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
         <FlatList
           data={shown}
           keyExtractor={(r) => r.id}
+          style={{ flex: 1 }}
           contentContainerStyle={{ padding: 16, gap: 12 }}
           renderItem={({ item, index }) => {
             const color = routeColor(index, colors.routeColors);
@@ -262,17 +265,19 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
                     <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={1}>{item.title}</Text>
                     {tab === "mine" && (
                       <Text style={styles.visBadge}>
-                        {item.is_public === false ? "🔒 Özel" : "🌍 Açık"}
+                        {item.is_public === false ? "Özel" : "Açık"}
                       </Text>
                     )}
                   </View>
                   <View style={styles.metaRow}>
-                    <Text style={styles.meta}>💰 {budgetLabel(item.budget_level)}</Text>
-                    <Text style={styles.meta}>📍 {exp.length} durak</Text>
-                    <Text style={styles.meta}>📏 {km} km</Text>
-                    {awayKm && <Text style={[styles.meta, { color: colors.primaryDark }]}>🧭 {awayKm} km uzakta</Text>}
+                    <Text style={styles.meta}>{budgetLabel(item.budget_level)}</Text>
+                    <Text style={styles.meta}>{exp.length} durak</Text>
+                    <Text style={styles.meta}>{km} km</Text>
+                    {awayKm && <Text style={[styles.meta, { color: colors.primaryDark }]}>{awayKm} km uzakta</Text>}
                   </View>
-                  <Text style={styles.icons}>{exp.slice(0, 5).map(waypointIcon).join("   ")}</Text>
+                  <View style={styles.iconsRow}>
+                    {exp.slice(0, 5).map((w) => <Icon key={w.id} name={waypointIcon(w)} size={13} color={colors.textFaint} />)}
+                  </View>
                 </View>
               </PressableScale>
             );
@@ -378,7 +383,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radius.lg, backgroundColor: colors.primary, ...shadow(6),
   },
   colCreateText: { color: "#fff", fontFamily: font.extra, fontSize: 15 },
-  filterBar: { flexGrow: 0, backgroundColor: "transparent" },
+  // flexShrink: 0 ŞART — FlatList uzayınca yatay çubuk ezilip yarı yüksekliğe iniyordu
+  filterBar: { flexGrow: 0, flexShrink: 0, backgroundColor: "transparent" },
   cityFilter: {
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill,
     backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
@@ -399,4 +405,5 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   metaRow: { flexDirection: "row", gap: 12, marginTop: 8 },
   meta: { fontSize: 13, color: colors.textMuted, fontFamily: font.semibold },
   icons: { fontSize: 18, marginTop: 10 },
+  iconsRow: { flexDirection: "row", gap: 8, marginTop: 10 },
 });

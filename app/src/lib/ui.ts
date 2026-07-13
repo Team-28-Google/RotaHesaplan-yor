@@ -30,12 +30,21 @@ export function legSegments(exp: Waypoint[]): LegSegment[] {
 export const segmentsToPath = (segs: LegSegment[]) =>
   segs.flatMap((s, i) => (i === 0 ? s.coords : s.coords.slice(1)));
 
+// Emoji değil Ionicons adı döner — emoji chrome'u kaldırıldı ("AI vibe" temizliği)
 const TRANSPORT_ICON: Record<TransportMode, string> = {
-  start: "📍", walk: "🚶", ferry: "⛴️", metro: "🚇", tram: "🚊",
-  marmaray: "🚆", bus: "🚌", metrobus: "🚌", funicular: "🚡",
-  teleferik: "🚡", minibus: "🚐", taxi: "🚕", bike: "🚲", other: "➡️",
+  start: "location-outline", walk: "walk-outline", ferry: "boat-outline", metro: "subway-outline",
+  tram: "train-outline", marmaray: "train-outline", bus: "bus-outline", metrobus: "bus-outline",
+  funicular: "trail-sign-outline", teleferik: "trail-sign-outline", minibus: "bus-outline",
+  taxi: "car-outline", bike: "bicycle-outline", other: "arrow-forward-outline",
 };
-export const transportIcon = (m: TransportMode) => TRANSPORT_ICON[m] ?? "➡️";
+export const transportIcon = (m: TransportMode) => TRANSPORT_ICON[m] ?? "arrow-forward-outline";
+
+/** Servisin transit adımlarındaki araç emojisi → Ionicons adı (LineBadge vb.). */
+const VEHICLE_ICON: Record<string, string> = {
+  "🚌": "bus-outline", "🚇": "subway-outline", "🚊": "train-outline", "🚆": "train-outline",
+  "⛴️": "boat-outline", "🚠": "trail-sign-outline", "🚡": "trail-sign-outline", "🚐": "bus-outline",
+};
+export const vehicleIcon = (v: string | null | undefined) => VEHICLE_ICON[v ?? ""] ?? "bus-outline";
 
 const TRANSPORT_LABEL: Record<TransportMode, string> = {
   start: "Başlangıç", walk: "Yürüyüş", ferry: "Vapur", metro: "Metro",
@@ -55,28 +64,28 @@ export function fmtDuration(min: number | null | undefined): string {
   return rest ? `${h} sa ${rest} dk` : `${h} sa`;
 }
 
-// Waypoint kategori/kind → ikon
+// Waypoint kategori/kind → Ionicons adı (harita pini + listeler)
 export function waypointIcon(w: Waypoint): string {
   if (w.kind === "utility") {
-    if (w.category === "water_fountain") return "⛲";
-    if (w.category === "rest_area") return "🪑";
-    return "🚻"; // public_toilet vb.
+    if (w.category === "water_fountain") return "water-outline";
+    if (w.category === "rest_area") return "pause-circle-outline";
+    return "person-outline"; // public_toilet vb.
   }
   switch (w.category) {
-    case "cafe": return "☕";
-    case "restaurant": return "🍽️";
-    case "street_food": return "🥙";
-    case "park": return "🌳";
-    case "historical_site": return "🏛️";
-    case "museum": return "🏛️";
-    case "mosque": return "🕌";
-    case "church": return "⛪";
-    case "bookstore": return "📚";
-    case "gallery": return "🖼️";
-    case "bazaar": return "🛍️";
-    case "viewpoint": return "🌅";
-    case "waterfront": return "🌊";
-    default: return "📌";
+    case "cafe": return "cafe-outline";
+    case "restaurant": return "restaurant-outline";
+    case "street_food": return "fast-food-outline";
+    case "park": return "leaf-outline";
+    case "historical_site": return "flag-outline";
+    case "museum": return "business-outline";
+    case "mosque": return "moon-outline";
+    case "church": return "book-outline";
+    case "bookstore": return "book-outline";
+    case "gallery": return "color-palette-outline";
+    case "bazaar": return "bag-handle-outline";
+    case "viewpoint": return "camera-outline";
+    case "waterfront": return "boat-outline";
+    default: return "location-outline";
   }
 }
 

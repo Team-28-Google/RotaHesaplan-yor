@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Alert, FlatList, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import Icon from "../components/Icon";
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
 import {
@@ -51,7 +52,7 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
     try {
       await Share.share({
         message:
-          `SANA'da "${emoji ?? "📁"} ${title}" koleksiyonuna katıl! 🤝\n` +
+          `SANA'da "${emoji ? `${emoji} ` : ""}${title}" koleksiyonuna katıl!\n` +
           `Birlikte rota toplayalım — linke tıkla:\n${INVITE_URL}&joinc=${token}`,
       });
     } catch { /* iptal */ }
@@ -77,7 +78,7 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Text style={styles.back}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{emoji ?? "📁"} {title}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{emoji ? `${emoji} ` : ""}{title}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -98,7 +99,7 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
           </Text>
         </View>
         <TouchableOpacity style={styles.inviteBtn} onPress={invite} activeOpacity={0.85}>
-          <Text style={styles.inviteText}>🤝 Davet et</Text>
+          <Text style={styles.inviteText}>Davet et</Text>
         </TouchableOpacity>
       </View>
 
@@ -108,10 +109,10 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
         </View>
       ) : routes.length === 0 ? (
         <View style={styles.center}>
-          <Text style={{ fontSize: 40 }}>{emoji ?? "📁"}</Text>
+          {emoji ? <Text style={{ fontSize: 40 }}>{emoji}</Text> : <Icon name="folder-open-outline" size={40} color={colors.textFaint} />}
           <Text style={styles.emptyTitle}>Koleksiyon henüz boş</Text>
           <Text style={styles.emptyText}>
-            Bir rotayı açıp "📁 Koleksiyona ekle" ile buraya at — davet ettiklerin de ekleyebilir.
+            Bir rotayı açıp "Koleksiyona ekle" ile buraya at — davet ettiklerin de ekleyebilir.
           </Text>
         </View>
       ) : (
@@ -137,11 +138,13 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
                     </TouchableOpacity>
                   </View>
                   <View style={styles.metaRow}>
-                    <Text style={styles.meta}>💰 {budgetLabel(item.budget_level)}</Text>
-                    <Text style={styles.meta}>📍 {exp.length} durak</Text>
-                    <Text style={styles.meta}>📏 {km} km</Text>
+                    <Text style={styles.meta}>{budgetLabel(item.budget_level)}</Text>
+                    <Text style={styles.meta}>{exp.length} durak</Text>
+                    <Text style={styles.meta}>{km} km</Text>
                   </View>
-                  <Text style={styles.icons}>{exp.slice(0, 5).map(waypointIcon).join("   ")}</Text>
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                    {exp.slice(0, 5).map((w) => <Icon key={w.id} name={waypointIcon(w)} size={13} color={colors.textFaint} />)}
+                  </View>
                 </View>
               </PressableScale>
             );

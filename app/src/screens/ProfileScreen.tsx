@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { captureRef } from "react-native-view-shot";
 
+import Icon from "../components/Icon";
 import { countMyComments, countMyRoutes, getFavoriteIds, getMyProfile, setMyAvatar, uploadPhoto } from "../lib/api";
 import { signOut } from "../lib/auth";
 import { AUTH_ENABLED, INVITE_URL } from "../lib/config";
@@ -39,14 +40,14 @@ function buildBadges(j: JourneyEntry[], myRoutes: number, favs: number, myCommen
   const totalKm = j.reduce((s, x) => s + x.distance_m, 0) / 1000;
   const totalStops = j.reduce((s, x) => s + x.stops, 0);
   return [
-    { icon: "🥾", name: "İlk Adım", desc: "İlk yolculuğunu tamamla", unlocked: j.length >= 1 },
-    { icon: "🧭", name: "Gezgin", desc: "3 yolculuk tamamla", unlocked: j.length >= 3 },
-    { icon: "🏙️", name: "Şehir Ustası", desc: "5 yolculuk tamamla", unlocked: j.length >= 5 },
-    { icon: "📏", name: "10K", desc: "Toplam 10 km yürü", unlocked: totalKm >= 10 },
-    { icon: "📍", name: "Kaşif", desc: "20 durak ziyaret et", unlocked: totalStops >= 20 },
-    { icon: "✍️", name: "Rota Yazarı", desc: "İlk rotanı paylaş", unlocked: myRoutes >= 1 },
-    { icon: "❤️", name: "Koleksiyoncu", desc: "3 rota kaydet", unlocked: favs >= 3 },
-    { icon: "💬", name: "Sosyal", desc: "İlk yorumunu yaz", unlocked: myComments >= 1 },
+    { icon: "footsteps-outline", name: "İlk Adım", desc: "İlk yolculuğunu tamamla", unlocked: j.length >= 1 },
+    { icon: "compass-outline", name: "Gezgin", desc: "3 yolculuk tamamla", unlocked: j.length >= 3 },
+    { icon: "business-outline", name: "Şehir Ustası", desc: "5 yolculuk tamamla", unlocked: j.length >= 5 },
+    { icon: "speedometer-outline", name: "10K", desc: "Toplam 10 km yürü", unlocked: totalKm >= 10 },
+    { icon: "location-outline", name: "Kaşif", desc: "20 durak ziyaret et", unlocked: totalStops >= 20 },
+    { icon: "create-outline", name: "Rota Yazarı", desc: "İlk rotanı paylaş", unlocked: myRoutes >= 1 },
+    { icon: "heart-outline", name: "Koleksiyoncu", desc: "3 rota kaydet", unlocked: favs >= 3 },
+    { icon: "chatbubble-outline", name: "Sosyal", desc: "İlk yorumunu yaz", unlocked: myComments >= 1 },
   ];
 }
 
@@ -90,8 +91,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const changeAvatar = () => {
     tap();
     Alert.alert("Profil fotoğrafı", undefined, [
-      { text: "📷 Fotoğraf çek", onPress: () => launchAvatar("camera") },
-      { text: "🖼️ Galeriden seç", onPress: () => launchAvatar("library") },
+      { text: "Fotoğraf çek", onPress: () => launchAvatar("camera") },
+      { text: "Galeriden seç", onPress: () => launchAvatar("library") },
       { text: "Vazgeç", style: "cancel" },
     ]);
   };
@@ -168,7 +169,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     try {
       await Share.share({
         message:
-          "SANA ile şehrini yeniden keşfet! 🧭\n" +
+          "SANA ile şehrini yeniden keşfet!\n" +
           "1) Expo Go uygulamasını kur\n2) Bu linki aç:\n" + INVITE_URL,
       });
     } catch { /* iptal — yoksay */ }
@@ -237,7 +238,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         </View>
 
         <View style={styles.heroProgressRow}>
-          <Text style={styles.heroProgressLabel}>🏅 {unlockedCount}/{badges.length} rozet</Text>
+          <Text style={styles.heroProgressLabel}>{unlockedCount}/{badges.length} rozet</Text>
           <View style={styles.heroBarBg}>
             <View style={[styles.heroBarFill, { width: `${Math.round((unlockedCount / badges.length) * 100)}%` }]} />
           </View>
@@ -293,7 +294,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       <View style={styles.badgeGrid}>
         {badges.map((b) => (
           <View key={b.name} style={[styles.badge, !b.unlocked && styles.badgeLocked]}>
-            <Text style={[styles.badgeIcon, !b.unlocked && { opacity: 0.35 }]}>{b.icon}</Text>
+            <View style={!b.unlocked && { opacity: 0.35 }}>
+              <Icon name={b.icon} size={24} color={b.unlocked ? colors.primary : colors.textFaint} />
+            </View>
             <Text style={[styles.badgeName, !b.unlocked && { color: colors.textFaint }]}>{b.name}</Text>
             <Text style={styles.badgeDesc}>{b.desc}</Text>
           </View>
@@ -306,7 +309,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       </View>
       {journeys.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🧭</Text>
+          <Icon name="compass-outline" size={34} color={colors.textFaint} />
           <Text style={styles.emptyText}>
             Henüz yolculuk yok. Bir rota aç, "Yolculuğa Başla" de — bitirdiğinde burada görünecek.
           </Text>
@@ -334,8 +337,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             <Animated.View style={{ transform: [{ scale: celebScale }], alignItems: "center" }}>
               <View ref={celebCardRef} collapsable={false} style={styles.celebCard}>
                 <LinearGradient colors={["#1B2447", "#0B1022"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.celebInner}>
-                  <Text style={styles.celebConfetti}>🎊 ✨ 🎉 ✨ 🎊</Text>
-                  <Text style={styles.celebIcon}>{celebrate.icon}</Text>
+                  <Icon name={celebrate.icon} size={64} color="#FF9F8B" />
                   <Text style={styles.celebLabel}>YENİ ROZET</Text>
                   <Text style={styles.celebName}>{celebrate.name}</Text>
                   <Text style={styles.celebDesc}>{celebrate.desc}</Text>
@@ -350,7 +352,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                   <Text style={styles.celebGhostText}>Kapat</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.celebShare, celebSharing && { opacity: 0.6 }]} onPress={shareBadge} disabled={celebSharing}>
-                  {celebSharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.celebShareText}>📤 Paylaş</Text>}
+                  {celebSharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.celebShareText}>Paylaş</Text>}
                 </TouchableOpacity>
               </View>
             </Animated.View>

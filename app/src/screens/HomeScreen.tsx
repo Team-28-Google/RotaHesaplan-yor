@@ -18,6 +18,7 @@ import { getOnboarding } from "../lib/onboarding";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { LeaderRow, RouteWithWaypoints } from "../lib/types";
+import Icon from "../components/Icon";
 import { fmtDuration, routeColor, waypointIcon } from "../lib/ui";
 import type { HomeScreenProps } from "../navigation";
 
@@ -155,7 +156,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     const icons = r.waypoints.filter((w) => w.kind === "experience").slice(0, 5).map(waypointIcon);
     return (
       <LinearGradient colors={[color, "rgba(11,16,34,0.85)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[style, styles.coverCenter]}>
-        <Text style={styles.coverIcons}>{icons.join("   ")}</Text>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          {icons.map((ic, j) => <Icon key={j} name={ic} size={17} color="rgba(255,255,255,0.9)" />)}
+        </View>
       </LinearGradient>
     );
   };
@@ -272,7 +275,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               {mostLiked.length > 0 && (
                 <View style={{ gap: 12 }}>
                   <View style={styles.sectionRow}>
-                    <Text style={styles.sectionTitle}>🔥 Çok Beğenilenler</Text>
+                    <Text style={styles.sectionTitle}>Çok Beğenilenler</Text>
                     <Text style={styles.sectionHint}>topluluğun favorileri</Text>
                   </View>
                   <FlatList
@@ -309,7 +312,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           }
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.emptyIcon}>🧭</Text>
+              <Icon name="compass-outline" size={40} color={colors.textFaint} />
               <Text style={styles.emptyTitle}>Henüz rota yok</Text>
               <Text style={styles.emptyText}>İlk rotayı sen oluştur — "+" ile başla.</Text>
             </View>
@@ -324,10 +327,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                     onPress={() => { tap(); navigation.navigate("Leaderboard"); }}
                   >
                     <View style={styles.leaderHead}>
-                      <Text style={styles.leaderTitle}>🏆 Bu haftanın gezginleri</Text>
+                      <Text style={styles.leaderTitle}>Bu haftanın gezginleri</Text>
                       <Text style={styles.leaderMore}>Tümü ›</Text>
                     </View>
-                    <Text style={styles.leaderSub}>yalnız doğrulanmış yolculuklar sayılır 📍</Text>
+                    <Text style={styles.leaderSub}>yalnız doğrulanmış yolculuklar sayılır</Text>
                     {leaders.slice(0, 5).map((l, i) => (
                       <View key={l.user_id} style={styles.leaderRow}>
                         <Text style={styles.leaderRank}>{i + 1}</Text>

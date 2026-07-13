@@ -14,8 +14,8 @@ import { useTheme } from "../lib/themeContext";
 import type { LeaderRow } from "../lib/types";
 import type { LeaderboardScreenProps } from "../navigation";
 
-// 1-2-3'e madalya, gerisine sıra numarası
-const RANK = ["🥇", "🥈", "🥉"];
+// İlk 3'e altın/gümüş/bronz renkli sıra, gerisine düz numara
+const RANK_COLOR = ["#E7B913", "#9AA4B2", "#C4763B"];
 
 export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps) {
   const insets = useSafeAreaInsets();
@@ -46,7 +46,7 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
 
       {/* İki dünya: gezenler (doğrulanmış yolculuk) · rota yazarları (❤️) */}
       <View style={styles.segment}>
-        {([["walk", "🏆 En Çok Gezen"], ["likes", "❤️ En Beğenilen"]] as const).map(([k, label]) => (
+        {([["walk", "En Çok Gezen"], ["likes", "En Beğenilen"]] as const).map(([k, label]) => (
           <TouchableOpacity
             key={k}
             style={[styles.segmentBtn, tab === k && styles.segmentBtnOn]}
@@ -59,7 +59,7 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
       </View>
       <Text style={styles.hint}>
         {tab === "walk"
-          ? "Son 7 gün · yalnız doğrulanmış yolculuklar sayılır 📍"
+          ? "Son 7 gün · yalnız doğrulanmış yolculuklar sayılır"
           : "Paylaştığın rotaların topladığı toplam beğeni"}
       </Text>
 
@@ -68,7 +68,7 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
           [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} style={{ height: 64, borderRadius: radius.lg }} />)
         ) : rows.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={{ fontSize: 40 }}>{tab === "walk" ? "🥾" : "❤️"}</Text>
+            <Ionicons name={tab === "walk" ? "walk-outline" : "heart-outline"} size={40} color={colors.textFaint} />
             <Text style={styles.emptyTitle}>
               {tab === "walk" ? "Bu hafta henüz doğrulanmış yolculuk yok" : "Henüz beğeni toplayan rota yok"}
             </Text>
@@ -92,7 +92,7 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
                 });
               }}
             >
-              <Text style={styles.rank}>{RANK[i] ?? `${i + 1}`}</Text>
+              <Text style={[styles.rank, i < 3 && { color: RANK_COLOR[i] }]}>{i + 1}</Text>
               <View style={styles.avatar}>
                 {l.avatar_url ? (
                   <Image source={{ uri: l.avatar_url }} style={styles.avatarImg} contentFit="cover" />
@@ -105,10 +105,10 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
                 <Text style={styles.meta}>
                   {tab === "walk"
                     ? `${(((l as LeaderRow).total_distance_m ?? 0) / 1000).toFixed(1)} km · ${(l as LeaderRow).journey_count} yolculuk`
-                    : `${(l as AuthorLeaderRow).total_likes} ❤️ · ${(l as AuthorLeaderRow).route_count} rota`}
+                    : `${(l as AuthorLeaderRow).total_likes} beğeni · ${(l as AuthorLeaderRow).route_count} rota`}
                 </Text>
               </View>
-              {i === 0 ? <Text style={{ fontSize: 20 }}>👑</Text>
+              {i === 0 ? <Ionicons name="trophy" size={18} color="#E7B913" />
                 : <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />}
             </TouchableOpacity>
           ))

@@ -10,6 +10,7 @@ import { fetchUserRoutes } from "../lib/api";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
+import Icon from "../components/Icon";
 import { budgetLabel, routeColor, waypointIcon } from "../lib/ui";
 import type { UserRoutesScreenProps } from "../navigation";
 
@@ -81,14 +82,19 @@ export default function UserRoutesScreen({ route: nav, navigation }: UserRoutesS
                 <View style={styles.cardBody}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={1}>{item.title}</Text>
-                    <Text style={styles.like}>❤️ {item.like_count}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                      <Icon name="heart" size={13} color="#FF5A5F" />
+                      <Text style={styles.like}>{item.like_count}</Text>
+                    </View>
                   </View>
                   <View style={styles.metaRow}>
-                    <Text style={styles.cardMeta}>💰 {budgetLabel(item.budget_level)}</Text>
-                    <Text style={styles.cardMeta}>📍 {exp.length} durak</Text>
-                    <Text style={styles.cardMeta}>📏 {km} km</Text>
+                    <Text style={styles.cardMeta}>{budgetLabel(item.budget_level)}</Text>
+                    <Text style={styles.cardMeta}>{exp.length} durak</Text>
+                    <Text style={styles.cardMeta}>{km} km</Text>
                   </View>
-                  <Text style={styles.icons}>{exp.slice(0, 5).map(waypointIcon).join("   ")}</Text>
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                    {exp.slice(0, 5).map((w) => <Icon key={w.id} name={waypointIcon(w)} size={13} color={colors.textFaint} />)}
+                  </View>
                 </View>
               </PressableScale>
             );

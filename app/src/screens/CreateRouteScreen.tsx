@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import Icon from "../components/Icon";
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import { createRoute, enrichRoute, searchPlaces } from "../lib/api";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
@@ -12,22 +13,22 @@ import { useTheme } from "../lib/themeContext";
 import type { CreateStop, EnrichResult, PlaceResult } from "../lib/types";
 import type { CreateRouteScreenProps } from "../navigation";
 
-// OSM kategori → emoji (arama sonuçlarına görsel kimlik verir)
+// OSM kategori → Ionicons adı (arama sonuçlarına görsel kimlik verir)
 function placeIcon(type?: string): string {
   const t = (type ?? "").toLowerCase();
-  if (/cafe|coffee/.test(t)) return "☕";
-  if (/restaurant|food|fast_food/.test(t)) return "🍽️";
-  if (/bar|pub|nightclub/.test(t)) return "🍸";
-  if (/museum|gallery|arts/.test(t)) return "🏛️";
-  if (/book|library/.test(t)) return "📚";
-  if (/park|garden|forest|tree/.test(t)) return "🌳";
-  if (/beach|water|bay|sea|river/.test(t)) return "🌊";
-  if (/hotel|hostel|guest/.test(t)) return "🏨";
-  if (/mosque|place_of_worship|church/.test(t)) return "🕌";
-  if (/shop|mall|supermarket|store|market/.test(t)) return "🛍️";
-  if (/viewpoint|attraction|monument|castle|palace|tourism/.test(t)) return "📸";
-  if (/station|subway|bus|tram|ferry/.test(t)) return "🚉";
-  return "📍";
+  if (/cafe|coffee/.test(t)) return "cafe-outline";
+  if (/restaurant|food|fast_food/.test(t)) return "restaurant-outline";
+  if (/bar|pub|nightclub/.test(t)) return "wine-outline";
+  if (/museum|gallery|arts/.test(t)) return "color-palette-outline";
+  if (/book|library/.test(t)) return "book-outline";
+  if (/park|garden|forest|tree/.test(t)) return "leaf-outline";
+  if (/beach|water|bay|sea|river/.test(t)) return "boat-outline";
+  if (/hotel|hostel|guest/.test(t)) return "bed-outline";
+  if (/mosque|place_of_worship|church/.test(t)) return "moon-outline";
+  if (/shop|mall|supermarket|store|market/.test(t)) return "bag-handle-outline";
+  if (/viewpoint|attraction|monument|castle|palace|tourism/.test(t)) return "camera-outline";
+  if (/station|subway|bus|tram|ferry/.test(t)) return "train-outline";
+  return "location-outline";
 }
 
 export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps) {
@@ -134,7 +135,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
         })),
       });
       setBusy(false); // Alert geri tuşuyla kapatılırsa buton spinner'da kalmasın
-      Alert.alert("🎉 Rotan paylaşıldı!", "Artık haritada ve akışta görünüyor.", [
+      Alert.alert("Rotan paylaşıldı!", "Artık haritada ve akışta görünüyor.", [
         { text: "Rotaya git", onPress: () => navigation.replace("RouteFlood", { routeId, title: title.trim() || enriched.title }) },
       ]);
     } catch (err) {
@@ -190,7 +191,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
 
       <View style={styles.searchWrap}>
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔎</Text>
+          <Icon name="search-outline" size={15} color={colors.textMuted} />
           <TextInput
             style={styles.searchField}
             value={query}
@@ -214,7 +215,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
       <View style={styles.mapWrap}>
         <OSMMap markers={markers} polylines={polylines} onMapPress={(lat, lng) => setPending({ lat, lng })} padding={40} />
         <View style={styles.hint} pointerEvents="none">
-          <Text style={styles.hintText}>🔎 Ara ya da 📍 haritaya dokun</Text>
+          <Text style={styles.hintText}>Ara ya da haritaya dokun</Text>
         </View>
       </View>
 
@@ -231,7 +232,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
                   {p.thumbnail ? (
                     <Image source={{ uri: p.thumbnail }} style={styles.resultThumb} transition={150} contentFit="cover" />
                   ) : (
-                    <View style={styles.resultIcon}><Text style={{ fontSize: 20 }}>{placeIcon(p.type)}</Text></View>
+                    <View style={styles.resultIcon}><Icon name={placeIcon(p.type)} size={18} color={colors.textMuted} /></View>
                   )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.resultName} numberOfLines={1}>{p.name}</Text>
@@ -262,7 +263,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
               disabled={stops.length < 2 || busy}
               activeOpacity={0.9}
             >
-              {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>✨ AI ile Tamamla ({stops.length})</Text>}
+              {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>AI ile Tamamla ({stops.length})</Text>}
             </TouchableOpacity>
           </>
         )}

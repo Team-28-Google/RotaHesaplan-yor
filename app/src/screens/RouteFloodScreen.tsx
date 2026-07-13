@@ -18,7 +18,7 @@ import {
   addComment, addRouteToCollection, addStop, canEditRoute, currentUserId, fetchComments,
   fetchCommentSummary, fetchMyCollections, fetchNavRoute, fetchRoute, fetchSpendStats,
   forkRoute, getFavoriteIds, getOrCreateShareToken, publishRoute, refreshRouteExtras,
-  removeStop, sendMemoryEvent, setFavorite, uploadPhoto,
+  removeStop, sendMemoryEvent, setFavorite, snapTrack, uploadPhoto,
   type CollectionInfo, type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { INVITE_URL } from "../lib/config";
@@ -28,7 +28,8 @@ import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
-import { budgetLabel, fmtDuration, legSegments, segmentsToPath, transportIcon, transportLabel, waypointIcon } from "../lib/ui";
+import Icon from "../components/Icon";
+import { budgetLabel, fmtDuration, legSegments, segmentsToPath, transportLabel, vehicleIcon, waypointIcon } from "../lib/ui";
 import type { RouteFloodScreenProps } from "../navigation";
 
 // 4.0a: detay paneli tam ekran haritanın üstünde, ekranın ~%58'i (aşağı kaydırılıp kapanır)
@@ -184,8 +185,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         const newId = await forkRoute(route, p);
         success();
         Alert.alert(
-          "Rotalarım'a kaydedildi 🎉",
-          "Bu rotanın senin kopyan oluşturuldu — orijinal rota değişmedi. Kopyan şimdilik özel; istersen içinden '🌍 Rotanı paylaş' ile herkese açabilirsin.",
+          "Rotalarım'a kaydedildi",
+          "Bu rotanın senin kopyan oluşturuldu — orijinal rota değişmedi. Kopyan şimdilik özel; istersen içinden 'Rotanı paylaş' ile herkese açabilirsin.",
           [
             { text: "Kopyamı aç", onPress: () => navigation.replace("RouteFlood", { routeId: newId, title: route.title }) },
             { text: "Tamam", style: "cancel" },
@@ -211,7 +212,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     const ok = await addRouteToCollection(c.id, route.id);
     if (ok) {
       success();
-      Alert.alert("Eklendi 📁", `"${route.title}" → ${c.emoji ?? "📁"} ${c.title}`);
+      Alert.alert("Eklendi", `"${route.title}" → ${c.emoji ? `${c.emoji} ` : ""}${c.title}`);
     }
   };
 
@@ -241,7 +242,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     try {
       await Share.share({
         message:
-          `SANA'da "${route.title}" rotasını birlikte düzenleyelim! 🤝\n` +
+          `SANA'da "${route.title}" rotasını birlikte düzenleyelim!\n` +
           `Linke tıkla, durak ekleyip çıkarabilirsin:\n${INVITE_URL}&join=${token}`,
       });
     } catch { /* iptal */ }
@@ -263,8 +264,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const pickCommentPhoto = () => {
     tap();
     Alert.alert("Fotoğraf ekle", undefined, [
-      { text: "📷 Fotoğraf çek", onPress: () => launchPhoto("camera") },
-      { text: "🖼️ Galeriden seç", onPress: () => launchPhoto("library") },
+      { text: "Fotoğraf çek", onPress: () => launchPhoto("camera") },
+      { text: "Galeriden seç", onPress: () => launchPhoto("library") },
       { text: "Vazgeç", style: "cancel" },
     ]);
   };
@@ -328,7 +329,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         photo: w.photo_urls?.[0], popup: w.name,
         variant: (i === 0 ? "start" : i === exp.length - 1 ? "end" : "stop") as "start" | "end" | "stop",
       })),
-      ...util.map((w) => ({ id: w.id, lat: w.lat, lng: w.lng, color: colors.utility, emoji: waypointIcon(w) })),
+      ...util.map((w) => ({ id: w.id, lat: w.lat, lng: w.lng, color: colors.utility, icon: waypointIcon(w) })),
     ],
     [exp, util, colors],
   );
@@ -393,15 +394,17 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [navMode, setNavMode] = useState<"walk" | "transit" | "drive">("walk");
   const [liveLeg, setLiveLeg] = useState<WalkLeg | null>(null);
   const [altIdx, setAltIdx] = useState(0); // transit alternatifi seçimi (GMaps paritesi)
+  const [tlOpen, setTlOpen] = useState(false); // timeline yarı-katlanır: kapalıyken tek satır özet
   const legOrigin = useRef<{ lat: number; lng: number } | null>(null);
   const legBusy = useRef(false);
 
-  useEffect(() => { setLiveLeg(null); setAltIdx(0); legOrigin.current = null; }, [target, journey, navMode]);
+  useEffect(() => { setLiveLeg(null); setAltIdx(0); setTlOpen(false); legOrigin.current = null; }, [target, journey, navMode]);
 
   // Seçili bacak: transit'te seçilen alternatif, diğer modlarda doğrudan yanıt
   const selLeg = navMode === "transit" && liveLeg?.alternatives?.length
     ? (liveLeg.alternatives[altIdx] ?? liveLeg)
     : liveLeg;
+  const selTransit = (selLeg?.steps ?? []).filter((s) => s.kind === "transit");
 
   // Şehirlerarası (>100 km): yürüme/toplu anlamsız → otomatik 🚗 arabaya geç
   useEffect(() => {
@@ -437,7 +440,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   };
 
   // Yolculuğu kapat → özet + paylaşım kartı göster, yerel günlüğe yaz (Profil istatistikleri)
-  const finishJourney = () => {
+  const finishJourney = async () => {
     // Dürüstlük korumasi: HİÇBİR durağa GPS ile varılmadıysa "tamamlandı" YOK —
     // kutlama/özet çıkmaz, kayıt oluşmaz (kullanıcı isteği; 3.11'in sert hali)
     if (visitedRef.current.size === 0) {
@@ -457,7 +460,13 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
       ? Math.max(1, Math.round((Date.now() - journeyStart.current) / 60000))
       : route.total_duration_min ?? 0;
     journeyStart.current = null;
-    const walked = downsample(track, 200); // DB/kart için makul boyut
+    let walked = downsample(track, 200); // DB/kart için makul boyut
+    // 4.0c Roads: ham GPS izini yola oturt (zigzag/sapma temizlenir) — servis ya da
+    // API hazır değilse null döner, ham iz aynen kalır
+    if (walked.length >= 2) {
+      const snapped = await snapTrack(walked);
+      if (snapped) walked = downsample(snapped, 200);
+    }
     setTraceSrc(walked.length >= 2 ? "walked" : "plan"); // gerçek iz varsa onu öne çıkar
     const s: JourneySummary = {
       title: route.title,
@@ -578,7 +587,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
           {targetStop.photo_urls?.[0] ? (
             <Image source={{ uri: targetStop.photo_urls[0] }} style={styles.navTopPhoto} contentFit="cover" />
           ) : (
-            <View style={styles.navTopIcon}><Text style={{ fontSize: 18 }}>{waypointIcon(targetStop)}</Text></View>
+            <View style={styles.navTopIcon}><Icon name={waypointIcon(targetStop)} size={18} color={colors.primary} /></View>
           )}
           <View style={{ flex: 1 }}>
             <Text style={styles.navTopLabel}>SIRADAKİ · {target + 1}/{exp.length}</Text>
@@ -586,10 +595,10 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             {userLoc && (
               <Text style={styles.navTopMeta}>
                 {selLeg
-                  ? `${farAway ? "🚗" : "🧭"} ${distText(selLeg.distance_m)} · ~${fmtDuration(selLeg.duration_min)}`
+                  ? `${distText(selLeg.distance_m)} · ~${fmtDuration(selLeg.duration_min)}`
                   : farAway
-                    ? `🛣️ ${distText(distMeters(userLoc, targetStop))} uzakta — araba rotası hesaplanıyor…`
-                    : `📏 ${distText(distMeters(userLoc, targetStop))} (kuş uçuşu)`}
+                    ? `${distText(distMeters(userLoc, targetStop))} uzakta — araba rotası hesaplanıyor…`
+                    : `${distText(distMeters(userLoc, targetStop))} (kuş uçuşu)`}
               </Text>
             )}
           </View>
@@ -605,22 +614,22 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             <View style={styles.titleRow}>
               <Text style={[styles.title, { flex: 1 }]}>{route.title}</Text>
               <TouchableOpacity onPress={toggleFav} hitSlop={12} style={styles.heart}>
-                <Animated.Text style={[styles.heartText, { transform: [{ scale: heartScale }] }]}>
-                  {fav ? "❤️" : "🤍"}
-                </Animated.Text>
+                <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+                  <Icon name={fav ? "heart" : "heart-outline"} size={24} color={fav ? "#FF5A5F" : colors.textMuted} />
+                </Animated.View>
               </TouchableOpacity>
             </View>
             {!!route.description && <Text style={styles.desc}>{route.description}</Text>}
             <View style={styles.pills}>
-              <Pill icon="💰" text={budgetLabel(route.budget_level)} />
-              <Pill icon="📍" text={`${exp.length} durak`} />
-              <Pill icon="📏" text={`${km} km`} />
-              {!!route.total_duration_min && <Pill icon="⏱️" text={`~${fmtDuration(route.total_duration_min)}`} />}
+              <Pill text={budgetLabel(route.budget_level)} />
+              <Pill text={`${exp.length} durak`} />
+              <Pill text={`${km} km`} />
+              {!!route.total_duration_min && <Pill text={`~${fmtDuration(route.total_duration_min)}`} />}
             </View>
-            {/* 💸 Gerçek harcama — bütçe tahmini değil, gezenlerin bildirimi (3.8) */}
+            {/* Gerçek harcama — bütçe tahmini değil, gezenlerin bildirimi (3.8) */}
             {spendStats && (
               <Text style={styles.spendNote}>
-                💸 Gerçek harcama: ort. ₺{spendStats.avg} · {spendStats.reports} gezgin bildirdi
+                Gerçek harcama: ort. ₺{spendStats.avg} · {spendStats.reports} gezgin bildirdi
               </Text>
             )}
             <View style={styles.tagRow}>
@@ -638,31 +647,31 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 activeOpacity={0.9}
               >
                 <Text style={styles.publishBtnText}>
-                  {publishing ? "Paylaşılıyor…" : "🌍 Rotanı paylaş — herkes görsün"}
+                  {publishing ? "Paylaşılıyor…" : "Rotanı paylaş — herkes görsün"}
                 </Text>
-                <Text style={styles.publishBtnSub}>🔒 Şimdilik sadece sen görüyorsun</Text>
+                <Text style={styles.publishBtnSub}>Şimdilik sadece sen görüyorsun</Text>
               </TouchableOpacity>
             )}
 
             {/* 🤝 Ortak düzenleme (3.7): sahibi davet eder; davetli rozetini görür */}
             {isOwner && (
               <TouchableOpacity style={styles.inviteBtn} onPress={shareEditInvite} activeOpacity={0.85}>
-                <Text style={styles.inviteBtnText}>🤝 Birlikte düzenle — arkadaşını davet et</Text>
+                <Text style={styles.inviteBtnText}>Birlikte düzenle — arkadaşını davet et</Text>
               </TouchableOpacity>
             )}
             {canEdit && !isOwner && (
-              <Text style={styles.editBadge}>✏️ Bu rotayı düzenleyebilirsin — durak ekle/çıkar</Text>
+              <Text style={styles.editBadge}>Bu rotayı düzenleyebilirsin — durak ekle/çıkar</Text>
             )}
 
-            {/* 📁 Koleksiyona ekle (3.10) */}
+            {/* Koleksiyona ekle (3.10) */}
             <TouchableOpacity style={styles.colAddBtn} onPress={openColSheet} activeOpacity={0.85}>
-              <Text style={styles.colAddText}>📁 Koleksiyona ekle</Text>
+              <Text style={styles.colAddText}>Koleksiyona ekle</Text>
             </TouchableOpacity>
 
-            {/* ✨ Topluluk ne diyor — AI yorum özeti (2.4) */}
+            {/* Topluluk ne diyor — AI yorum özeti (2.4) */}
             {communitySummary?.ok && (
               <View style={styles.community}>
-                <Text style={styles.communityTitle}>✨ TOPLULUK NE DİYOR · {communitySummary.count} yorum</Text>
+                <Text style={styles.communityTitle}>TOPLULUK NE DİYOR · {communitySummary.count} yorum</Text>
                 <Text style={styles.communityText}>{communitySummary.summary}</Text>
                 {!!communitySummary.tags?.length && (
                   <View style={styles.communityTags}>
@@ -676,11 +685,11 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
 
             {journey ? (
               <TouchableOpacity style={[styles.startBtn, styles.stopBtn]} onPress={finishJourney} activeOpacity={0.9}>
-                <Text style={styles.startBtnText}>⏹ Yolculuğu Bitir</Text>
+                <Text style={styles.startBtnText}>Yolculuğu Bitir</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.startBtn} onPress={startJourney} activeOpacity={0.9}>
-                <Text style={styles.startBtnText}>🧭 Yolculuğa Başla</Text>
+                <Text style={styles.startBtnText}>Yolculuğa Başla</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -700,14 +709,14 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   {w.transport_mode !== "start" && (
                     <View style={styles.legPill}>
                       <Text style={styles.legText}>
-                        {transportIcon(w.transport_mode)} {transportLabel(w.transport_mode)}
+                        {transportLabel(w.transport_mode)}
                         {w.leg_duration_min ? ` · ~${fmtDuration(w.leg_duration_min)}` : ""}
                         {w.transport_note ? ` · ${w.transport_note}` : ""}
                       </Text>
                     </View>
                   )}
                   <View style={styles.stopNameRow}>
-                    <Text style={[styles.stopName, { flex: 1 }]}>{waypointIcon(w)} {w.name}</Text>
+                    <Text style={[styles.stopName, { flex: 1 }]}>{w.name}</Text>
                     {canEdit && exp.length > 2 && (
                       <TouchableOpacity onPress={() => onRemoveStop(w.id)} hitSlop={10} disabled={editBusy}>
                         <Text style={[styles.stopRemove, editBusy && { opacity: 0.4 }]}>✕</Text>
@@ -716,9 +725,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   </View>
                   {!!w.note && <Text style={styles.note}>{w.note}</Text>}
                   <View style={styles.stopFoot}>
-                    {getRating(w.metadata) !== undefined && <Text style={styles.rating}>⭐ {getRating(w.metadata)}</Text>}
+                    {getRating(w.metadata) !== undefined && <Text style={styles.rating}>★ {getRating(w.metadata)}</Text>}
                     <TouchableOpacity onPress={() => openDirections(w.lat, w.lng)} hitSlop={6}>
-                      <Text style={styles.dirText}>🧭 Yol tarifi</Text>
+                      <Text style={styles.dirText}>Yol tarifi</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -744,7 +753,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               <Text style={styles.nearbyTitle}>Yakında pratik noktalar</Text>
               {util.map((w) => (
                 <View key={w.id} style={styles.amenity}>
-                  <Text style={styles.amenityIcon}>{waypointIcon(w)}</Text>
+                  <Icon name={waypointIcon(w)} size={15} color={colors.textMuted} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.amenityName}>{w.name}</Text>
                     {!!w.note && <Text style={styles.amenityNote}>{w.note}</Text>}
@@ -778,7 +787,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               )}
               <View style={styles.commentRow}>
                 <TouchableOpacity style={styles.commentPhotoBtn} onPress={pickCommentPhoto} hitSlop={6}>
-                  <Text style={{ fontSize: 18 }}>📷</Text>
+                  <Icon name="camera-outline" size={19} color={colors.textMuted} />
                 </TouchableOpacity>
                 <TextInput
                   style={styles.commentInput}
@@ -825,13 +834,13 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
           {/* Şehirlerarası: araba yolu gösterilir; yürüme/toplu yaklaşınca açılır */}
           {farAway && (
             <Text style={styles.farInfo}>
-              🛣️ Rota {userLoc && targetStop ? distText(distMeters(userLoc, targetStop)) : ""} uzakta — araba yolu gösteriliyor.
-              🚶 Yürüme ve 🚌 toplu taşıma rotaya yaklaşınca açılır.
+              Rota {userLoc && targetStop ? distText(distMeters(userLoc, targetStop)) : ""} uzakta — araba yolu gösteriliyor.
+              Yürüme ve toplu taşıma rotaya yaklaşınca açılır.
             </Text>
           )}
-          {/* 4.0: mod seçici — 🚶 Yürü · 🚌 Toplu · 🚗 Araba (uzaktayken yalnız araba) */}
+          {/* 4.0: mod seçici — Yürü · Toplu · Araba (uzaktayken yalnız araba) */}
           <View style={styles.modeRow}>
-            {([["walk", "🚶 Yürü"], ["transit", "🚌 Toplu"], ["drive", "🚗 Araba"]] as const).map(([m, label]) => {
+            {([["walk", "walk-outline", "Yürü"], ["transit", "bus-outline", "Toplu"], ["drive", "car-outline", "Araba"]] as const).map(([m, ic, label]) => {
               const locked = farAway && m !== "drive";
               return (
                 <TouchableOpacity
@@ -841,15 +850,33 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   disabled={locked}
                   activeOpacity={0.85}
                 >
-                  <Text style={[styles.modeText, navMode === m && styles.modeTextOn]}>
-                    {locked ? "🔒 " : ""}{label}
-                  </Text>
+                  <Icon name={locked ? "lock-closed-outline" : ic} size={13} color={navMode === m ? "#fff" : "#8A93B8"} />
+                  <Text style={[styles.modeText, navMode === m && styles.modeTextOn]}>{label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-          {/* TRANSIT alternatif KARTLARI (4.0b GMaps): rozet dizisi + süre + saat aralığı */}
-          {navMode === "transit" && (liveLeg?.alternatives?.length ?? 0) > 1 && (
+          {/* TRANSIT yarı-katlanır özet satırı: rozet dizisi + saat + aç/kapa oku */}
+          {navMode === "transit" && !!selLeg?.steps?.length && (
+            <TouchableOpacity style={styles.tlToggle} onPress={() => { tap(); setTlOpen(!tlOpen); }} activeOpacity={0.8}>
+              <View style={[styles.altBadges, { flex: 1 }]}>
+                {selTransit.length === 0 ? (
+                  <Text style={styles.altWalk}>yürüyerek</Text>
+                ) : (
+                  selTransit.slice(0, 4).map((s, j) => (
+                    <Fragment key={j}>
+                      {j > 0 && <Text style={styles.altArrow}>›</Text>}
+                      <LineBadge line={s.line ?? "?"} color={s.color} vehicle={s.vehicle} small />
+                    </Fragment>
+                  ))
+                )}
+              </View>
+              {!!(selLeg.dep && selLeg.arr) && <Text style={styles.tlTime}>{selLeg.dep} → {selLeg.arr}</Text>}
+              <Text style={styles.tlChevron}>{tlOpen ? "⌄" : "⌃"}</Text>
+            </TouchableOpacity>
+          )}
+          {/* TRANSIT alternatif KARTLARI (4.0b GMaps): rozet dizisi + süre + saat aralığı — açıkken */}
+          {navMode === "transit" && tlOpen && (liveLeg?.alternatives?.length ?? 0) > 1 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 8 }}>
               {liveLeg!.alternatives!.map((a, i) => {
                 const on = altIdx === i;
@@ -863,7 +890,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   >
                     <View style={styles.altBadges}>
                       {tSteps.length === 0 ? (
-                        <Text style={styles.altWalk}>🚶 yürüyerek</Text>
+                        <Text style={styles.altWalk}>yürüyerek</Text>
                       ) : (
                         tSteps.slice(0, 4).map((s, j) => (
                           <Fragment key={j}>
@@ -881,8 +908,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               })}
             </ScrollView>
           )}
-          {/* TRANSIT dikey timeline (4.0b): yürü → renkli hat rozetiyle bin → in */}
-          {navMode === "transit" && !!selLeg?.steps?.length && (
+          {/* TRANSIT dikey timeline (4.0b): yürü → renkli hat rozetiyle bin → in — açıkken */}
+          {navMode === "transit" && tlOpen && !!selLeg?.steps?.length && (
             <ScrollView style={styles.tlBox} nestedScrollEnabled showsVerticalScrollIndicator={false}>
               {selLeg.steps.map((s, i) => (
                 <View key={i} style={styles.tlRow}>
@@ -901,7 +928,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                     </>
                   ) : (
                     <>
-                      <View style={styles.tlWalkIcon}><Text style={{ fontSize: 13 }}>🚶</Text></View>
+                      <View style={styles.tlWalkIcon}><Icon name="walk-outline" size={14} color="#C6CCE4" /></View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.tlTitle} numberOfLines={1}>{s.dist_m} m yürü</Text>
                         {!!s.text && <Text style={styles.tlSub} numberOfLines={1}>{s.text}</Text>}
@@ -913,7 +940,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             </ScrollView>
           )}
           {navMode === "transit" && selLeg && !selLeg.steps?.length && (
-            <Text style={styles.transitInfo} numberOfLines={1}>🚶 Bu mesafe için yürüme önerildi (hat gerekmedi)</Text>
+            <Text style={styles.transitInfo} numberOfLines={1}>Bu mesafe için yürüme önerildi (hat gerekmedi)</Text>
           )}
           <View style={styles.jRow}>
           <View style={{ flex: 1 }}>
@@ -924,17 +951,17 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 target < last ? (
                   <Text style={styles.jArrived}>✓ Vardın — sıradaki durağa geçiliyor…</Text>
                 ) : (
-                  <Text style={styles.jArrived}>🎉 Rota tamamlandı — keyfini çıkar</Text>
+                  <Text style={styles.jArrived}>Rota tamamlandı — keyfini çıkar</Text>
                 )
               ) : selLeg ? (
                 <Text style={styles.jDist}>
-                  {navMode === "walk" ? "🚶" : navMode === "transit" ? (selLeg.transit?.vehicle ?? "🚌") : "🚗"} {distText(selLeg.distance_m)} · ~{fmtDuration(selLeg.duration_min)} · rotayı izle
+                  {distText(selLeg.distance_m)} · ~{fmtDuration(selLeg.duration_min)} · rotayı izle
                 </Text>
               ) : (
-                <Text style={styles.jDist}>📍 {distText(distMeters(userLoc, targetStop))} ileride · seni takip ediyorum</Text>
+                <Text style={styles.jDist}>{distText(distMeters(userLoc, targetStop))} ileride · seni takip ediyorum</Text>
               )
             ) : (
-              <Text style={styles.jLabel}>📍 Konum bekleniyor…</Text>
+              <Text style={styles.jLabel}>Konum bekleniyor…</Text>
             )}
           </View>
           {/* Uzaktayken Sonraki/Bitir anlamsız — gizle (çıkış sol üst ✕ ile) */}
@@ -964,12 +991,12 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
             <View style={{ width: "100%", marginTop: 10, gap: 8 }}>
               {myCols.length === 0 ? (
                 <Text style={styles.colEmpty}>
-                  Henüz koleksiyonun yok — Kayıtlı sekmesi → 📁 Koleksiyon → "＋ Yeni koleksiyon".
+                  Henüz koleksiyonun yok — Kayıtlı sekmesi → Koleksiyon → "＋ Yeni koleksiyon".
                 </Text>
               ) : (
                 myCols.map((c) => (
                   <TouchableOpacity key={c.id} style={styles.colRow} onPress={() => addToCollection(c)} activeOpacity={0.85}>
-                    <Text style={{ fontSize: 20 }}>{c.emoji ?? "📁"}</Text>
+                    {c.emoji ? <Text style={{ fontSize: 20 }}>{c.emoji}</Text> : <Icon name="folder-outline" size={20} color={colors.textMuted} />}
                     <View style={{ flex: 1 }}>
                       <Text style={styles.colRowTitle} numberOfLines={1}>{c.title}</Text>
                       <Text style={styles.colRowMeta}>{c.route_count} rota · {c.member_count} üye</Text>
@@ -993,7 +1020,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               {sumPhase === "review" ? (
                 /* ADIM 1 — Değerlendirme (3.8 UX): düşünceler + puan + 💸; sonra kart */
                 <View style={{ width: "100%" }}>
-                  <Text style={styles.sumTitle}>🎉 Rota tamamlandı</Text>
+                  <Text style={styles.sumTitle}>Rota tamamlandı</Text>
                   <Text style={styles.revSub}>Deneyimini anlat — topluluğa yol gösterir (hepsi opsiyonel).</Text>
 
                   <View style={[styles.starsRow, { marginTop: 12 }]}>
@@ -1015,7 +1042,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   />
 
                   <View style={styles.spendRow}>
-                    <Text style={styles.spendLabel}>💸 Ne kadar harcadın?</Text>
+                    <Text style={styles.spendLabel}>Ne kadar harcadın?</Text>
                     <View style={styles.spendChips}>
                       {[0, 100, 250, 500, 1000].map((v) => {
                         const on = spent === v;
@@ -1062,7 +1089,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                 </View>
               ) : (
               <>
-              <Text style={styles.sumTitle}>🎉 Rota tamamlandı</Text>
+              <Text style={styles.sumTitle}>Rota tamamlandı</Text>
 
               {/* Format seçimi */}
               <View style={styles.fmtRow}>
@@ -1091,7 +1118,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                       style={[styles.fmtChip, traceSrc === "walked" && styles.fmtChipOn]}
                       onPress={() => { tap(); setTraceSrc("walked"); }}
                     >
-                      <Text style={[styles.fmtChipText, traceSrc === "walked" && styles.fmtChipTextOn]}>👣 Yürüdüğüm iz</Text>
+                      <Text style={[styles.fmtChipText, traceSrc === "walked" && styles.fmtChipTextOn]}>Yürüdüğüm iz</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1117,12 +1144,12 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                         <View style={styles.shareStops}>
                           {exp.slice(0, 5).map((w, i) => (
                             <Text key={w.id} style={styles.shareStop} numberOfLines={1}>
-                              {i + 1}. {waypointIcon(w)} {w.name}
+                              {i + 1}. {w.name}
                             </Text>
                           ))}
                           {exp.length > 5 && <Text style={styles.shareStop}>+{exp.length - 5} durak daha…</Text>}
                         </View>
-                        <Text style={styles.shareFooter}>sana ile keşfedildi 🧭</Text>
+                        <Text style={styles.shareFooter}>sana ile keşfedildi</Text>
                       </LinearGradient>
                     </View>
                   </View>
@@ -1148,12 +1175,12 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                         <View style={styles.shareStops}>
                           {exp.slice(0, 6).map((w, i) => (
                             <Text key={w.id} style={styles.storyStop} numberOfLines={1}>
-                              {i + 1}. {waypointIcon(w)} {w.name}
+                              {i + 1}. {w.name}
                             </Text>
                           ))}
                           {exp.length > 6 && <Text style={styles.storyStop}>+{exp.length - 6} durak daha…</Text>}
                         </View>
-                        <Text style={styles.shareFooter}>sana ile keşfedildi 🧭</Text>
+                        <Text style={styles.shareFooter}>sana ile keşfedildi</Text>
                       </LinearGradient>
                     </View>
                   </View>
@@ -1165,7 +1192,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                   <Text style={styles.sumGhostText}>Kapat</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.sumShare, sharing && { opacity: 0.6 }]} onPress={shareCard} disabled={sharing}>
-                  {sharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.sumShareText}>📤 Paylaş</Text>}
+                  {sharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.sumShareText}>Paylaş</Text>}
                 </TouchableOpacity>
               </View>
               </>
@@ -1267,7 +1294,7 @@ function LineBadge({ line, color, vehicle, small }: {
       backgroundColor: color || "#1A73E8", borderRadius: 5,
       paddingHorizontal: small ? 6 : 8, paddingVertical: small ? 2 : 4,
     }}>
-      <Text style={{ fontSize: small ? 10 : 12 }}>{vehicle ?? "🚌"}</Text>
+      <Icon name={vehicleIcon(vehicle)} size={small ? 11 : 13} color="#fff" />
       <Text style={{
         color: "#fff", fontFamily: font.extra, fontSize: small ? 10.5 : 12.5, maxWidth: 110,
       }} numberOfLines={1}>{line}</Text>
@@ -1275,11 +1302,11 @@ function LineBadge({ line, color, vehicle, small }: {
   );
 }
 
-function Pill({ icon, text }: { icon: string; text: string }) {
+function Pill({ text }: { text: string }) {
   const { colors } = useTheme();
   return (
     <View style={{ backgroundColor: colors.surfaceAlt, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill }}>
-      <Text style={{ fontSize: 13, color: colors.text, fontFamily: font.bold }}>{icon} {text}</Text>
+      <Text style={{ fontSize: 13, color: colors.text, fontFamily: font.bold }}>{text}</Text>
     </View>
   );
 }
@@ -1429,7 +1456,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   // 4.0 mod seçici (navigasyon barında)
   modeRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
   modeChip: {
-    flex: 1, paddingVertical: 7, alignItems: "center", borderRadius: radius.pill,
+    flex: 1, paddingVertical: 7, alignItems: "center", justifyContent: "center",
+    flexDirection: "row", gap: 5, borderRadius: radius.pill,
     backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "#263052",
   },
   modeChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
@@ -1448,7 +1476,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   altArrow: { color: "#8A93B8", fontSize: 11, fontFamily: font.bold },
   altWalk: { color: "#C6CCE4", fontFamily: font.bold, fontSize: 11.5 },
   altDur: { color: "#8A93B8", fontFamily: font.bold, fontSize: 11.5 },
-  tlBox: { maxHeight: 150, marginBottom: 8 },
+  tlToggle: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4, marginBottom: 6 },
+  tlTime: { color: "#8A93B8", fontFamily: font.bold, fontSize: 11.5 },
+  tlChevron: { color: "#7DD3FC", fontSize: 15, fontFamily: font.extra, paddingHorizontal: 4 },
+  tlBox: { maxHeight: 210, marginBottom: 8 },
   tlRow: {
     flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6,
     borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",

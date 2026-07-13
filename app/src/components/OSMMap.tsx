@@ -3,6 +3,7 @@ import {
   Image, PixelRatio, Platform, StyleSheet, Text, TouchableOpacity, View,
   type StyleProp, type ViewStyle,
 } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { captureRef } from "react-native-view-shot";
 
@@ -23,7 +24,7 @@ export type OSMMarker = {
   color: string;
   label?: string;
   photo?: string;            // varsa fotoğraflı baloncuk
-  emoji?: string;            // amenity (WC/çeşme)
+  icon?: string;             // amenity (WC/çeşme) — Ionicons adı
   variant?: "start" | "end" | "stop";
   popup?: string;
 };
@@ -94,9 +95,9 @@ type MapStyles = ReturnType<typeof makeStyles>;
 
 /** Marker içeriğinin imzası — içerik/tema değişirse bitmap yeniden üretilir. */
 const iconSig = (m: OSMMarker, mode: string) =>
-  `${m.id}|${mode}|${m.photo ?? ""}|${m.emoji ?? ""}|${m.label ?? ""}|${m.variant ?? ""}`;
+  `${m.id}|${mode}|${m.photo ?? ""}|${m.icon ?? ""}|${m.label ?? ""}|${m.variant ?? ""}`;
 
-/** Ekran DIŞINDA marker'ı (foto/numara/emoji) çizip bir kez PNG'ye çevirir (Android bitmap yolu). */
+/** Ekran DIŞINDA marker'ı (foto/numara/ikon) çizip bir kez PNG'ye çevirir (Android bitmap yolu). */
 function MarkerIconRenderer({ m, styles, sig, onDone }: {
   m: OSMMarker; styles: MapStyles; sig: string; onDone: (sig: string, uri: string) => void;
 }) {
@@ -131,8 +132,10 @@ function MarkerIconRenderer({ m, styles, sig, onDone }: {
             onError={() => onDone(sig, "")}
           />
         </View>
-      ) : m.emoji ? (
-        <View style={styles.emojiWrap} collapsable={false}><Text style={{ fontSize: 16 }}>{m.emoji}</Text></View>
+      ) : m.icon ? (
+        <View style={styles.emojiWrap} collapsable={false}>
+          <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={16} color={m.color} />
+        </View>
       ) : (
         <View style={[styles.numWrap, { backgroundColor: ring }]} collapsable={false}>
           <Text style={styles.numText}>{m.label ?? "•"}</Text>
@@ -215,8 +218,10 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
           <View style={[styles.photoSquare, { borderColor: ring }]} collapsable={false}>
             <Image source={{ uri: m.photo }} style={styles.photoImg} resizeMode="cover" fadeDuration={0} />
           </View>
-        ) : m.emoji ? (
-          <View style={styles.emojiWrap} collapsable={false}><Text style={{ fontSize: 16 }}>{m.emoji}</Text></View>
+        ) : m.icon ? (
+          <View style={styles.emojiWrap} collapsable={false}>
+            <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={16} color={m.color} />
+          </View>
         ) : (
           <View style={[styles.numWrap, { backgroundColor: ring }]} collapsable={false}>
             <Text style={styles.numText}>{m.label ?? "•"}</Text>
@@ -407,6 +412,14 @@ export default function OSMMap({
             <Fragment key={`ns${i}`}>
               <Polyline coordinates={pts} strokeColor="rgba(255,255,255,0.95)" strokeWidth={9} lineCap="round" lineJoin="round" zIndex={4} />
               <Polyline coordinates={pts} strokeColor={s.color || "#1A73E8"} strokeWidth={6} lineCap="round" lineJoin="round" zIndex={5} />
+              {/* Biniş/iniş durakları: hat renginde halkalı beyaz nokta (GMaps stili).
+                  tracksViewChanges AÇIK — kapalıyken çeyrek-render bug'ı bunları da yarım dondurur */}
+              <Marker coordinate={pts[0]} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges zIndex={7}>
+                <View style={[styles.stopDot, { borderColor: s.color || "#1A73E8" }]} />
+              </Marker>
+              <Marker coordinate={pts[pts.length - 1]} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges zIndex={7}>
+                <View style={[styles.stopDot, { borderColor: s.color || "#1A73E8" }]} />
+              </Marker>
             </Fragment>
           );
         })}
@@ -490,6 +503,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
 
   udotRing: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(37,99,235,0.22)", alignItems: "center", justifyContent: "center" },
   udot: { width: 16, height: 16, borderRadius: 8, backgroundColor: "#1A73E8", borderWidth: 3, borderColor: "#fff" },
+  stopDot: { width: 15, height: 15, borderRadius: 7.5, backgroundColor: "#fff", borderWidth: 3.5 },
 
   recenter: {
     position: "absolute", right: 12, bottom: 12, width: 42, height: 42, borderRadius: 21,

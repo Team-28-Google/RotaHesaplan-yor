@@ -12,14 +12,14 @@ import { useTheme } from "../lib/themeContext";
 import type { OnboardingScreenProps } from "../navigation";
 
 const VIBES = [
-  { id: "sakin", label: "Sakin", emoji: "🌿" },
-  { id: "tarih", label: "Tarih", emoji: "🏛️" },
-  { id: "deniz", label: "Deniz", emoji: "🌊" },
-  { id: "kahve", label: "Kahve", emoji: "☕" },
-  { id: "sanat", label: "Sanat", emoji: "🖼️" },
-  { id: "gece", label: "Gece", emoji: "🌙" },
-  { id: "yesil", label: "Yeşil", emoji: "🌳" },
-  { id: "yuruyus", label: "Yürüyüş", emoji: "🚶" },
+  { id: "sakin", label: "Sakin", icon: "leaf-outline" },
+  { id: "tarih", label: "Tarih", icon: "flag-outline" },
+  { id: "deniz", label: "Deniz", icon: "boat-outline" },
+  { id: "kahve", label: "Kahve", icon: "cafe-outline" },
+  { id: "sanat", label: "Sanat", icon: "color-palette-outline" },
+  { id: "gece", label: "Gece", icon: "moon-outline" },
+  { id: "yesil", label: "Yeşil", icon: "flower-outline" },
+  { id: "yuruyus", label: "Yürüyüş", icon: "walk-outline" },
 ];
 const BUDGETS = [
   { level: 1, label: "₺", desc: "Cüzdan dostu" },
@@ -107,7 +107,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                   onPress={() => toggleVibe(v.id)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.vibeEmoji}>{v.emoji}</Text>
+                  <Ionicons name={v.icon as keyof typeof Ionicons.glyphMap} size={22} color={on ? colors.primary : colors.textMuted} />
                   <Text style={[styles.vibeLabel, on && styles.vibeLabelOn]}>{v.label}</Text>
                   {on && <Ionicons name="checkmark-circle" size={16} color={colors.primary} style={styles.vibeCheck} />}
                 </TouchableOpacity>
@@ -154,7 +154,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.nextBtn} onPress={finish} activeOpacity={0.9}>
-            <Text style={styles.nextText}>🧭 Keşfe Başla</Text>
+            <Text style={styles.nextText}>Keşfe Başla</Text>
           </TouchableOpacity>
         )}
       </View>

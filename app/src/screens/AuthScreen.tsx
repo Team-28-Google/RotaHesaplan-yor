@@ -122,7 +122,7 @@ export default function AuthScreen() {
               ))}
             </View>
 
-            <Text style={styles.h2}>{mode === "login" ? "Tekrar hoş geldin 👋" : "Aramıza katıl ✨"}</Text>
+            <Text style={styles.h2}>{mode === "login" ? "Tekrar hoş geldin" : "Aramıza katıl"}</Text>
 
             <View style={styles.inputRow}>
               <Ionicons name="mail-outline" size={18} color={colors.textFaint} />
@@ -180,7 +180,7 @@ export default function AuthScreen() {
                         activeOpacity={0.85}
                       >
                         <Text style={[styles.genderText, on && styles.genderTextOn]}>
-                          {on ? "✓ " : ""}{g.label}
+                          {g.label}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -189,8 +189,8 @@ export default function AuthScreen() {
               </>
             )}
 
-            {error && <Text style={styles.error}>⚠️ {error}</Text>}
-            {info && <Text style={styles.info}>✅ {info}</Text>}
+            {error && <Text style={styles.error}>{error}</Text>}
+            {info && <Text style={styles.info}>✓ {info}</Text>}
 
             <TouchableOpacity
               style={[styles.btn, !canSubmit && styles.btnDisabled]}
@@ -206,7 +206,7 @@ export default function AuthScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.footer}>Kaydolarak rotalarını toplulukla paylaşabilirsin 🧭</Text>
+          <Text style={styles.footer}>Kaydolarak rotalarını toplulukla paylaşabilirsin</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

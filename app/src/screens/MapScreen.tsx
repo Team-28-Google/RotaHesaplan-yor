@@ -19,6 +19,7 @@ import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
+import Icon from "../components/Icon";
 import { budgetLabel, legSegments, routeColor, segmentsToPath, waypointIcon } from "../lib/ui";
 import type { MapScreenProps } from "../navigation";
 
@@ -224,7 +225,9 @@ export default function MapScreen({ navigation }: MapScreenProps) {
                   end={{ x: 1, y: 1 }}
                   style={styles.cover}
                 >
-                  <Text style={styles.coverIcons}>{icons.join("   ")}</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {icons.map((ic, j) => <Icon key={j} name={ic} size={15} color="rgba(255,255,255,0.9)" />)}
+                  </View>
                   <Text style={styles.coverBudget}>{budgetLabel(item.budget_level)}</Text>
                 </LinearGradient>
                 <View style={styles.cardBody}>
@@ -235,8 +238,8 @@ export default function MapScreen({ navigation }: MapScreenProps) {
                     ))}
                   </View>
                   <View style={styles.metaRow}>
-                    <Text style={styles.meta}>📍 {expStops.length} durak</Text>
-                    <Text style={styles.meta}>📏 {km} km</Text>
+                    <Text style={styles.meta}>{expStops.length} durak</Text>
+                    <Text style={styles.meta}>{km} km</Text>
                     <Text style={styles.go}>Keşfet →</Text>
                   </View>
                 </View>
