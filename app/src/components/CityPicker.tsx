@@ -1,10 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Modal, PanResponder, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator, Alert, Animated, Dimensions, KeyboardAvoidingView, Modal, PanResponder,
+  Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from "react-native";
 
-import { detectCity } from "../lib/api";
-import { CITIES, dynCities, registerCity } from "../lib/cities";
+import { detectCity, searchCities } from "../lib/api";
+import { canonKey, CITIES, dynCities, registerCity, searchProvinces, unregisterCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { supabase } from "../lib/supabase";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
@@ -20,6 +23,36 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [locating, setLocating] = useState(false);
+  const [q, setQ] = useState(""); // 81 il araması — cümleye il yazmaya gerek kalmaz
+  const results = useMemo(() => searchProvinces(q), [q]);
+  useEffect(() => { if (!visible) setQ(""); }, [visible]);
+
+  // DÜNYA şehirleri (Berlin, Münih...): ≥3 harfte servise debounce'lu sorgu —
+  // TR sonuçları çevrimdışı listeden anında, dünya sonuçları altına eklenir
+  const [world, setWorld] = useState<{ name: string; country: string | null; lat: number; lng: number }[]>([]);
+  useEffect(() => {
+    const t = q.trim();
+    if (t.length < 3) { setWorld([]); return; }
+    const h = setTimeout(() => {
+      searchCities(t).then((r) => setWorld(r.filter((w) => w.country !== "Türkiye")));
+    }, 450);
+    return () => clearTimeout(h);
+  }, [q]);
+
+  const pickProvince = async (p: { key: string; label: string; lat: number; lng: number }) => {
+    tap();
+    await registerCity(p.key, p.label, p.lat, p.lng); // pilot şehirse no-op
+    setQ("");
+    onSelect(p.key);
+  };
+
+  // Eklenen şehri sil (6 pilot silinemez; aktif olan silinmesin diye ikon gizlenir)
+  const [, force] = useState(0);
+  const removeDyn = async (key: string) => {
+    tap();
+    await unregisterCity(key);
+    force((x) => x + 1);
+  };
 
   // Geocoding: konumdan il algıla (tüm-Türkiye) — bilinmeyen il kalıcı kayda alınır,
   // AI o ilde de rota üretir; elle şehir eklemek gerekmez
@@ -73,7 +106,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.bg}>
+      <KeyboardAvoidingView style={styles.bg} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
         <Animated.View style={[styles.sheet, { transform: [{ translateY: dragY }] }]}>
           <View {...pan.panHandlers}>
@@ -89,6 +122,73 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
             </View>
           </View>
 
+          {/* 81 il araması: yaz → seç; seçilen il kalıcı kaydolur, AI orada üretir */}
+          <View style={styles.searchRow}>
+            <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              value={q}
+              onChangeText={setQ}
+              placeholder="Şehir ara — Türkiye + dünya (örn. Antalya, Berlin)"
+              placeholderTextColor={colors.textFaint}
+              autoCorrect={false}
+            />
+            {q.length > 0 && (
+              <TouchableOpacity onPress={() => setQ("")} hitSlop={8}>
+                <Ionicons name="close-circle" size={16} color={colors.textFaint} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Liste sabit yükseklikte KAYDIRILIR — sheet büyüyüp ekranı itmez */}
+          <ScrollView
+            style={{ maxHeight: Math.min(400, Dimensions.get("window").height * 0.48) }}
+            contentContainerStyle={{ gap: 10 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+          {q.trim().length > 0 && results.map((p) => (
+            <TouchableOpacity key={p.key} style={styles.row} activeOpacity={0.85} onPress={() => pickProvince(p)}>
+              <View style={styles.iconWrap}>
+                <Ionicons name="location-outline" size={20} color={colors.textMuted} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>{p.label}</Text>
+                <Text style={styles.districts}>
+                  {counts[p.key] != null ? `${counts[p.key]} rota` : "AI bu şehirde senin için üretir"}
+                </Text>
+              </View>
+              {p.key === current
+                ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                : <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />}
+            </TouchableOpacity>
+          ))}
+          {q.trim().length > 0 && world.map((w) => (
+            <TouchableOpacity
+              key={`w-${w.name}-${w.country}`}
+              style={styles.row}
+              activeOpacity={0.85}
+              onPress={() => pickProvince({ key: canonKey(w.name), label: w.name, lat: w.lat, lng: w.lng })}
+            >
+              <View style={styles.iconWrap}>
+                <Ionicons name="globe-outline" size={20} color={colors.textMuted} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>{w.name}</Text>
+                <Text style={styles.districts}>
+                  {w.country ?? "Dünya"} · AI bu şehirde senin için üretir
+                </Text>
+              </View>
+              {canonKey(w.name) === current
+                ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                : <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />}
+            </TouchableOpacity>
+          ))}
+          {q.trim().length > 0 && results.length === 0 && world.length === 0 && (
+            <Text style={styles.noResult}>Şehir bulunamadı — yazımı kontrol et.</Text>
+          )}
+
+          {q.trim().length === 0 && (
           <TouchableOpacity style={[styles.row, styles.locRow]} onPress={findByLocation} disabled={locating} activeOpacity={0.85}>
             <View style={styles.iconWrap}><Ionicons name="locate-outline" size={20} color={colors.primary} /></View>
             <View style={{ flex: 1 }}>
@@ -101,9 +201,13 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
               ? <ActivityIndicator size="small" color={colors.primary} />
               : <Ionicons name="navigate" size={18} color={colors.primary} />}
           </TouchableOpacity>
+          )}
 
-          {[...CITIES, ...dynCities()].map((c) => {
+          {/* Eklenen şehirler listenin SONUNDA kalıcı durur (kaydırma var) —
+              sık kullanılan şehri her seferinde yazmak gerekmez; çöp ikonuyla silinir */}
+          {q.trim().length === 0 && [...CITIES, ...dynCities()].map((c) => {
             const on = c.key === current;
+            const isDyn = !CITIES.some((x) => x.key === c.key);
             return (
               <TouchableOpacity
                 key={c.key}
@@ -127,14 +231,19 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 )}
                 {on ? (
                   <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                ) : isDyn ? (
+                  <TouchableOpacity onPress={() => removeDyn(c.key)} hitSlop={10}>
+                    <Ionicons name="trash-outline" size={18} color={colors.textFaint} />
+                  </TouchableOpacity>
                 ) : (
                   <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
                 )}
               </TouchableOpacity>
             );
           })}
+          </ScrollView>
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -147,6 +256,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   handle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 4 },
   headRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  searchRow: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: colors.surfaceAlt, borderRadius: radius.lg,
+    paddingHorizontal: 12, borderWidth: 1.5, borderColor: colors.border,
+  },
+  searchInput: { flex: 1, paddingVertical: 9, fontSize: 13.5, fontFamily: font.medium, color: colors.text },
+  noResult: { fontSize: 12.5, fontFamily: font.medium, color: colors.textFaint, textAlign: "center", paddingVertical: 8 },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surfaceAlt,
     alignItems: "center", justifyContent: "center", marginTop: 2,

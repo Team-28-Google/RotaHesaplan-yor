@@ -1,5 +1,5 @@
 import { AI_SERVICE_URL } from "./config";
-import { getActiveCity } from "./cities";
+import { getActiveCity, registerCity } from "./cities";
 import { supabase } from "./supabase";
 import type { CreateStop, EnrichResult, LeaderRow, PlaceResult, PlanResponse, RouteWithWaypoints, Waypoint } from "./types";
 
@@ -579,6 +579,39 @@ export async function fetchWalkRoute(
   return fetchNavRoute(from, to, "walk");
 }
 
+/** DÜNYA şehir araması (şehir seçicideki kutu): Geocoding forward, yalnız şehir/il
+ *  tipi sonuçlar. Servise ulaşılamazsa boş — TR listesi çevrimdışı çalışmaya devam eder. */
+export async function searchCities(
+  q: string,
+): Promise<{ name: string; country: string | null; lat: number; lng: number }[]> {
+  if (q.trim().length < 2) return [];
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/search-city`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q: q.trim() }),
+    }, 10_000);
+    if (!res.ok) return [];
+    const j = await res.json();
+    return Array.isArray(j.results) ? j.results : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Paylaşım kartı için rota izli KOYU harita PNG URL'i (4.0c Static Maps — servis
+ *  proxy'si, anahtar sunucuda). Görsel yüklenemezse çağıran stilize çizime düşer. */
+export function staticMapUrl(
+  points: { lat: number; lng: number }[],
+  line: "coral" | "teal" = "coral",
+  w = 608, h = 300,
+): string {
+  const step = Math.max(1, Math.ceil(points.length / 60)); // URL makul kalsın
+  const pts = points.filter((_, i) => i % step === 0 || i === points.length - 1);
+  const path = pts.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join("|");
+  return `${AI_SERVICE_URL}/static-map?path=${encodeURIComponent(path)}&w=${w}&h=${h}&line=${line}`;
+}
+
 /** Yürünen GPS izini yola oturtur (4.0c Roads API). Servis/anahtar hazır değilse
  *  ya da sonuç anlamsızsa null — çağıran ham izi kullanmaya devam eder. */
 export async function snapTrack(
@@ -733,11 +766,19 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
   let dist = 0;
   for (let i = 1; i < input.stops.length; i++) dist += haversineM(input.stops[i - 1], input.stops[i]);
 
+  // Şehir AKTİF SEÇİMDEN DEĞİL, durakların GERÇEK konumundan türetilir — Antalya'da
+  // oluşturulan rota app İstanbul'da kalsa bile İstanbul akışına düşmez. Servis
+  // kapalıysa/il çözülemezse aktif şehre düşülür (eski davranış).
+  const first = input.stops[0];
+  const detected = first ? await detectCity(first.lat, first.lng) : null;
+  if (detected) await registerCity(detected.key, detected.label, first!.lat, first!.lng);
+  const city = detected?.key ?? await getActiveCity();
+
   const { data: routeRow, error } = await supabase
     .from("routes")
     .insert({
       author_id: uid, title: input.title, description: input.description,
-      city: await getActiveCity(),
+      city,
       vibe_tags: input.vibe_tags, weather_fit: input.weather_fit, budget_level: 2,
       is_seed: false, is_public: false, // 3.13: özel başlar; "🌍 Rotanı paylaş" ile açılır
       total_distance_m: dist, total_duration_min: Math.round(dist / 80),

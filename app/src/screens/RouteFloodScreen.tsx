@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { useKeepAwake } from "expo-keep-awake";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -18,7 +19,7 @@ import {
   addComment, addRouteToCollection, addStop, canEditRoute, currentUserId, fetchComments,
   fetchCommentSummary, fetchMyCollections, fetchNavRoute, fetchRoute, fetchSpendStats,
   forkRoute, getFavoriteIds, getOrCreateShareToken, publishRoute, refreshRouteExtras,
-  removeStop, sendMemoryEvent, setFavorite, snapTrack, uploadPhoto,
+  removeStop, sendMemoryEvent, setFavorite, snapTrack, staticMapUrl, uploadPhoto,
   type CollectionInfo, type CommentSummary, type FloodComment, type WalkLeg,
 } from "../lib/api";
 import { INVITE_URL } from "../lib/config";
@@ -558,6 +559,8 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
 
   return (
     <View style={styles.container}>
+      {/* 4.3: yolculuk boyunca ekran uyanık kalır (hook koşullu bileşenle bağlanır) */}
+      {journey && <KeepAwake />}
       <OSMMap
         polylines={polylines}
         markers={markers}
@@ -1166,10 +1169,10 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                         <Text style={styles.shareDate}>
                           {summary.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} · {route.city}
                         </Text>
-                        <RouteTrace
+                        <MapTrace
                           stops={exp}
                           points={traceSrc === "walked" ? summary.track : plannedPath}
-                          color={traceSrc === "walked" ? "rgba(45,212,191,0.9)" : "rgba(244,80,59,0.85)"}
+                          walked={traceSrc === "walked"}
                         />
                         <ShareStats stops={summary.stops} distM={summary.distM} durationMin={summary.durationMin} />
                         <View style={styles.shareStops}>
@@ -1228,6 +1231,40 @@ function ShareStats({ stops, distM, durationMin }: { stops: number; distM: numbe
 
 /** Story kartındaki rota izi (3.1b): `points` boyunca çizgi (sokak kıvrımları YA DA
     yürünen GPS izi), duraklar nokta olarak üstte. SVG'siz — döndürülmüş ince View'lar. */
+/** 4.3: render edildiği sürece ekranı uyanık tutar — yalnız yolculukta takılır. */
+function KeepAwake() {
+  useKeepAwake();
+  return null;
+}
+
+/** Story kartındaki iz (4.0c): GERÇEK koyu harita (Static Maps, servis proxy'si);
+ *  görsel yüklenemezse (API kapalı / çevrimdışı) stilize çizime düşer — kart boş kalmaz. */
+function MapTrace({ stops, points, walked }: {
+  stops: { lat: number; lng: number }[];
+  points: { lat: number; lng: number }[];
+  walked: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const path = points.length >= 2 ? points : stops;
+  if (failed || path.length < 2) {
+    return <RouteTrace stops={stops} points={points}
+      color={walked ? "rgba(45,212,191,0.9)" : "rgba(244,80,59,0.85)"} />;
+  }
+  return (
+    <View style={{
+      width: 304, height: 150, marginTop: 18, borderRadius: radius.lg,
+      overflow: "hidden", backgroundColor: "rgba(255,255,255,0.05)",
+    }}>
+      <Image
+        source={{ uri: staticMapUrl(path, walked ? "teal" : "coral") }}
+        style={{ width: "100%", height: "100%" }}
+        contentFit="cover"
+        onError={() => setFailed(true)}
+      />
+    </View>
+  );
+}
+
 function RouteTrace({ stops, points, color = "rgba(244,80,59,0.85)" }: {
   stops: { lat: number; lng: number }[];
   points: { lat: number; lng: number }[];
