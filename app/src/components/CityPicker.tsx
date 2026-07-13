@@ -165,7 +165,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
           ))}
           {q.trim().length > 0 && world.map((w) => (
             <TouchableOpacity
-              key={`w-${w.name}-${w.country}`}
+              key={`w-${w.name}-${w.lat.toFixed(3)}-${w.lng.toFixed(3)}`}
               style={styles.row}
               activeOpacity={0.85}
               onPress={() => pickProvince({ key: canonKey(w.name), label: w.name, lat: w.lat, lng: w.lng })}
