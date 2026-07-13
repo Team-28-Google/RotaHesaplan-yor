@@ -347,7 +347,15 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         # Tüm-Türkiye: KONUMDAN üretimde şehir de konumdan türetilir — app'in aktif
         # şehri başka ilde kalmış olabilir (Antalya'da üretilen rota İstanbul'a yazılmasın)
         detected = norm_city(google_reverse_geocode_city(env, gen_center[0], gen_center[1]))
-        if detected in _TR_PROVINCES and detected != city:
+        wanted = norm_city(intent.get("city"))
+        if wanted in _TR_PROVINCES and detected in _TR_PROVINCES and wanted != detected:
+            # Cümlede AÇIKÇA başka il var ("Antalya'da...") ama kullanıcı İstanbul'da
+            # "Konumum"u seçmiş — ileri tarihli uzak plan: CÜMLEDEKİ İL kazanır,
+            # üretim o ilin merkezinde yapılır (konum yok sayılır)
+            city = wanted
+            lat, lng = city_coords(env, city)
+            district = {"name": f"{city} merkezi", "lat": lat, "lng": lng, "vibes": []}
+        elif detected in _TR_PROVINCES and detected != city:
             city = detected
     elif gen_district:
         district = next((d for d in _DISTRICTS.get(city, []) if d["name"] == gen_district), None) \
