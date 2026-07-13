@@ -15,8 +15,8 @@ import random
 
 from app.clients import (
     _CITY_COORDS, city_coords, get_route, get_weather, google_photo_url, google_place_lookup,
-    google_places_search, google_walk_leg, load_env, match_routes, nvidia_chat,
-    nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select,
+    google_places_search, google_reverse_geocode_city, google_walk_leg, load_env, match_routes,
+    nvidia_chat, nvidia_embed, sb_delete, sb_insert, sb_patch, sb_select,
 )
 
 # --------------------------- Prompt'lar ---------------------------
@@ -344,6 +344,11 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     Merkez önceliği: kullanıcı konumu > seçilen semt > AI semt seçimi (2.7b; 3.0c şehir-bazlı)."""
     if gen_center:
         district = {"name": "konumunun çevresi", "lat": gen_center[0], "lng": gen_center[1], "vibes": []}
+        # Tüm-Türkiye: KONUMDAN üretimde şehir de konumdan türetilir — app'in aktif
+        # şehri başka ilde kalmış olabilir (Antalya'da üretilen rota İstanbul'a yazılmasın)
+        detected = norm_city(google_reverse_geocode_city(env, gen_center[0], gen_center[1]))
+        if detected in _TR_PROVINCES and detected != city:
+            city = detected
     elif gen_district:
         district = next((d for d in _DISTRICTS.get(city, []) if d["name"] == gen_district), None) \
             or _pick_district(city, intent.get("vibe_tags") or [], intent.get("mood") or "")
