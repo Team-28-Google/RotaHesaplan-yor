@@ -417,6 +417,71 @@ def google_places_search(env: dict, query: str, lat: float, lng: float,
     return out
 
 
+# --------------------------- Static Maps (4.0c) ---------------------------
+def encode_polyline(points: list[dict], precision: int = 5) -> str:
+    """[{lat,lng}] → Google encoded polyline (decode_polyline'ın tersi)."""
+    factor = 10 ** precision
+    out: list[str] = []
+    prev_lat = prev_lng = 0
+    for p in points:
+        lat, lng = round(p["lat"] * factor), round(p["lng"] * factor)
+        for delta in (lat - prev_lat, lng - prev_lng):
+            v = ~(delta << 1) if delta < 0 else (delta << 1)
+            while v >= 0x20:
+                out.append(chr((0x20 | (v & 0x1F)) + 63))
+                v >>= 5
+            out.append(chr(v + 63))
+        prev_lat, prev_lng = lat, lng
+    return "".join(out)
+
+
+# Paylaşım kartının koyu marka görünümü — app'in DARK_MAP_STYLE'ının kompakt hali
+_STATIC_DARK_STYLE = [
+    "element:geometry|color:0x141B33",
+    "element:labels.text.fill|color:0x8A93B8",
+    "element:labels.text.stroke|color:0x0B1022",
+    "feature:poi|visibility:off",
+    "feature:transit|visibility:off",
+    "feature:administrative|element:geometry|visibility:off",
+    "feature:road|element:labels.icon|visibility:off",
+    "feature:road|element:geometry|color:0x232C4E",
+    "feature:road.highway|element:geometry|color:0x2E3960",
+    "feature:water|element:geometry|color:0x0E1B33",
+    "feature:landscape|element:geometry|color:0x101731",
+]
+_LINE_COLORS = {"coral": "0xF4503BE6", "teal": "0x2DD4BFE6"}  # planlanan / yürünen
+
+
+def google_static_map(env: dict, points: list[dict], w: int = 608, h: int = 300,
+                      line: str = "coral") -> bytes | None:
+    """Rota izli koyu temalı harita PNG'si (Maps Static API) — paylaşım kartı arka planı.
+    Anahtar sunucuda kalır; app bu byte'ları /static-map proxy'sinden alır."""
+    key = _google_server_key(env)
+    if not key or len(points) < 2:
+        return None
+    params: list[tuple[str, str]] = [
+        ("size", f"{min(w, 640)}x{min(h, 640)}"),
+        ("scale", "2"),
+        ("maptype", "roadmap"),
+        ("path", f"color:{_LINE_COLORS.get(line, _LINE_COLORS['coral'])}|weight:4|enc:"
+                 + encode_polyline(points)),
+        # başlangıç yeşil, bitiş mercan nokta (kart dilindeki renkler)
+        ("markers", f"size:small|color:0x34D399|{points[0]['lat']:.5f},{points[0]['lng']:.5f}"),
+        ("markers", f"size:small|color:0xF4503B|{points[-1]['lat']:.5f},{points[-1]['lng']:.5f}"),
+        ("key", key),
+    ]
+    params += [("style", s) for s in _STATIC_DARK_STYLE]
+    url = "https://maps.googleapis.com/maps/api/staticmap?" + urllib.parse.urlencode(params)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "sana-ai"})
+        with urllib.request.urlopen(req, timeout=20, context=_SSL) as r:
+            if "image" not in (r.headers.get("Content-Type") or ""):
+                return None
+            return r.read()
+    except Exception:
+        return None
+
+
 # --------------------------- Roads + Geocoding (4.0c) ---------------------------
 def google_snap_to_roads(env: dict, points: list[dict]) -> list[dict]:
     """Ham GPS izini yola oturtur (Roads API snapToRoads, interpolate=true).

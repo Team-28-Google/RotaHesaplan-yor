@@ -10,12 +10,12 @@ HTTP/CORS taşıma katmanıdır (mobil app buraya konuşur).
 """
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.clients import (google_nav_leg, google_reverse_geocode_city, google_snap_to_roads,
-                         google_walk_leg, load_env, nvidia_embed)
+                         google_static_map, google_walk_leg, load_env, nvidia_embed)
 from app.pipeline import _TR_PROVINCES, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
@@ -221,6 +221,22 @@ def snap_track(req: SnapTrackRequest) -> dict:
     """Yürünen GPS izini yola oturtur (4.0c Roads). Hatada ok:false → app ham izi kullanır."""
     snapped = google_snap_to_roads(load_env(), [p.model_dump() for p in req.points])
     return {"ok": len(snapped) >= 2, "points": snapped}
+
+
+@app.get("/static-map")
+def static_map(path: str, w: int = 608, h: int = 300, line: str = "coral") -> Response:
+    """Rota izli koyu harita PNG'si (4.0c Static Maps) — paylaşım kartı arka planı.
+    path: "lat,lng|lat,lng|..." (≤100 nokta). Anahtar sunucuda kalır; görsel proxy'lenir."""
+    try:
+        pts = [{"lat": float(a), "lng": float(b)}
+               for a, b in (p.split(",", 1) for p in path.split("|") if p)][:100]
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail="path biçimi: lat,lng|lat,lng") from e
+    img = google_static_map(load_env(), pts, w, h, line)
+    if not img:
+        raise HTTPException(status_code=502, detail="static map üretilemedi (API kapalı olabilir)")
+    return Response(content=img, media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.post("/detect-city")
