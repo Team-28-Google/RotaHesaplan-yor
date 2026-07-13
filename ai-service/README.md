@@ -22,18 +22,31 @@ Sağlık kontrolü: http://127.0.0.1:8000/health · Swagger: http://127.0.0.1:80
 
 ```
 app/
-  config.py          # .env → Settings (pydantic-settings)
-  llm/provider.py    # Sağlayıcı soyutlama: NvidiaClient (gerçek) + GeminiClient (stub)
-  main.py            # FastAPI: /health, /embed, /plan-route
+  clients.py   # stdlib istemciler: NVIDIA NIM, Supabase REST, Google (Routes/Places/
+               # Weather/Geocoding/Roads), polyline decoder
+  pipeline.py  # deterministik pipeline: niyet → hafıza → hava → eşleştirme/ÜRETİM →
+               # anlatı; norm_city (81 il), enrich/embed/geometri işleri
+  main.py      # FastAPI: ince HTTP/CORS katmanı (uçlar aşağıda)
 ```
 
 ## Uçlar
 
-| Uç | Durum | Açıklama |
-|---|---|---|
-| `GET /health` | ✅ | Sağlayıcı + embed boyutu |
-| `POST /embed` | ✅ | `{text, input_type}` → embedding vektörü |
-| `POST /plan-route` | 🚧 Sprint 2 | Deterministik pipeline (Intent→Memory→Budget→Logistics→Flood) |
+| Uç | Açıklama |
+|---|---|
+| `GET /health` | Sağlayıcı bilgisi |
+| `POST /embed` | `{text, input_type}` → embedding vektörü (1024) |
+| `POST /plan-route` | Deterministik pipeline; `force_generate` ile AI üretici, `city` ile aktif şehir (81 il) |
+| `POST /nav-route` | Çok modlu canlı navigasyon (walk/transit/drive) — transit adımları, hat renkleri, alternatifler |
+| `POST /walk-route` | Eski istemciler için yürüme kısayolu |
+| `POST /detect-city` | Koordinat → il (Geocoding, tüm Türkiye; Datça→Mugla gibi kanonikleştirme) |
+| `POST /snap-track` | Ham GPS izini yola oturtur (Roads) |
+| `POST /search-place` | Mekan araması (Places New, aktif şehre bias'lı) |
+| `POST /enrich-route` | Kullanıcı duraklarına başlık/etiket/anlatı |
+| `POST /enrich-photos` | Fotosuz duraklara Places foto + puan |
+| `POST /route-geometry` | Duraklara gerçek sokak geometrisi |
+| `POST /embed-route` | Rotayı topluluk aramasına embed'ler |
+| `POST /memory/onboarding` · `/memory/event` | AI hafızası: profil + davranış |
+| `POST /summarize-comments` | ≥3 yorumda AI topluluk özeti (1 saat cache) |
 
 ## Hızlı test
 

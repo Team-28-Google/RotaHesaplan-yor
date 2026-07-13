@@ -17,9 +17,11 @@ _Şehirde yalnız değilsin._
 
 ## Takım Rolleri
 
+| İsim | Rol |
+|---|---|
 | Muhammet Mustafa KAPLAN | Product Owner |
-| Eda ÇARKÇI              | Scrum Master |
-| Betül SİRKECİ           | Developer |
+| Eda ÇARKÇI | Scrum Master |
+| Betül SİRKECİ | Developer |
 
 ## Ürün İsmi
 
@@ -41,6 +43,14 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 - **Gerçek Sokaklardan Geçen Rotalar** — Duraklar arası yollar harita üzerinde kuş uçuşu düz çizgiyle değil, gerçekten yürüyeceğin sokaklar ve tahmini yürüme süreleriyle gösterilir.
 - **Adım Adım Canlı Yürüyüş** — Yolculuk sırasında bulunduğun yerden sıradaki durağa giden yol çizilir; sen ilerledikçe rota kendini günceller, harita yürüdüğün yöne döner ve varış süresi anlık değişir. Tıpkı bir navigasyon uygulaması gibi, ama şehri keşfetmek için.
 - **Havaya Göre Uyum** — Yağmur varsa uygulama planını yeniden düşünür ve sana kapalı mekân alternatifleri önerir. Planın hava koşullarıyla uyumlu kalır.
+- **Yepyeni Rota Üretimi** — Havuzda sana uygun rota yoksa (ya da istersen) yapay zekâ, Google Places'tan topladığı gerçek mekânlardan sıfırdan rota kurar. **Türkiye'nin 81 ilinin hepsinde** çalışır; il için önceden veri girilmesi gerekmez.
+- **Konumdan Şehir Tespiti** — "Konumumdan bul" ile hangi ildeysen uygulama o ile geçer; rotalar, harita ve planlama oraya göre çalışır.
+- **Çok Modlu Canlı Navigasyon** — Yürüme, toplu taşıma ve araba modları. Toplu taşımada hatlar kendi renginde çizilir; biniş/iniş durakları, adım adım plan ve saatli alternatif kartları gösterilir. Rota 100 km'den uzaksa önce araba yolu önerilir.
+- **Fork ve Yayınlama** — Başkasının rotasına durak eklediğinde orijinal bozulmaz; kendi özel kopyan oluşur. "Rotanı paylaş" dediğinde herkese açılır.
+- **Ortak Koleksiyonlar ve Birlikte Düzenleme** — Davet linkiyle arkadaşını ekle; birlikte rota toplayın ya da aynı rotayı birlikte düzenleyin.
+- **Adil Liderlik** — Haftanın gezginleri ve en beğenilen rota yazarları. Yalnız durakların en az yarısına GPS ile gerçekten varılan yolculuklar sayılır — koltuktan "Bitir" liderliğe işlemez.
+- **Gerçek Harcama Bilgisi** — Rotayı gezenlerin bildirdiği ortalama maliyet ("ort. ₺X · N gezgin bildirdi") rota detayında görünür.
+- **Yürüdüğün İzin Kaydı** — Gerçek GPS izin kaydedilir ve yola oturtulur; paylaşım kartında "planlanan yol / yürüdüğüm iz" seçimi yapılır.
 - **Kendi Rotanı Oluştur** — Haritaya kendi duraklarını eklersin; uygulama rotana başlık, etiket ve akıcı bir hikâye yazarak sana yardımcı olur. Oluşturduğun rota kaydedilir ve başkalarıyla paylaşılabilir.
 - **Topluluk Deneyimi ve Yorumlar** — Rotalara yorum yapabilir, puan verebilirsin. Yeterince yorum biriktiğinde, o rotayı gezenlerin ortak izlenimlerini özetleyen kısa bir topluluk değerlendirmesi görürsün.
 - **Favoriler, İstatistikler ve Rozetler** — Beğendiğin rotaları kaydeder, tamamladığın yolculukların istatistiklerini ve kazandığın rozetleri profilinde bir arada görürsün.
@@ -53,18 +63,14 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 - Keşif ve deneyim odaklı gezginler
 - Rutinden uzaklaşmak, spontane plan yapmak isteyen 15–40 yaş arası şehir sakinleri
 - Gezdiği yerleri sosyal olarak paylaşmayı seven kullanıcılar
-- Başlangıç şehri İstanbul; mimari çok şehirli kullanıma uygun tasarlanmıştır
+- Türkiye'nin **81 ilinde** çalışır: hazır rota havuzu İstanbul + Ankara, İzmir, Bursa, Gaziantep, Muğla ile başlar; diğer illerde yapay zekâ rotayı anında üretir
 
 ## Product Backlog
 
 | Doküman | Bağlantı |
-
-| Product Backlog ve Sprint Dokümanı (Google Docs) |
-
- [Bağlantı](https://docs.google.com/document/d/1V6ZFwyk_IGDACvW2ceZccBPBLeglqC88d44AO_4shRs/edit?usp=sharing) |
-| Backlog ve Sprint Tablosu (Google Sheets) |
-
- [Bağlantı](https://docs.google.com/spreadsheets/d/1AVFdYQgp5Mha5J03qgG6b1DjximQ1Ydr351EOIji-Qg/edit?usp=sharing) |
+|---|---|
+| Product Backlog ve Sprint Dokümanı (Google Docs) | [Bağlantı](https://docs.google.com/document/d/1V6ZFwyk_IGDACvW2ceZccBPBLeglqC88d44AO_4shRs/edit?usp=sharing) |
+| Backlog ve Sprint Tablosu (Google Sheets) | [Bağlantı](https://docs.google.com/spreadsheets/d/1AVFdYQgp5Mha5J03qgG6b1DjximQ1Ydr351EOIji-Qg/edit?usp=sharing) |
 
 > **Not:** Google Docs birden fazla sekme içerir (Sprint 1/2/3, Daily Scrum(konuşma kayıtları)) ve ekran görüntülerinin bulunduğu ayrı bir **Ürün Görselleri** sekmesi barındırır. İnceleme sırasında sekmelerin kontrol edilmesi önerilir.
 
@@ -93,9 +99,9 @@ SANA, yapay zekâ öncelikli üç katmanlı bir mimariye sahiptir. Kimlik doğru
                                                │
               ┌────────────────────────────────┼───────────────────────┐
               ▼                                ▼                        ▼
-    Gemini 2.5-flash-lite          NVIDIA nv-embedqa-e5-v5      Google API'ler
-       (sohbet: niyet + anlatı)      (embedding, 1024 boyut)      Routes · Weather
-                                                                  + Photon/OSM (arama)
+    NVIDIA llama-3.1-8b-instruct   NVIDIA nv-embedqa-e5-v5      Google API'ler
+       (sohbet: niyet + anlatı)      (embedding, 1024 boyut)      Routes v2 · Places (New)
+                                                                  Weather · Geocoding · Roads
 ```
 
 ### Yapay Zekâ Pipeline'ı
@@ -103,27 +109,33 @@ SANA, yapay zekâ öncelikli üç katmanlı bir mimariye sahiptir. Kimlik doğru
 Plan üretimi, her aşaması ölçülen ve kullanıcıya gösterilen altı adımlı deterministik bir akıştır:
 
 ```
-1. Niyet Çözümleme   Serbest metin, yapılandırılmış JSON'a çevrilir (ruh hali, bütçe, tercih)
-2. Hafıza Tarama     Kullanıcının onboarding profili ve son davranışları okunur
-3. Hava Kontrolü     Google Weather API (yağış durumunda kapalı mekân eğilimi)
-4. Rota Eşleştirme   NVIDIA embedding, pgvector kosinüs benzerliği (match_routes)
-5. Rota Seçimi       Bütçe, hava ve tercih filtreleri uygulanır
-6. Anlatı Yazımı     Seçilen rota için sıcak, kişiselleştirilmiş günlük anlatısı üretilir
+1. Niyet Çözümleme    Serbest metin, yapılandırılmış JSON'a çevrilir; şehir adı 81 il
+                      listesine karşı doğrulanır (halüsinasyon koruması)
+2. Hafıza Tarama      Kullanıcının onboarding profili ve son davranışları okunur
+3. Hava Kontrolü      Google Weather API (yağış durumunda kapalı mekân eğilimi)
+4. Rota Eşleştirme    NVIDIA embedding, pgvector kosinüs benzerliği (match_routes)
+   └─ ÜRETİM YOLU     Havuz boşsa ya da kullanıcı isterse: Google Places'tan gerçek
+                      mekân adayları → LLM yalnız SEÇİM yapar (uydurma imkânsız) →
+                      anlatı ikinci geçişte yazılır; il merkezi Geocoding'den bulunur
+5. Rota Seçimi        Bütçe, hava, görünürlük (özel rota sahibine) filtreleri
+6. Anlatı Yazımı      Seçilen rota için sıcak, kişiselleştirilmiş günlük anlatısı
 ```
 
-> **Model stratejisi:** Sohbet çağrıları Gemini, embedding işlemleri NVIDIA ile yürütülür (vektör boyutu veritabanı şemasında 1024 olarak sabittir). Sağlayıcı, `LLM_PROVIDER` ortam değişkeniyle değiştirilebilir.
+> **Model stratejisi:** Sohbet ve embedding NVIDIA NIM üzerinden yürütülür
+> (llama-3.1-8b-instruct + nv-embedqa-e5-v5; vektör boyutu şemada 1024 sabittir).
+> Sağlayıcı `LLM_PROVIDER` ortam değişkeniyle değiştirilebilir.
 
 ## Teknoloji Yığını
 
 | Katman | Teknoloji |
 |---|---|
-| Mobil | React Native, Expo SDK 54, TypeScript, React Navigation, expo-image, expo-haptics |
-| Harita | react-native-maps (Google), Routes API (geometri ve navigasyon), Weather API |
-| Backend | Supabase — PostgreSQL, pgvector (HNSW), Row Level Security, Auth, Storage |
-| AI Servis | Python, FastAPI, deterministik pipeline |
-| Dil Modelleri | Gemini 2.5-flash-lite (sohbet), NVIDIA nv-embedqa-e5-v5 (embedding) |
-| Arama | Photon / OpenStreetMap (sunucusuz, anahtarsız) |
-| Dağıtım | EAS Update (Expo Go önizleme linki), Render (AI servis) |
+| Mobil | React Native, Expo SDK 54, TypeScript, React Navigation, expo-image, expo-haptics, expo-location, expo-linking (davet deep link'leri) |
+| Harita | react-native-maps (Google), Routes v2 (çok modlu navigasyon + transit hatları), Weather, Geocoding (il tespiti), Roads (iz düzeltme) |
+| Backend | Supabase — PostgreSQL, pgvector (HNSW), Row Level Security, security-definer RPC'ler, Auth, Storage |
+| AI Servis | Python, FastAPI, deterministik pipeline (stdlib istemciler), Render blueprint |
+| Dil Modelleri | NVIDIA NIM — llama-3.1-8b-instruct (sohbet), nv-embedqa-e5-v5 (embedding) |
+| Arama | Google Places (New) — aktif şehir merkezine bias'lı Text Search |
+| Dağıtım | EAS Update (Expo Go önizleme linki), Render (AI servis, push'ta otomatik deploy) |
 
 ## Monorepo Yapısı
 
@@ -142,7 +154,7 @@ cp app/.env.example app/.env
 cp ai-service/.env.example ai-service/.env
 
 # 2) Veritabanı — Supabase SQL editöründe sırayla çalıştırın
-#    supabase/migrations/0001 ... 0006
+#    supabase/migrations/0001 ... 0016
 
 # 3) AI servis
 cd ai-service && python -m venv .venv
@@ -154,6 +166,10 @@ cd app && npm install && npx expo start
 ```
 
 > Güncel geliştirme durumu ve teknik kararlar için [`PROGRESS.md`](PROGRESS.md), yol haritası için [`docs/ROADMAP.md`](docs/ROADMAP.md) dosyalarına bakınız.
+
+## Lisans
+
+Bu proje [MIT lisansı](LICENSE) ile lisanslanmıştır.
 
 ---
 
