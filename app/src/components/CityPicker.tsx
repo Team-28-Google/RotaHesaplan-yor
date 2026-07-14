@@ -94,12 +94,12 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   ).current;
   useEffect(() => { if (visible) dragY.setValue(0); }, [visible, dragY]);
 
-  // Şehir başına rota sayısı — sheet açılınca tek hafif sorgu (yalnızca city kolonu)
+  // Şehir başına rota sayısı — sunucuda gruplanır (0021); yalnız herkese açık rotalar
   useEffect(() => {
     if (!visible) return;
-    supabase.from("routes").select("city").then(({ data }) => {
+    supabase.rpc("city_route_counts").then(({ data }) => {
       const c: Record<string, number> = {};
-      for (const r of data ?? []) c[r.city as string] = (c[r.city as string] ?? 0) + 1;
+      for (const r of (data ?? []) as { city: string; n: number }[]) c[r.city] = r.n;
       setCounts(c);
     });
   }, [visible]);

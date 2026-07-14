@@ -9,8 +9,8 @@ import Icon from "../components/Icon";
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
 import {
-  currentUserId, fetchCollection, getOrCreateCollectionToken, removeRouteFromCollection,
-  type CollectionMember,
+  currentUserId, fetchCollection, getOrCreateCollectionToken, leaveCollection,
+  removeRouteFromCollection, renameCollection, type CollectionMember,
 } from "../lib/api";
 import { INVITE_URL } from "../lib/config";
 import { tap } from "../lib/haptics";
@@ -25,22 +25,67 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { collectionId, title, emoji } = nav.params;
+  const { collectionId, emoji } = nav.params;
+  const [title, setTitle] = useState(nav.params.title);
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
   const [members, setMembers] = useState<CollectionMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const isOwner = !!uid && uid === ownerId;
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       currentUserId().then((u) => { if (active) setUid(u); });
       fetchCollection(collectionId)
-        .then(({ routes: r, members: m }) => { if (active) { setRoutes(r); setMembers(m); } })
+        .then(({ routes: r, members: m, ownerId: o }) => {
+          if (active) { setRoutes(r); setMembers(m); setOwnerId(o); }
+        })
         .finally(() => { if (active) setLoading(false); });
       return () => { active = false; };
     }, [collectionId]),
   );
+
+  // Rol tabanlı yönetim (0020): sahibi yeniden adlandırır; üye koleksiyondan ayrılır
+  const openManage = () => {
+    tap();
+    const opts: { text: string; style?: "destructive" | "cancel"; onPress?: () => void }[] = [];
+    if (isOwner) {
+      opts.push({ text: "Yeniden adlandır", onPress: promptRename });
+    } else if (uid) {
+      opts.push({
+        text: "Koleksiyondan ayrıl", style: "destructive",
+        onPress: () => {
+          Alert.alert("Ayrıl", `"${title}" koleksiyonundan ayrılınsın mı?`, [
+            { text: "Vazgeç", style: "cancel" },
+            {
+              text: "Ayrıl", style: "destructive",
+              onPress: async () => {
+                if (await leaveCollection(collectionId)) navigation.goBack();
+                else Alert.alert("Olmadı", "Ayrılınamadı — tekrar dene.");
+              },
+            },
+          ]);
+        },
+      });
+    }
+    opts.push({ text: "Vazgeç", style: "cancel" });
+    Alert.alert(title, undefined, opts);
+  };
+
+  const promptRename = () => {
+    Alert.prompt?.(
+      "Yeniden adlandır", "Koleksiyonun yeni adı:",
+      async (text?: string) => {
+        const t = (text ?? "").trim();
+        if (!t || t === title) return;
+        if (await renameCollection(collectionId, t)) setTitle(t);
+        else Alert.alert("Olmadı", "Ad değiştirilemedi.");
+      },
+      "plain-text", title,
+    ) ?? Alert.alert("Desteklenmiyor", "Yeniden adlandırma bu cihazda kullanılamıyor.");
+  };
 
   const invite = async () => {
     tap();
@@ -79,7 +124,11 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
           <Text style={styles.back}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{emoji ? `${emoji} ` : ""}{title}</Text>
-        <View style={{ width: 24 }} />
+        {uid ? (
+          <TouchableOpacity onPress={openManage} hitSlop={10}>
+            <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
+          </TouchableOpacity>
+        ) : <View style={{ width: 24 }} />}
       </View>
 
       {/* Üyeler + davet */}

@@ -1,4 +1,4 @@
-import { AI_SERVICE_URL } from "./config";
+import { AI_SERVICE_URL, APP_KEY } from "./config";
 import { getActiveCity, registerCity } from "./cities";
 import { supabase } from "./supabase";
 import type { CreateStop, EnrichResult, LeaderRow, PlaceResult, PlanResponse, RouteWithWaypoints, Waypoint } from "./types";
@@ -16,6 +16,9 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   }
 }
 const isAbort = (e: unknown) => e instanceof Error && e.name === "AbortError";
+
+/** Anonim maliyet uçlarına bot kalkanı header'ı (#3a); APP_KEY boşsa boş obje. */
+const appKeyHeader: Record<string, string> = APP_KEY ? { "X-App-Key": APP_KEY } : {};
 
 /** Servise kimlik (güvenlik): Supabase oturum token'ı — servis user_id'yi gövdeden
  *  değil BU token'dan doğrular. Oturum yoksa boş obje (anonim uçlar çalışmaya devam eder). */
@@ -197,9 +200,9 @@ export async function createCollection(title: string, emoji: string): Promise<st
 
 /** Koleksiyon içeriği: rotalar (RLS erişilebilenler) + üyeler. */
 export async function fetchCollection(collectionId: string): Promise<{
-  routes: RouteWithWaypoints[]; members: CollectionMember[];
+  routes: RouteWithWaypoints[]; members: CollectionMember[]; ownerId: string | null;
 }> {
-  const [routesRes, membersRes] = await Promise.all([
+  const [routesRes, membersRes, colRes] = await Promise.all([
     supabase.from("collection_routes")
       .select("routes(*, waypoints(*))")
       .eq("collection_id", collectionId)
@@ -207,6 +210,7 @@ export async function fetchCollection(collectionId: string): Promise<{
     supabase.from("collection_members")
       .select("user_id, profiles(username, avatar_url)")
       .eq("collection_id", collectionId),
+    supabase.from("collections").select("owner_id").eq("id", collectionId).maybeSingle(),
   ]);
   const routes = (routesRes.data ?? [])
     .map((r) => (r as unknown as { routes: RouteWithWaypoints }).routes)
@@ -218,7 +222,7 @@ export async function fetchCollection(collectionId: string): Promise<{
     username: m.profiles?.username ?? "gezgin",
     avatar_url: m.profiles?.avatar_url ?? null,
   }));
-  return { routes, members };
+  return { routes, members, ownerId: (colRes.data?.owner_id as string) ?? null };
 }
 
 export async function addRouteToCollection(collectionId: string, routeId: string): Promise<boolean> {
@@ -234,13 +238,32 @@ export async function removeRouteFromCollection(collectionId: string, routeId: s
     .delete().eq("collection_id", collectionId).eq("route_id", routeId);
 }
 
-/** Koleksiyon davet token'ı (yalnız sahibi — RLS). */
+/** Koleksiyondan ayrıl (0020): üye kendini çıkarır → RLS izin verir. */
+export async function leaveCollection(collectionId: string): Promise<boolean> {
+  const uid = await currentUserId();
+  if (!uid) return false;
+  const { error } = await supabase.from("collection_members")
+    .delete().eq("collection_id", collectionId).eq("user_id", uid);
+  return !error;
+}
+
+/** Koleksiyonu yeniden adlandır (0020): yalnız sahibi — RLS. */
+export async function renameCollection(collectionId: string, title: string, emoji?: string): Promise<boolean> {
+  const patch: Record<string, string> = { title: title.trim() };
+  if (emoji) patch.emoji = emoji;
+  const { error } = await supabase.from("collections").update(patch).eq("id", collectionId);
+  return !error;
+}
+
+/** Koleksiyon davet token'ı (yalnız sahibi — RLS). Yarış düzeltmesi (upsert). */
 export async function getOrCreateCollectionToken(collectionId: string): Promise<string | null> {
   const { data } = await supabase
     .from("collection_share_tokens").select("token").eq("collection_id", collectionId).maybeSingle();
   if (data?.token) return data.token as string;
   const { data: ins, error } = await supabase
-    .from("collection_share_tokens").insert({ collection_id: collectionId }).select("token").single();
+    .from("collection_share_tokens")
+    .upsert({ collection_id: collectionId }, { onConflict: "collection_id" })
+    .select("token").single();
   if (error) return null;
   return (ins?.token as string) ?? null;
 }
@@ -253,13 +276,16 @@ export async function joinCollectionByToken(token: string): Promise<string | nul
 }
 
 // --------------------------- Ortak düzenleme (3.7) ---------------------------
-/** Rota sahibi için davet token'ı getirir (yoksa üretir) — RLS: yalnız sahibi. */
+/** Rota sahibi için davet token'ı getirir (yoksa üretir) — RLS: yalnız sahibi.
+ *  Yarış düzeltmesi (upsert): eşzamanlı çift dokunuşta çakışmaz. */
 export async function getOrCreateShareToken(routeId: string): Promise<string | null> {
   const { data } = await supabase
     .from("route_share_tokens").select("token").eq("route_id", routeId).maybeSingle();
   if (data?.token) return data.token as string;
   const { data: ins, error } = await supabase
-    .from("route_share_tokens").insert({ route_id: routeId }).select("token").single();
+    .from("route_share_tokens")
+    .upsert({ route_id: routeId }, { onConflict: "route_id" })
+    .select("token").single();
   if (error) return null;
   return (ins?.token as string) ?? null;
 }
@@ -493,7 +519,7 @@ export async function planRoute(
   try {
     res = await fetchWithTimeout(`${AI_SERVICE_URL}/plan-route`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      headers: { "Content-Type": "application/json", ...appKeyHeader, ...(await authHeaders()) },
       body: JSON.stringify({
         text,
         user_id: uid ?? undefined,
@@ -559,7 +585,7 @@ export async function fetchNavRoute(
   try {
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/nav-route`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
       body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng, mode }),
     }, 15_000);
     if (res.ok) {
@@ -571,7 +597,7 @@ export async function fetchNavRoute(
     if (mode === "walk" && res.status === 404) {
       const legacy = await fetchWithTimeout(`${AI_SERVICE_URL}/walk-route`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...appKeyHeader },
         body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng }),
       }, 12_000);
       if (!legacy.ok) return null;
@@ -601,7 +627,7 @@ export async function searchCities(
   try {
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/search-city`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
       body: JSON.stringify({ q: q.trim() }),
     }, 10_000);
     if (!res.ok) return [];
@@ -622,7 +648,9 @@ export function staticMapUrl(
   const step = Math.max(1, Math.ceil(points.length / 60)); // URL makul kalsın
   const pts = points.filter((_, i) => i % step === 0 || i === points.length - 1);
   const path = pts.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join("|");
-  return `${AI_SERVICE_URL}/static-map?path=${encodeURIComponent(path)}&w=${w}&h=${h}&line=${line}`;
+  // Image kaynağı header taşıyamaz → app-key ?k= ile gider (#3a)
+  const kq = APP_KEY ? `&k=${encodeURIComponent(APP_KEY)}` : "";
+  return `${AI_SERVICE_URL}/static-map?path=${encodeURIComponent(path)}&w=${w}&h=${h}&line=${line}${kq}`;
 }
 
 /** Yürünen GPS izini yola oturtur (4.0c Roads API). Servis/anahtar hazır değilse
@@ -634,7 +662,7 @@ export async function snapTrack(
   try {
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/snap-track`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
       body: JSON.stringify({ points }),
     }, 8_000);
     if (!res.ok) return null;
@@ -651,7 +679,7 @@ export async function detectCity(lat: number, lng: number): Promise<{ key: strin
   try {
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/detect-city`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
       body: JSON.stringify({ lat, lng }),
     }, 10_000);
     if (!res.ok) return null;
@@ -727,7 +755,7 @@ export async function searchPlaces(q: string): Promise<PlaceResult[]> {
   try {
     res = await fetchWithTimeout(`${AI_SERVICE_URL}/search-place`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
       body: JSON.stringify({ q, city: await getActiveCity() }),
     }, 20_000);
   } catch (e) {

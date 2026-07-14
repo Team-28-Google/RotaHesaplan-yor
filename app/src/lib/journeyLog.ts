@@ -56,7 +56,8 @@ async function insertRemote(entry: JourneyEntry): Promise<string | null> {
       created_at: entry.date, // kuyruktan geç gönderilse de yolculuk zamanı korunur
       path: entry.path ?? null, // 4.2 — kolon yoksa (0011 öncesi) insert hata verir → kuyruk korur
       spent_try: entry.spent_try ?? null, // 3.8
-      verified: entry.verified ?? false,  // 3.11
+      // verified GÖNDERİLMEZ: sunucu trigger'ı izi duraklarla karşılaştırıp KENDİSİ
+      // hesaplar (0023, güvenlik #4). Yerel kopya kendi tahminini gösterir (offline).
     }).select("id").single();
     if (error) return null;
     return (data?.id as string) ?? null;

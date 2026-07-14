@@ -14,9 +14,10 @@ from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import (google_nav_leg, google_reverse_geocode_place, google_search_city,
-                         google_snap_to_roads, google_static_map, google_walk_leg, load_env,
-                         nvidia_embed, sb_select, verify_supabase_token)
+from app.clients import (app_key_ok, google_nav_leg, google_reverse_geocode_place,
+                         google_search_city, google_snap_to_roads, google_static_map,
+                         google_walk_leg, load_env, nvidia_embed, sb_select,
+                         verify_supabase_token)
 from app.pipeline import _TR_PROVINCES, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
@@ -121,6 +122,13 @@ def _uid_or_401(authorization: str | None) -> str:
     return uid
 
 
+def _guard_app_key(x_app_key: str | None, k: str | None = None) -> None:
+    """Anonim (oturumsuz) maliyet uçları için bot kalkanı (#3a): app-key header'ı
+    ya da ?k= sorgu parametresi. SANA_APP_SECRET tanımlı değilse serbest."""
+    if not app_key_ok(load_env(), x_app_key or k):
+        raise HTTPException(status_code=403, detail="Geçersiz istek")
+
+
 def _can_touch_route(env: dict, uid: str, route_id: str) -> bool:
     """Rota mutasyonu izni: sahibi ya da collaborator (geometri/foto vandalizmi kapanır)."""
     rows = sb_select(env, "routes", f"select=author_id&id=eq.{route_id}") or []
@@ -149,11 +157,14 @@ def embed(req: EmbedRequest) -> dict:
 
 
 @app.post("/plan-route")
-def plan_route(req: PlanRouteRequest, authorization: str | None = Header(None)) -> dict:
+def plan_route(req: PlanRouteRequest, authorization: str | None = Header(None),
+               x_app_key: str | None = Header(None)) -> dict:
     """Deterministik AI pipeline: niyet (+kullanıcı hafızası) → rota → AI flood anlatısı.
     user_id gövdeden DEĞİL token'dan alınır — başkasının profiliyle plan çekilemez;
     token yoksa plan anonim çalışır (kişiselleştirmesiz, üretim yazarı seed)."""
     uid = verify_supabase_token(load_env(), authorization)
+    if uid is None:  # oturumsuz plan yine mümkün ama bot kalkanından geçmeli (#3a)
+        _guard_app_key(x_app_key)
     try:
         gen_center = (req.gen_lat, req.gen_lng) if req.gen_lat is not None and req.gen_lng is not None else None
         return run_pipeline(req.text, uid, req.force_weather_fit, req.force_generate,
@@ -214,15 +225,17 @@ def embed_route(req: EmbedRouteRequest, authorization: str | None = Header(None)
 
 
 @app.post("/walk-route")
-def walk_route(req: WalkRouteRequest) -> dict:
+def walk_route(req: WalkRouteRequest, x_app_key: str | None = Header(None)) -> dict:
     """Canlı navigasyon: kullanıcı konumu → hedef durak yürüme rotası (journey modu)."""
+    _guard_app_key(x_app_key)
     leg = google_walk_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng)
     return {"ok": bool(leg), **(leg or {})}
 
 
 @app.post("/nav-route")
-def nav_route(req: NavRouteRequest) -> dict:
+def nav_route(req: NavRouteRequest, x_app_key: str | None = Header(None)) -> dict:
     """Çok modlu canlı navigasyon (4.0): 🚶 walk / 🚌 transit (+hat bilgisi) / 🚗 drive."""
+    _guard_app_key(x_app_key)
     leg = google_nav_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng, req.mode)
     return {"ok": bool(leg), **(leg or {})}
 
@@ -254,22 +267,27 @@ def route_geometry(req: EmbedRouteRequest, authorization: str | None = Header(No
 
 
 @app.post("/search-place")
-def search_place(req: SearchRequest) -> dict:
+def search_place(req: SearchRequest, x_app_key: str | None = Header(None)) -> dict:
     """Mekan araması — Google Places (New), aktif şehre bias'lı (SerpApi yedek)."""
+    _guard_app_key(x_app_key)
     return {"results": run_search_places(req.q, req.city)}
 
 
 @app.post("/snap-track")
-def snap_track(req: SnapTrackRequest) -> dict:
+def snap_track(req: SnapTrackRequest, x_app_key: str | None = Header(None)) -> dict:
     """Yürünen GPS izini yola oturtur (4.0c Roads). Hatada ok:false → app ham izi kullanır."""
+    _guard_app_key(x_app_key)
     snapped = google_snap_to_roads(load_env(), [p.model_dump() for p in req.points])
     return {"ok": len(snapped) >= 2, "points": snapped}
 
 
 @app.get("/static-map")
-def static_map(path: str, w: int = 608, h: int = 300, line: str = "coral") -> Response:
+def static_map(path: str, w: int = 608, h: int = 300, line: str = "coral",
+               k: str | None = None) -> Response:
     """Rota izli koyu harita PNG'si (4.0c Static Maps) — paylaşım kartı arka planı.
-    path: "lat,lng|lat,lng|..." (≤100 nokta). Anahtar sunucuda kalır; görsel proxy'lenir."""
+    path: "lat,lng|lat,lng|..." (≤100 nokta). Anahtar sunucuda kalır; görsel proxy'lenir.
+    Image kaynağı header taşıyamadığı için app-key ?k= ile gelir (#3a)."""
+    _guard_app_key(None, k)
     try:
         pts = [{"lat": float(a), "lng": float(b)}
                for a, b in (p.split(",", 1) for p in path.split("|") if p)][:100]
@@ -283,9 +301,10 @@ def static_map(path: str, w: int = 608, h: int = 300, line: str = "coral") -> Re
 
 
 @app.post("/detect-city")
-def detect_city(req: DetectCityRequest) -> dict:
+def detect_city(req: DetectCityRequest, x_app_key: str | None = Header(None)) -> dict:
     """Konumdan şehir algılama (Geocoding, TÜM DÜNYA): TR'de il → kanonik ad
     (Datça→Mugla); yurtdışında şehir adı aynen (Berlin). Çözülemezse city:null."""
+    _guard_app_key(x_app_key)
     place = google_reverse_geocode_place(load_env(), req.lat, req.lng)
     if not place:
         return {"ok": False, "province": None, "city": None, "country": None}
@@ -300,7 +319,8 @@ def detect_city(req: DetectCityRequest) -> dict:
 
 
 @app.post("/search-city")
-def search_city(req: CitySearchRequest) -> dict:
+def search_city(req: CitySearchRequest, x_app_key: str | None = Header(None)) -> dict:
     """DÜNYA şehir araması (Geocoding forward) — app'in şehir seçicisindeki arama
     kutusunu besler; yalnız şehir/il tipi sonuçlar döner."""
+    _guard_app_key(x_app_key)
     return {"results": google_search_city(load_env(), req.q)}

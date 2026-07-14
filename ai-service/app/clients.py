@@ -38,7 +38,7 @@ def load_env(path: str | None = None) -> dict:
         if os.environ.get(k):
             env[k] = os.environ[k]
     # .env dosyası olmayan ortamlar (Render vb.): ilgili değişkenleri os.environ'dan tamamla
-    _PREFIXES = ("SUPABASE_", "NVIDIA_", "GOOGLE_", "GEMINI_", "OPENWEATHER", "LLM_", "EMBED_")
+    _PREFIXES = ("SUPABASE_", "NVIDIA_", "GOOGLE_", "GEMINI_", "OPENWEATHER", "LLM_", "EMBED_", "SANA_")
     for k, v in os.environ.items():
         if k not in env and k.startswith(_PREFIXES):
             env[k] = v
@@ -112,6 +112,17 @@ def _sb_headers(env: dict) -> dict:
 # gönderdiği Supabase oturum token'ından alınır — başkası adına hafıza yazma/okuma
 # ve rota değiştirme kapanır.
 _TOKEN_CACHE: dict[str, tuple[str, float]] = {}
+
+
+def app_key_ok(env: dict, provided: str | None) -> bool:
+    """Anonim uçlar için basit bot kalkanı (güvenlik review #3a): app derlemesine
+    gömülü paylaşımlı sır. SANA_APP_SECRET tanımlı DEĞİLSE kontrol atlanır (kurulmadan
+    hiçbir şey bozulmaz). Gerçek sır değil — amaç URL'i keşfeden rastgele botların
+    ücretsiz Google kotamızı eritmesini engellemek (fatura zaten 0 TL tavanlı)."""
+    secret = env.get("SANA_APP_SECRET")
+    if not secret:
+        return True
+    return provided == secret
 
 
 def verify_supabase_token(env: dict, authorization: str | None) -> str | None:

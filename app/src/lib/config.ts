@@ -18,6 +18,11 @@ export const AUTH_ENABLED = true;
 export const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL ?? "";
 export const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD ?? "";
 
+// Servis bot kalkanı (güvenlik #3a): anonim maliyet uçlarına gönderilen paylaşımlı
+// sır. Gerçek sır değil (derlemeye gömülür) — amaç rastgele botları elemek.
+// app/.env → EXPO_PUBLIC_APP_KEY; servis → SANA_APP_SECRET (aynı değer). Boşsa kontrol yok.
+export const APP_KEY = process.env.EXPO_PUBLIC_APP_KEY ?? "";
+
 // Davet linki (3.6) — EAS Update preview kanalı; Expo Go'da açılır, APK gerekmez.
 // projectId app.json extra.eas.projectId ile aynı olmalı. Güncel link: npm run share:link
 export const INVITE_URL = "exp://u.expo.dev/56ef00aa-02fe-4a2f-89c6-fc8ac4ae31cf?channel-name=preview";
