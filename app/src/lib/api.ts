@@ -307,10 +307,10 @@ export async function fetchSpendStats(routeId: string): Promise<{ avg: number; r
   }
 }
 
-/** Haftalık liderlik (3.5) — view yoksa/boşsa sessizce boş liste. */
+/** Haftalık liderlik (3.5) — 0018: view yerine kontrollü RPC (Security Advisor fix'i). */
 export async function fetchWeeklyLeaderboard(): Promise<LeaderRow[]> {
   try {
-    const { data, error } = await supabase.from("weekly_leaderboard").select("*");
+    const { data, error } = await supabase.rpc("weekly_leaderboard");
     if (error) return [];
     return (data ?? []) as LeaderRow[];
   } catch {
@@ -328,7 +328,7 @@ export interface AuthorLeaderRow {
 }
 export async function fetchAuthorLeaderboard(): Promise<AuthorLeaderRow[]> {
   try {
-    const { data, error } = await supabase.from("author_likes_leaderboard").select("*");
+    const { data, error } = await supabase.rpc("author_likes_leaderboard");
     if (error) return [];
     return (data ?? []) as AuthorLeaderRow[];
   } catch {
