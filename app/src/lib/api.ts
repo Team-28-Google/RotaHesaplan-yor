@@ -17,6 +17,18 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 }
 const isAbort = (e: unknown) => e instanceof Error && e.name === "AbortError";
 
+/** Servise kimlik (güvenlik): Supabase oturum token'ı — servis user_id'yi gövdeden
+ *  değil BU token'dan doğrular. Oturum yoksa boş obje (anonim uçlar çalışmaya devam eder). */
+async function authHeaders(): Promise<Record<string, string>> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const t = data.session?.access_token;
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 /** Tüm rotaları sıralı waypoint'leriyle birlikte getirir (en yeni önce). */
 export async function fetchRoutes(city?: string): Promise<RouteWithWaypoints[]> {
   let q = supabase
@@ -272,10 +284,11 @@ export async function canEditRoute(routeId: string, authorId: string): Promise<b
 
 /** Durak değişince arka planda geometri + foto/puanı tazeler (hatalar yutulur). */
 export async function refreshRouteExtras(routeId: string): Promise<void> {
+  const auth = await authHeaders(); // servis artık sahiplik doğruluyor
   const post = (path: string) =>
     fetchWithTimeout(`${AI_SERVICE_URL}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ route_id: routeId }),
     }, 45_000).then(() => undefined, () => undefined);
   await Promise.all([post("/route-geometry"), post("/enrich-photos")]);
@@ -480,7 +493,7 @@ export async function planRoute(
   try {
     res = await fetchWithTimeout(`${AI_SERVICE_URL}/plan-route`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({
         text,
         user_id: uid ?? undefined,
@@ -658,7 +671,7 @@ export async function syncOnboardingMemory(vibes: string[], budget: number): Pro
     if (!uid) return false;
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/memory/onboarding`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ user_id: uid, vibes, budget }),
     }, 20_000);
     return res.ok;
@@ -670,11 +683,11 @@ export async function syncOnboardingMemory(vibes: string[], budget: number): Pro
 /** Davranış hafızası (2.2): favori/yolculuk/yorum olayını AI hafızasına işler.
  *  Fire-and-forget — başarısızlık app akışını etkilemez. */
 export function sendMemoryEvent(kind: "favorite" | "journey" | "comment", routeId: string): void {
-  currentUserId().then((uid) => {
+  Promise.all([currentUserId(), authHeaders()]).then(([uid, auth]) => {
     if (!uid) return;
     fetchWithTimeout(`${AI_SERVICE_URL}/memory/event`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ user_id: uid, kind, route_id: routeId }),
     }, 15_000).catch(() => {});
   }).catch(() => {});
@@ -797,10 +810,11 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
   if (wErr) throw wErr;
 
   // hafızaya embedle (başkalarının AI aramasında çıksın) — başarısız olsa da rota kayıtlı
+  const auth = await authHeaders(); // servis artık kimlik/sahiplik doğruluyor
   try {
     await fetchWithTimeout(`${AI_SERVICE_URL}/embed-route`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ route_id: routeId }),
     }, 20_000);
   } catch { /* yoksay */ }
@@ -809,7 +823,7 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
   try {
     await fetchWithTimeout(`${AI_SERVICE_URL}/route-geometry`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ route_id: routeId }),
     }, 45_000);
   } catch { /* yoksay */ }
@@ -818,7 +832,7 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
   try {
     await fetchWithTimeout(`${AI_SERVICE_URL}/enrich-photos`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ route_id: routeId }),
     }, 45_000);
   } catch { /* yoksay */ }

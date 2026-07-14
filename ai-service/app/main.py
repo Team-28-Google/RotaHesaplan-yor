@@ -10,13 +10,13 @@ HTTP/CORS taşıma katmanıdır (mobil app buraya konuşur).
 """
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.clients import (google_nav_leg, google_reverse_geocode_place, google_search_city,
                          google_snap_to_roads, google_static_map, google_walk_leg, load_env,
-                         nvidia_embed)
+                         nvidia_embed, sb_select, verify_supabase_token)
 from app.pipeline import _TR_PROVINCES, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
@@ -112,6 +112,27 @@ class CitySearchRequest(BaseModel):
     q: str = Field(..., min_length=2)
 
 
+# ---- Kimlik yardımcıları (güvenlik review #1) ----
+def _uid_or_401(authorization: str | None) -> str:
+    """Geçerli Supabase oturumu şart olan uçlar için: token → uid, yoksa 401."""
+    uid = verify_supabase_token(load_env(), authorization)
+    if not uid:
+        raise HTTPException(status_code=401, detail="Giriş doğrulanamadı")
+    return uid
+
+
+def _can_touch_route(env: dict, uid: str, route_id: str) -> bool:
+    """Rota mutasyonu izni: sahibi ya da collaborator (geometri/foto vandalizmi kapanır)."""
+    rows = sb_select(env, "routes", f"select=author_id&id=eq.{route_id}") or []
+    if not rows:
+        return False
+    if rows[0].get("author_id") == uid:
+        return True
+    c = sb_select(env, "route_collaborators",
+                  f"select=user_id&route_id=eq.{route_id}&user_id=eq.{uid}") or []
+    return bool(c)
+
+
 @app.get("/health")
 def health() -> dict:
     env = load_env()
@@ -128,30 +149,37 @@ def embed(req: EmbedRequest) -> dict:
 
 
 @app.post("/plan-route")
-def plan_route(req: PlanRouteRequest) -> dict:
-    """Deterministik AI pipeline: niyet (+kullanıcı hafızası) → rota → AI flood anlatısı."""
+def plan_route(req: PlanRouteRequest, authorization: str | None = Header(None)) -> dict:
+    """Deterministik AI pipeline: niyet (+kullanıcı hafızası) → rota → AI flood anlatısı.
+    user_id gövdeden DEĞİL token'dan alınır — başkasının profiliyle plan çekilemez;
+    token yoksa plan anonim çalışır (kişiselleştirmesiz, üretim yazarı seed)."""
+    uid = verify_supabase_token(load_env(), authorization)
     try:
         gen_center = (req.gen_lat, req.gen_lng) if req.gen_lat is not None and req.gen_lng is not None else None
-        return run_pipeline(req.text, req.user_id, req.force_weather_fit, req.force_generate,
+        return run_pipeline(req.text, uid, req.force_weather_fit, req.force_generate,
                             gen_center, req.gen_district, req.city)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
 
 
 @app.post("/memory/onboarding")
-def memory_onboarding(req: OnboardingMemoryRequest) -> dict:
-    """Onboarding tercihlerini kullanıcı profili olarak AI hafızasına yazar."""
+def memory_onboarding(req: OnboardingMemoryRequest, authorization: str | None = Header(None)) -> dict:
+    """Onboarding tercihlerini kullanıcı profili olarak AI hafızasına yazar.
+    Kimlik TOKEN'dan — gövdedeki user_id yok sayılır (başkasının hafızası ezilemez)."""
+    uid = _uid_or_401(authorization)
     try:
-        return save_onboarding_memory(req.user_id, req.vibes, req.budget)
+        return save_onboarding_memory(uid, req.vibes, req.budget)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Hafıza hatası: {e}") from e
 
 
 @app.post("/memory/event")
-def memory_event(req: MemoryEventRequest) -> dict:
-    """Davranış hafızası (2.2): favori/yolculuk/yorum → preference_update embed'i."""
+def memory_event(req: MemoryEventRequest, authorization: str | None = Header(None)) -> dict:
+    """Davranış hafızası (2.2): favori/yolculuk/yorum → preference_update embed'i.
+    Kimlik TOKEN'dan — gövdedeki user_id yok sayılır."""
+    uid = _uid_or_401(authorization)
     try:
-        return save_memory_event(req.user_id, req.kind, req.route_id)
+        return save_memory_event(uid, req.kind, req.route_id)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Hafıza hatası: {e}") from e
 
@@ -175,8 +203,10 @@ def enrich_route(req: EnrichRequest) -> dict:
 
 
 @app.post("/embed-route")
-def embed_route(req: EmbedRouteRequest) -> dict:
-    """Kaydedilen rotayı hafızaya embedler (başkalarının AI aramasında çıksın)."""
+def embed_route(req: EmbedRouteRequest, authorization: str | None = Header(None)) -> dict:
+    """Kaydedilen rotayı hafızaya embedler (başkalarının AI aramasında çıksın).
+    Oturum şart (anonim embed spam'i kapanır)."""
+    _uid_or_401(authorization)
     try:
         return run_embed_route(req.route_id)
     except Exception as e:  # noqa: BLE001
@@ -198,8 +228,12 @@ def nav_route(req: NavRouteRequest) -> dict:
 
 
 @app.post("/enrich-photos")
-def enrich_photos(req: EmbedRouteRequest) -> dict:
-    """Fotosuz duraklara Places foto+puan yazar (3.2a) — rota yazımı sonrası fire-and-forget."""
+def enrich_photos(req: EmbedRouteRequest, authorization: str | None = Header(None)) -> dict:
+    """Fotosuz duraklara Places foto+puan yazar (3.2a) — rota yazımı sonrası fire-and-forget.
+    Yalnız rotanın sahibi/collaborator'ı tetikleyebilir."""
+    uid = _uid_or_401(authorization)
+    if not _can_touch_route(load_env(), uid, req.route_id):
+        raise HTTPException(status_code=403, detail="Bu rota üzerinde yetkin yok")
     try:
         return run_enrich_photos(req.route_id)
     except Exception as e:  # noqa: BLE001
@@ -207,8 +241,12 @@ def enrich_photos(req: EmbedRouteRequest) -> dict:
 
 
 @app.post("/route-geometry")
-def route_geometry(req: EmbedRouteRequest) -> dict:
-    """Rotanın yürüme bacaklarına gerçek sokak geometrisi yazar (Google Routes)."""
+def route_geometry(req: EmbedRouteRequest, authorization: str | None = Header(None)) -> dict:
+    """Rotanın yürüme bacaklarına gerçek sokak geometrisi yazar (Google Routes).
+    Yalnız rotanın sahibi/collaborator'ı tetikleyebilir."""
+    uid = _uid_or_401(authorization)
+    if not _can_touch_route(load_env(), uid, req.route_id):
+        raise HTTPException(status_code=403, detail="Bu rota üzerinde yetkin yok")
     try:
         return run_route_geometry(req.route_id)
     except Exception as e:  # noqa: BLE001

@@ -27,17 +27,20 @@ export async function ensureProfile(userId: string, email: string) {
 }
 
 /** Kayıt sonrası opsiyonel profil detayları (doğum tarihi/cinsiyet) — 5.1.
- *  Profil satırı yoksa önce oluşturur; hata sessizce yutulur (kayıt akışını bozmaz). */
+ *  Güvenlik (0017): hassas alanlar herkese açık profiles'ta değil, yalnız sahibinin
+ *  okuyabildiği profiles_private'ta durur. Hata sessizce yutulur (kayıt akışı bozulmaz). */
 export async function saveProfileDetails(details: { birth_date?: string | null; gender?: string | null }) {
   try {
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) return;
     await ensureProfile(user.id, user.email ?? "");
-    const patch: Record<string, string> = {};
-    if (details.birth_date) patch.birth_date = details.birth_date;
-    if (details.gender) patch.gender = details.gender;
-    if (Object.keys(patch).length) await supabase.from("profiles").update(patch).eq("id", user.id);
+    const row: Record<string, string> = {};
+    if (details.birth_date) row.birth_date = details.birth_date;
+    if (details.gender) row.gender = details.gender;
+    if (Object.keys(row).length) {
+      await supabase.from("profiles_private").upsert({ id: user.id, ...row });
+    }
   } catch { /* opsiyonel alanlar — sessiz */ }
 }
 

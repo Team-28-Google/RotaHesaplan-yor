@@ -108,6 +108,38 @@ def _sb_headers(env: dict) -> dict:
     return {"apikey": k, "Authorization": f"Bearer {k}", "Content-Type": "application/json"}
 
 
+# Kimlik doğrulama (güvenlik review #1): user_id istek gövdesinden DEĞİL, app'in
+# gönderdiği Supabase oturum token'ından alınır — başkası adına hafıza yazma/okuma
+# ve rota değiştirme kapanır.
+_TOKEN_CACHE: dict[str, tuple[str, float]] = {}
+
+
+def verify_supabase_token(env: dict, authorization: str | None) -> str | None:
+    """'Bearer <jwt>' → doğrulanmış kullanıcı id'si (GoTrue /auth/v1/user).
+    Geçersiz/boşsa None. 60 sn cache — her istekte GoTrue'ya gidilmez."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    tok = authorization.split(" ", 1)[1].strip()
+    if not tok:
+        return None
+    now = time.time()
+    hit = _TOKEN_CACHE.get(tok)
+    if hit and hit[1] > now:
+        return hit[0]
+    url = env["SUPABASE_URL"].rstrip("/") + "/auth/v1/user"
+    try:
+        r = _req(url, "GET", {"apikey": env["SUPABASE_SERVICE_ROLE_KEY"],
+                              "Authorization": f"Bearer {tok}"})
+    except Exception:
+        return None
+    uid = (r or {}).get("id")
+    if uid:
+        if len(_TOKEN_CACHE) > 500:  # kaba temizlik — token'lar zaten saatlik döner
+            _TOKEN_CACHE.clear()
+        _TOKEN_CACHE[tok] = (uid, now + 60)
+    return uid
+
+
 def match_routes(env: dict, query_embedding, match_count=5, filter_city=None, max_budget=4):
     url = env["SUPABASE_URL"].rstrip("/") + "/rest/v1/rpc/match_routes"
     body = {"query_embedding": query_embedding, "match_count": match_count,
