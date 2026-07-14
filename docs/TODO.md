@@ -487,9 +487,48 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 
 ---
 
+## FAZ 6 — GELİR MODELİ (V2, teslim sonrası) 👤+🤖
+> Kullanıcı isteği (14 Tem): "app'i ücretli yapmak için yol haritası". İlke:
+> sosyal döngü (keşfet-yürü-paylaş) HEP ücretsiz kalır — para, AI'ın pahalı
+> kısımlarından ve konfor özelliklerinden kazanılır. Google kotaları 0 TL tavanlı.
+
+### 6.0 Temel hazırlık (para istemeden önce) 🤖
+- [ ] Kullanım ölçümü: plan/üretim başına maliyet görünürlüğü (NVIDIA+Google çağrı sayacı,
+  basit `usage_log` tablosu) — neyi ücretlendireceğimizi VERİYLE seçelim.
+- [ ] Ücretsiz katman tanımı: kullanıcı başı günlük AI üretim limiti (örn. 2/gün) —
+  servis tarafında token'lı sayaç (6ef0a63 kimlik altyapısı hazır).
+- [ ] 5.5 Analytics + Sentry (funnel: onboarding→plan→yolculuk→paylaşım).
+
+### 6.1 Store'a çıkış (ücretli olmanın ön şartı) 👤+🤖
+- [ ] İsim/marka kararı (SANA vs Rota Hesaplanıyor) + ikon final.
+- [ ] 👤 Google Play geliştirici hesabı ($25, tek seferlik); (iOS V3 — $99/yıl).
+- [ ] 🤖 EAS production build + Play submit; sürüm/updates kanalı düzeni.
+- [ ] 🤖 Gizlilik politikası + KVKK aydınlatma metni (store zorunluluğu; konum verisi!).
+- [ ] Render free→Starter kararı (uyuma sorunu ücretli kullanıcıya yakışmaz, ~$7/ay).
+
+### 6.2 SANA Premium — abonelik (RevenueCat) 👤+🤖
+- [ ] 🤖 RevenueCat entegrasyonu (Expo uyumlu, dev build ister — 0.3'e bağlı);
+  entitlement: `premium`. Doğrulama SUNUCUDA: RevenueCat webhook →
+  `profiles_private.premium_until` → servis üretim limitinde kontrol.
+- [ ] Paket önerisi: ÜCRETSİZ = sınırsız keşif/yürüyüş/paylaşım + günde 2 AI üretim.
+  PREMIUM = sınırsız AI üretim · dünya şehirlerinde öncelikli üretim · özel paylaşım
+  kartı temaları · gelişmiş istatistikler (aylık km/şehir haritası) · reklamsız garanti.
+- [ ] 👤 Fiyat testi: ₺49,99/ay · ₺299/yıl başlangıç; ilk hafta indirimli deneme.
+- [ ] Paywall ekranı: onboarding'de DEĞİL — ilk limit aşımında, nazik.
+
+### 6.3 Ek gelir kanalları (Premium'dan sonra, veriye göre) 👤+🤖
+- [ ] Affiliate: durak/rota detayına rezervasyon-bilet ortaklığı (GetYourGuide/
+  Booking tarzı) — tıklama başı komisyon, kullanıcıya bedava.
+- [ ] Sponsorlu duraklar/rotalar: yerel işletme "öne çıkan durak" (açık etiketli).
+- [ ] Şehir rehberi paketleri: küratörlü premium rota koleksiyonları (tek seferlik IAP).
+- [ ] (Araştır) Turizm ofisleri/belediye iş birlikleri — B2B beyaz etiket.
+
+---
+
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 14 Tem | **GÜVENLİK REVIEW + gelir modeli (FAZ 6)** | Derin review: servis kimlik doğrulaması (token'dan user_id, sahiplik guard'ları — 6ef0a63) + profiles_private (0017, KVKK) + liderlik view'ları→RPC (0018, Advisor CRITICAL). Kota tavanları 0 TL (kullanıcı). Air Quality+Elevation açılırsa entegre edilecek. FAZ 6 monetizasyon yol haritası eklendi (Premium/RevenueCat, sunucu-taraflı entitlement) |
 | 13 Tem | **TÜM-TÜRKİYE + 4.0c (Geocoding/Roads) + EMOJİ TEMİZLİĞİ** | 81 il (norm_city+_TR_PROVINCES), bilinmeyen ilde Geocoding il merkezi → AI üretim (Antalya canlı ✓); /detect-city + /snap-track; CityPicker: ✕ + aşağı kaydır + "Konumumdan bul" + dinamik şehir kaydı; emoji chrome'u 14 dosyada Ionicons/düz metne çevrildi (koleksiyon emoji kapağı kullanıcı içeriği olarak kaldı); Kayıtlı filtre çubuğu ezilme fix'i (flexShrink:0 + FlatList flex:1); EAS Update preview'a atıldı + testçi yönergesi. Servis commit'leri: 23625cc + c29665c (push bekliyor). EAS dev build: başlatıldı→İPTAL (kullanıcı kararı: taze onaysız bulut build yok) |
 | 7 Tem | Harita [+] · Home avatar→Profil · profil fotoğrafı (kullanıcı istekleri) | Map'te sağ üst rota-oluştur FAB'ı; Home avatarı Profil'e gider + fotoğrafı gösterir; Profil avatarına dokun → kamera/galeri + kare kırpma → photos bucket → profiles.avatar_url |
 | 7 Tem | **3.0c ÇOK ŞEHİR TAMAM** 🏙️ | 5 şehir: 23 seed + şehir-bilinçli plan/üretici/arama + CityPicker (ilk açılışta otomatik). Bonus: arama Google Places'a geçti, SerpApi runtime'dan söküldü, çeyrek-marker fix v2. Seed beğenileri sıfırlandı (yeniden yazım) |
