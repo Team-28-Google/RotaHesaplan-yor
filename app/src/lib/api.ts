@@ -618,11 +618,17 @@ export async function fetchWalkRoute(
   return fetchNavRoute(from, to, "walk");
 }
 
-/** DÜNYA şehir araması (şehir seçicideki kutu): Geocoding forward, yalnız şehir/il
- *  tipi sonuçlar. Servise ulaşılamazsa boş — TR listesi çevrimdışı çalışmaya devam eder. */
-export async function searchCities(
-  q: string,
-): Promise<{ name: string; country: string | null; lat: number; lng: number }[]> {
+export interface CityHit {
+  name: string;
+  country: string | null;
+  place_id?: string;   // Autocomplete sonucu — koordinat seçimde çözülür
+  lat?: number;        // Geocoding yedeği doğrudan koordinat verir
+  lng?: number;
+}
+
+/** DÜNYA şehir OTOMATİK-TAMAMLAMA (şehir seçicideki kutu): yazdıkça ön-ek eşleştirmeli
+ *  çoklu şehir önerisi. Servise ulaşılamazsa boş — TR listesi çevrimdışı çalışır. */
+export async function searchCities(q: string): Promise<CityHit[]> {
   if (q.trim().length < 2) return [];
   try {
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/search-city`, {
@@ -635,6 +641,24 @@ export async function searchCities(
     return Array.isArray(j.results) ? j.results : [];
   } catch {
     return [];
+  }
+}
+
+/** Seçilen dünya şehrinin koordinatı (placeId ya da ad). Autocomplete sonucu koordinat
+ *  taşımadığı için seçimde çağrılır; doğrudan koordinat varsa (Geocoding yedeği) o kullanılır. */
+export async function cityLatLng(hit: CityHit): Promise<{ lat: number; lng: number } | null> {
+  if (hit.lat != null && hit.lng != null) return { lat: hit.lat, lng: hit.lng };
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/city-latlng`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
+      body: JSON.stringify({ place_id: hit.place_id, name: hit.name }),
+    }, 10_000);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.ok ? { lat: j.lat, lng: j.lng } : null;
+  } catch {
+    return null;
   }
 }
 

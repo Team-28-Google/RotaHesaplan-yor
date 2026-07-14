@@ -616,6 +616,50 @@ def google_reverse_geocode_city(env: dict, lat: float, lng: float) -> str | None
     return p["name"] if p else None
 
 
+def google_autocomplete_city(env: dict, q: str, limit: int = 6) -> list[dict]:
+    """DÜNYA şehir OTOMATİK-TAMAMLAMA (Places Autocomplete New) — yazdıkça ön-ek
+    eşleştirmeli çoklu şehir önerisi ('berl' → Berlin, Bern...). Koordinat DÖNMEZ;
+    seçimde google_place_latlng ile çözülür. Anahtar/sonuç yoksa []."""
+    key = _google_server_key(env)
+    if not key or len(q.strip()) < 2:
+        return []
+    headers = {"Content-Type": "application/json", "X-Goog-Api-Key": key}
+    body = {"input": q.strip(), "includedPrimaryTypes": ["(cities)"], "languageCode": "tr"}
+    try:
+        r = _req("https://places.googleapis.com/v1/places:autocomplete", "POST", headers, body, timeout=12)
+    except Exception:
+        return []
+    out = []
+    for s in (r or {}).get("suggestions") or []:
+        p = s.get("placePrediction") or {}
+        sf = p.get("structuredFormat") or {}
+        name = ((sf.get("mainText") or {}).get("text")) or ((p.get("text") or {}).get("text"))
+        country = (sf.get("secondaryText") or {}).get("text")
+        pid = p.get("placeId")
+        if name and pid:
+            out.append({"place_id": pid, "name": name, "country": country})
+        if len(out) >= limit:
+            break
+    return out
+
+
+def google_place_latlng(env: dict, place_id: str) -> dict | None:
+    """placeId → {lat, lng} (Place Details New, yalnız location alanı). Şehir seçilince
+    koordinatı çözer. Anahtar/hata yoksa None."""
+    key = _google_server_key(env)
+    if not key or not place_id:
+        return None
+    headers = {"X-Goog-Api-Key": key, "X-Goog-FieldMask": "location"}
+    try:
+        r = _req(f"https://places.googleapis.com/v1/places/{urllib.parse.quote(place_id)}", "GET", headers, timeout=12)
+    except Exception:
+        return None
+    loc = (r or {}).get("location") or {}
+    if loc.get("latitude") is not None:
+        return {"lat": loc["latitude"], "lng": loc["longitude"]}
+    return None
+
+
 def google_search_city(env: dict, q: str, limit: int = 5) -> list[dict]:
     """DÜNYA geneli şehir arama (Geocoding forward): yalnız şehir/il tipindeki
     sonuçlar → [{name, country, lat, lng}]. LLM şehir doğrulamasında da kullanılır."""

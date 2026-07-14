@@ -6,7 +6,7 @@ import {
   Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 
-import { detectCity, searchCities } from "../lib/api";
+import { cityLatLng, detectCity, searchCities, type CityHit } from "../lib/api";
 import { canonKey, CITIES, dynCities, registerCity, searchProvinces, unregisterCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { supabase } from "../lib/supabase";
@@ -27,15 +27,23 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   const results = useMemo(() => searchProvinces(q), [q]);
   useEffect(() => { if (!visible) setQ(""); }, [visible]);
 
-  // DÜNYA şehirleri (Berlin, Münih...): ≥3 harfte servise debounce'lu sorgu —
-  // TR sonuçları çevrimdışı listeden anında, dünya sonuçları altına eklenir
-  const [world, setWorld] = useState<{ name: string; country: string | null; lat: number; lng: number }[]>([]);
+  // DÜNYA şehirleri (Berlin, Münih...): ≥2 harfte Places Autocomplete — yazdıkça
+  // ön-ek eşleştirmeli çoklu öneri; TR sonuçları çevrimdışı listeden anında görünür
+  const [world, setWorld] = useState<CityHit[]>([]);
+  const [searching, setSearching] = useState(false);
+  const seq = useRef(0);
   useEffect(() => {
     const t = q.trim();
-    if (t.length < 3) { setWorld([]); return; }
+    if (t.length < 2) { setWorld([]); setSearching(false); return; }
+    setSearching(true);
+    const my = ++seq.current;
     const h = setTimeout(() => {
-      searchCities(t).then((r) => setWorld(r.filter((w) => w.country !== "Türkiye")));
-    }, 450);
+      searchCities(t).then((r) => {
+        if (my !== seq.current) return; // eski sorgu geç geldiyse yok say
+        setWorld(r.filter((w) => (w.country ?? "") !== "Türkiye"));
+        setSearching(false);
+      });
+    }, 250);
     return () => clearTimeout(h);
   }, [q]);
 
@@ -44,6 +52,17 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
     await registerCity(p.key, p.label, p.lat, p.lng); // pilot şehirse no-op
     setQ("");
     onSelect(p.key);
+  };
+
+  // Dünya şehri seçimi: autocomplete koordinat taşımaz → seçimde çözülür
+  const [resolving, setResolving] = useState<string | null>(null);
+  const pickWorld = async (w: CityHit) => {
+    tap();
+    setResolving(w.place_id ?? w.name);
+    const loc = await cityLatLng(w);
+    setResolving(null);
+    if (!loc) { Alert.alert("Konum çözülemedi", "Tekrar dene ya da başka şehir seç."); return; }
+    await pickProvince({ key: canonKey(w.name), label: w.name, lat: loc.lat, lng: loc.lng });
   };
 
   // Eklenen şehri sil (6 pilot silinemez; aktif olan silinmesin diye ikon gizlenir)
@@ -163,28 +182,40 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 : <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />}
             </TouchableOpacity>
           ))}
-          {q.trim().length > 0 && world.map((w) => (
-            <TouchableOpacity
-              key={`w-${w.name}-${w.lat.toFixed(3)}-${w.lng.toFixed(3)}`}
-              style={styles.row}
-              activeOpacity={0.85}
-              onPress={() => pickProvince({ key: canonKey(w.name), label: w.name, lat: w.lat, lng: w.lng })}
-            >
-              <View style={styles.iconWrap}>
-                <Ionicons name="globe-outline" size={20} color={colors.textMuted} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{w.name}</Text>
-                <Text style={styles.districts}>
-                  {w.country ?? "Dünya"} · AI bu şehirde senin için üretir
-                </Text>
-              </View>
-              {canonKey(w.name) === current
-                ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                : <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />}
-            </TouchableOpacity>
-          ))}
-          {q.trim().length > 0 && results.length === 0 && world.length === 0 && (
+          {q.trim().length > 0 && world.map((w, i) => {
+            const busy = resolving === (w.place_id ?? w.name);
+            return (
+              <TouchableOpacity
+                key={`w-${w.place_id ?? `${w.name}-${i}`}`}
+                style={styles.row}
+                activeOpacity={0.85}
+                disabled={!!resolving}
+                onPress={() => pickWorld(w)}
+              >
+                <View style={styles.iconWrap}>
+                  <Ionicons name="globe-outline" size={20} color={colors.textMuted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{w.name}</Text>
+                  <Text style={styles.districts} numberOfLines={1}>
+                    {w.country ?? "Dünya"}
+                  </Text>
+                </View>
+                {busy
+                  ? <ActivityIndicator size="small" color={colors.primary} />
+                  : canonKey(w.name) === current
+                    ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                    : <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />}
+              </TouchableOpacity>
+            );
+          })}
+          {q.trim().length >= 2 && searching && world.length === 0 && (
+            <View style={styles.searchingRow}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.noResult}>Dünya şehirleri aranıyor…</Text>
+            </View>
+          )}
+          {q.trim().length > 0 && !searching && results.length === 0 && world.length === 0 && (
             <Text style={styles.noResult}>Şehir bulunamadı — yazımı kontrol et.</Text>
           )}
 
@@ -263,6 +294,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   searchInput: { flex: 1, paddingVertical: 9, fontSize: 13.5, fontFamily: font.medium, color: colors.text },
   noResult: { fontSize: 12.5, fontFamily: font.medium, color: colors.textFaint, textAlign: "center", paddingVertical: 8 },
+  searchingRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 8 },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surfaceAlt,
     alignItems: "center", justifyContent: "center", marginTop: 2,

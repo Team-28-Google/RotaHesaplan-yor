@@ -14,10 +14,10 @@ from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import (app_key_ok, google_nav_leg, google_reverse_geocode_place,
-                         google_search_city, google_snap_to_roads, google_static_map,
-                         google_walk_leg, load_env, nvidia_embed, sb_select,
-                         verify_supabase_token)
+from app.clients import (app_key_ok, google_autocomplete_city, google_nav_leg,
+                         google_place_latlng, google_reverse_geocode_place, google_search_city,
+                         google_snap_to_roads, google_static_map, google_walk_leg, load_env,
+                         nvidia_embed, sb_select, verify_supabase_token)
 from app.pipeline import _TR_PROVINCES, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
@@ -111,6 +111,11 @@ class DetectCityRequest(BaseModel):
 
 class CitySearchRequest(BaseModel):
     q: str = Field(..., min_length=2)
+
+
+class CityLatLngRequest(BaseModel):
+    place_id: str | None = None
+    name: str | None = None
 
 
 # ---- Kimlik yardımcıları (güvenlik review #1) ----
@@ -320,7 +325,28 @@ def detect_city(req: DetectCityRequest, x_app_key: str | None = Header(None)) ->
 
 @app.post("/search-city")
 def search_city(req: CitySearchRequest, x_app_key: str | None = Header(None)) -> dict:
-    """DÜNYA şehir araması (Geocoding forward) — app'in şehir seçicisindeki arama
-    kutusunu besler; yalnız şehir/il tipi sonuçlar döner."""
+    """DÜNYA şehir OTOMATİK-TAMAMLAMA (Places Autocomplete) — yazdıkça ön-ek eşleştirmeli
+    çoklu şehir önerisi ('berl'→Berlin/Bern). Koordinat seçimde /city-latlng ile çözülür.
+    Autocomplete boş dönerse Geocoding'e düşer (tam ad yazıldıysa yine bulur)."""
     _guard_app_key(x_app_key)
-    return {"results": google_search_city(load_env(), req.q)}
+    env = load_env()
+    hits = google_autocomplete_city(env, req.q)
+    if not hits:  # yedek: tam ad girildiyse Geocoding koordinatla döner
+        hits = google_search_city(env, req.q)
+    return {"results": hits}
+
+
+@app.post("/city-latlng")
+def city_latlng(req: CityLatLngRequest, x_app_key: str | None = Header(None)) -> dict:
+    """Seçilen şehrin koordinatı: önce placeId (Place Details), yoksa/olmazsa ada göre
+    Geocoding. Şehir seçici, autocomplete sonucuna dokununca çağırır."""
+    _guard_app_key(x_app_key)
+    env = load_env()
+    loc = google_place_latlng(env, req.place_id) if req.place_id else None
+    if not loc and req.name:
+        from app.clients import city_coords
+        lat, lng = city_coords(env, req.name)
+        loc = {"lat": lat, "lng": lng}
+    if not loc:
+        raise HTTPException(status_code=404, detail="Konum çözülemedi")
+    return {"ok": True, **loc}
