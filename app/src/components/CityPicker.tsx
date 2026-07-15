@@ -28,7 +28,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   const [q, setQ] = useState(""); // 81 il araması — cümleye il yazmaya gerek kalmaz
   const results = useMemo(() => searchProvinces(q), [q]);
   // Ülke yazınca (almanya, fransa...) o ülkenin büyük şehirleri — anında, API'siz
-  const countryCities = useMemo<CityHit[]>(() => citiesOfCountry(q) ?? [], [q]);
+  const countryCities = useMemo<CityHit[]>(() => citiesOfCountry(q, lang) ?? [], [q, lang]);
   useEffect(() => { if (!visible) setQ(""); }, [visible]);
 
   // DÜNYA şehirleri (Berlin, Münih...): ≥2 harfte Places Autocomplete — yazdıkça
@@ -42,16 +42,17 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
     setSearching(true);
     const my = ++seq.current;
     const h = setTimeout(() => {
-      searchCities(t).then((r) => {
+      searchCities(t, lang).then((r) => {
         if (my !== seq.current) return; // eski sorgu geç geldiyse yok say
         // ülke-şehri listesinde zaten olanları tekrar gösterme
         const already = new Set(countryCities.map((c) => c.name.toLocaleLowerCase("tr")));
-        setWorld(r.filter((w) => (w.country ?? "") !== "Türkiye" && !already.has(w.name.toLocaleLowerCase("tr"))));
+        const isTR = (c: string | null) => c === "Türkiye" || c === "Turkey"; // TR şehirleri çevrimdışı listede
+        setWorld(r.filter((w) => !isTR(w.country ?? null) && !already.has(w.name.toLocaleLowerCase("tr"))));
         setSearching(false);
       });
     }, 250);
     return () => clearTimeout(h);
-  }, [q]);
+  }, [q, lang]);
 
   const pickProvince = async (p: { key: string; label: string; lat: number; lng: number }) => {
     tap();
@@ -144,7 +145,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.bg} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView style={styles.bg} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
         <Animated.View style={[styles.sheet, { transform: [{ translateY: dragY }] }]}>
           <View {...pan.panHandlers}>
@@ -240,7 +241,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{w.name}</Text>
                   <Text style={styles.districts} numberOfLines={1}>
-                    {w.country ?? "Dünya"}
+                    {w.country ?? t("city.world")}
                   </Text>
                 </View>
                 {busy
@@ -294,7 +295,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.name, on && styles.nameOn]}>{c.label}</Text>
                   <Text style={styles.districts} numberOfLines={1}>
-                    {c.districts.length ? c.districts.slice(0, 3).join(" · ") : "AI bu şehirde senin için üretir"}
+                    {c.districts.length ? c.districts.slice(0, 3).join(" · ") : t("city.aiWillGenerate")}
                   </Text>
                 </View>
                 {counts[c.key] != null && (
