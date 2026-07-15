@@ -135,6 +135,95 @@ export const PROVINCES: { key: string; label: string; lat: number; lng: number }
 const fold = (s: string) =>
   s.toLocaleLowerCase("tr").replace(/[çğıöşü]/g, (c) => ({ "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u" }[c] ?? c));
 
+// Ülke yazınca o ülkenin büyük şehirlerini ANINDA göster (TR listesi gibi, API'siz).
+// key = ülke etiketi (görünür); aliases = eşleşecek yazımlar; cities = büyük şehirler.
+// Şehir koordinatları seçimde /city-latlng (Geocoding) ile çözülür — burada yalnız ad.
+interface CountryCities { label: string; aliases: string[]; cities: string[] }
+const COUNTRIES: CountryCities[] = [
+  { label: "Almanya", aliases: ["almanya", "germany", "deutschland"], cities: ["Berlin", "Münih", "Hamburg", "Köln", "Frankfurt"] },
+  { label: "Fransa", aliases: ["fransa", "france"], cities: ["Paris", "Marsilya", "Lyon", "Nice", "Bordeaux"] },
+  { label: "İtalya", aliases: ["italya", "italy", "italia"], cities: ["Roma", "Milano", "Venedik", "Floransa", "Napoli"] },
+  { label: "İspanya", aliases: ["ispanya", "spain", "espana"], cities: ["Madrid", "Barselona", "Sevilla", "Valensiya", "Malaga"] },
+  { label: "Birleşik Krallık", aliases: ["ingiltere", "birlesik krallik", "uk", "england", "britain"], cities: ["Londra", "Manchester", "Edinburgh", "Liverpool", "Birmingham"] },
+  { label: "Hollanda", aliases: ["hollanda", "netherlands", "holland"], cities: ["Amsterdam", "Rotterdam", "Lahey", "Utrecht", "Eindhoven"] },
+  { label: "Amerika", aliases: ["amerika", "abd", "usa", "america", "united states"], cities: ["New York", "Los Angeles", "Chicago", "Miami", "San Francisco"] },
+  { label: "Japonya", aliases: ["japonya", "japan"], cities: ["Tokyo", "Osaka", "Kyoto", "Yokohama", "Sapporo"] },
+  { label: "Yunanistan", aliases: ["yunanistan", "greece"], cities: ["Atina", "Selanik", "Rodos", "Heraklion", "Patras"] },
+  { label: "Avusturya", aliases: ["avusturya", "austria"], cities: ["Viyana", "Salzburg", "Graz", "Innsbruck"] },
+  { label: "Çekya", aliases: ["cekya", "cek cumhuriyeti", "czech", "czechia"], cities: ["Prag", "Brno", "Ostrava"] },
+  { label: "Portekiz", aliases: ["portekiz", "portugal"], cities: ["Lizbon", "Porto", "Faro"] },
+  { label: "Rusya", aliases: ["rusya", "russia"], cities: ["Moskova", "St. Petersburg", "Kazan", "Soçi"] },
+  { label: "İsviçre", aliases: ["isvicre", "switzerland"], cities: ["Zürih", "Cenevre", "Bern", "Lozan"] },
+  { label: "Belçika", aliases: ["belcika", "belgium"], cities: ["Brüksel", "Anvers", "Bruges", "Gent"] },
+  { label: "İsveç", aliases: ["isvec", "sweden"], cities: ["Stockholm", "Göteborg", "Malmö"] },
+  { label: "Norveç", aliases: ["norvec", "norway"], cities: ["Oslo", "Bergen", "Trondheim"] },
+  { label: "Danimarka", aliases: ["danimarka", "denmark"], cities: ["Kopenhag", "Aarhus", "Odense"] },
+  { label: "Polonya", aliases: ["polonya", "poland"], cities: ["Varşova", "Krakov", "Gdansk", "Wroclaw"] },
+  { label: "Macaristan", aliases: ["macaristan", "hungary"], cities: ["Budapeşte", "Debrecen"] },
+  { label: "İrlanda", aliases: ["irlanda", "ireland"], cities: ["Dublin", "Cork", "Galway"] },
+  { label: "Hırvatistan", aliases: ["hirvatistan", "croatia"], cities: ["Zagreb", "Dubrovnik", "Split", "Zadar"] },
+  { label: "Bulgaristan", aliases: ["bulgaristan", "bulgaria"], cities: ["Sofya", "Filibe", "Varna", "Burgaz"] },
+  { label: "Gürcistan", aliases: ["gurcistan", "georgia"], cities: ["Tiflis", "Batum", "Kutaisi"] },
+  { label: "Azerbaycan", aliases: ["azerbaycan", "azerbaijan"], cities: ["Bakü", "Gence"] },
+  { label: "Birleşik Arap Emirlikleri", aliases: ["bae", "dubai ulke", "emirlikler", "uae"], cities: ["Dubai", "Abu Dabi", "Şarja"] },
+  { label: "Mısır", aliases: ["misir", "egypt"], cities: ["Kahire", "İskenderiye", "Luksor", "Hurgada"] },
+  { label: "Fas", aliases: ["fas", "morocco"], cities: ["Kazablanka", "Marakeş", "Rabat", "Fes"] },
+  { label: "Çin", aliases: ["cin", "china"], cities: ["Pekin", "Şanghay", "Guangzhou", "Şenzhen"] },
+  { label: "Hindistan", aliases: ["hindistan", "india"], cities: ["Delhi", "Mumbai", "Bangalore", "Jaipur"] },
+  { label: "Brezilya", aliases: ["brezilya", "brazil"], cities: ["Rio de Janeiro", "São Paulo", "Brasília", "Salvador"] },
+  { label: "Kanada", aliases: ["kanada", "canada"], cities: ["Toronto", "Vancouver", "Montreal", "Ottawa"] },
+  { label: "Meksika", aliases: ["meksika", "mexico"], cities: ["Mexico City", "Cancún", "Guadalajara"] },
+  { label: "Slovakya", aliases: ["slovakya", "slovakia", "slovensko"], cities: ["Bratislava", "Košice", "Žilina"] },
+  { label: "Slovenya", aliases: ["slovenya", "slovenia"], cities: ["Ljubljana", "Maribor", "Bled"] },
+  { label: "Sırbistan", aliases: ["sirbistan", "serbia"], cities: ["Belgrad", "Novi Sad", "Niş"] },
+  { label: "Romanya", aliases: ["romanya", "romania"], cities: ["Bükreş", "Kluj", "Braşov", "Timişoara"] },
+  { label: "Ukrayna", aliases: ["ukrayna", "ukraine"], cities: ["Kiev", "Lviv", "Odesa", "Harkiv"] },
+  { label: "Finlandiya", aliases: ["finlandiya", "finland"], cities: ["Helsinki", "Tampere", "Turku"] },
+  { label: "İzlanda", aliases: ["izlanda", "iceland"], cities: ["Reykjavik", "Akureyri"] },
+  { label: "Estonya", aliases: ["estonya", "estonia"], cities: ["Tallinn", "Tartu"] },
+  { label: "Litvanya", aliases: ["litvanya", "lithuania"], cities: ["Vilnius", "Kaunas"] },
+  { label: "Letonya", aliases: ["letonya", "latvia"], cities: ["Riga", "Jurmala"] },
+  { label: "Malta", aliases: ["malta"], cities: ["Valletta", "Sliema"] },
+  { label: "Kıbrıs", aliases: ["kibris", "cyprus"], cities: ["Lefkoşa", "Girne", "Larnaka", "Limasol"] },
+  { label: "Lüksemburg", aliases: ["luksemburg", "luxembourg"], cities: ["Lüksemburg"] },
+  { label: "Tayland", aliases: ["tayland", "thailand"], cities: ["Bangkok", "Phuket", "Chiang Mai", "Pattaya"] },
+  { label: "Vietnam", aliases: ["vietnam"], cities: ["Hanoi", "Ho Chi Minh", "Da Nang", "Hoi An"] },
+  { label: "Endonezya", aliases: ["endonezya", "indonesia"], cities: ["Cakarta", "Bali", "Bandung", "Surabaya"] },
+  { label: "Malezya", aliases: ["malezya", "malaysia"], cities: ["Kuala Lumpur", "Penang", "Johor Bahru"] },
+  { label: "Singapur", aliases: ["singapur", "singapore"], cities: ["Singapur"] },
+  { label: "Filipinler", aliases: ["filipinler", "philippines"], cities: ["Manila", "Cebu", "Davao"] },
+  { label: "Güney Kore", aliases: ["guney kore", "kore", "south korea", "korea"], cities: ["Seul", "Busan", "Incheon", "Jeju"] },
+  { label: "Tayvan", aliases: ["tayvan", "taiwan"], cities: ["Taipei", "Kaohsiung", "Taichung"] },
+  { label: "Güney Afrika", aliases: ["guney afrika", "south africa"], cities: ["Cape Town", "Johannesburg", "Durban", "Pretoria"] },
+  { label: "Tunus", aliases: ["tunus", "tunisia"], cities: ["Tunus", "Sus", "Hammamet"] },
+  { label: "Ürdün", aliases: ["urdun", "jordan"], cities: ["Amman", "Petra", "Akabe"] },
+  { label: "Lübnan", aliases: ["lubnan", "lebanon"], cities: ["Beyrut", "Trablus", "Byblos"] },
+  { label: "İsrail", aliases: ["israil", "israel"], cities: ["Kudüs", "Tel Aviv", "Hayfa"] },
+  { label: "Katar", aliases: ["katar", "qatar"], cities: ["Doha", "Al Wakrah"] },
+  { label: "Suudi Arabistan", aliases: ["suudi arabistan", "suudi", "saudi arabia", "saudi"], cities: ["Riyad", "Cidde", "Mekke", "Medine"] },
+  { label: "Kuveyt", aliases: ["kuveyt", "kuwait"], cities: ["Kuveyt"] },
+  { label: "İran", aliases: ["iran"], cities: ["Tahran", "İsfahan", "Şiraz", "Meşhed"] },
+  { label: "Pakistan", aliases: ["pakistan"], cities: ["İslamabad", "Lahor", "Karaçi"] },
+  { label: "Sri Lanka", aliases: ["sri lanka", "srilanka"], cities: ["Kolombo", "Kandy", "Galle"] },
+  { label: "Nepal", aliases: ["nepal"], cities: ["Katmandu", "Pokhara"] },
+  { label: "Arjantin", aliases: ["arjantin", "argentina"], cities: ["Buenos Aires", "Córdoba", "Mendoza"] },
+  { label: "Şili", aliases: ["sili", "chile"], cities: ["Santiago", "Valparaíso"] },
+  { label: "Kolombiya", aliases: ["kolombiya", "colombia"], cities: ["Bogotá", "Medellín", "Cartagena"] },
+  { label: "Peru", aliases: ["peru"], cities: ["Lima", "Cusco", "Arequipa"] },
+  { label: "Küba", aliases: ["kuba", "cuba"], cities: ["Havana", "Varadero"] },
+  { label: "Avustralya", aliases: ["avustralya", "australia"], cities: ["Sydney", "Melbourne", "Brisbane", "Perth"] },
+  { label: "Yeni Zelanda", aliases: ["yeni zelanda", "new zealand"], cities: ["Auckland", "Wellington", "Queenstown"] },
+];
+
+/** Sorgu bir ülke adına (ön-ek) uyuyorsa o ülkenin büyük şehirlerini döndürür (anında, API'siz).
+ *  Uymuyorsa null → çağıran normal şehir aramasına devam eder. */
+export function citiesOfCountry(q: string): { name: string; country: string }[] | null {
+  const f = fold(q.trim());
+  if (f.length < 3) return null;
+  const hit = COUNTRIES.find((c) => c.aliases.some((a) => a.startsWith(f) || f === a));
+  return hit ? hit.cities.map((name) => ({ name, country: hit.label })) : null;
+}
+
 /** Servisin norm_city kanoniğiyle aynı anahtar: Türkçe karakterler ASCII'ye
  *  (Münih→Munih) — DB city kolonu ve filtreler her iki uçta aynı kalır. */
 export const canonKey = (s: string) =>

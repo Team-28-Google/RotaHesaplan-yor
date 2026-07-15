@@ -7,8 +7,9 @@ import {
 } from "react-native";
 
 import { cityLatLng, detectCity, searchCities, type CityHit } from "../lib/api";
-import { canonKey, CITIES, dynCities, registerCity, searchProvinces, unregisterCity } from "../lib/cities";
+import { canonKey, CITIES, citiesOfCountry, dynCities, registerCity, searchProvinces, unregisterCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
+import { useLocale } from "../lib/localeContext";
 import { supabase } from "../lib/supabase";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
@@ -20,11 +21,14 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   onSelect: (cityKey: string) => void;
 }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [locating, setLocating] = useState(false);
   const [q, setQ] = useState(""); // 81 il araması — cümleye il yazmaya gerek kalmaz
   const results = useMemo(() => searchProvinces(q), [q]);
+  // Ülke yazınca (almanya, fransa...) o ülkenin büyük şehirleri — anında, API'siz
+  const countryCities = useMemo<CityHit[]>(() => citiesOfCountry(q) ?? [], [q]);
   useEffect(() => { if (!visible) setQ(""); }, [visible]);
 
   // DÜNYA şehirleri (Berlin, Münih...): ≥2 harfte Places Autocomplete — yazdıkça
@@ -40,7 +44,9 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
     const h = setTimeout(() => {
       searchCities(t).then((r) => {
         if (my !== seq.current) return; // eski sorgu geç geldiyse yok say
-        setWorld(r.filter((w) => (w.country ?? "") !== "Türkiye"));
+        // ülke-şehri listesinde zaten olanları tekrar gösterme
+        const already = new Set(countryCities.map((c) => c.name.toLocaleLowerCase("tr")));
+        setWorld(r.filter((w) => (w.country ?? "") !== "Türkiye" && !already.has(w.name.toLocaleLowerCase("tr"))));
         setSearching(false);
       });
     }, 250);
@@ -61,7 +67,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
     setResolving(w.place_id ?? w.name);
     const loc = await cityLatLng(w);
     setResolving(null);
-    if (!loc) { Alert.alert("Konum çözülemedi", "Tekrar dene ya da başka şehir seç."); return; }
+    if (!loc) { Alert.alert(t("city.cantResolve"), t("city.cantResolveBody")); return; }
     await pickProvince({ key: canonKey(w.name), label: w.name, lat: loc.lat, lng: loc.lng });
   };
 
@@ -81,19 +87,31 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Konum izni gerekli", "Şehrini otomatik bulmak için konum izni vermelisin — ya da listeden seç.");
+        Alert.alert(t("city.permTitle"), t("city.permBody"));
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // Konum: önce hızlı son-bilinen; yoksa taze konumu 12 sn timeout'la al
+      // (getCurrentPositionAsync bazı cihazlarda sonsuza kadar askıda kalabiliyor)
+      let pos = await Location.getLastKnownPositionAsync();
+      if (!pos) {
+        pos = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          new Promise<null>((r) => setTimeout(() => r(null), 12_000)),
+        ]);
+      }
+      if (!pos) {
+        Alert.alert(t("city.notFoundNow"), t("city.cantResolveBody"));
+        return;
+      }
       const d = await detectCity(pos.coords.latitude, pos.coords.longitude);
       if (d) {
         await registerCity(d.key, d.label, pos.coords.latitude, pos.coords.longitude);
         onSelect(d.key);
       } else {
-        Alert.alert("Şu an bulunamadı", "Konum servisine ulaşılamadı ya da il çözülemedi — tekrar dene ya da listeden seç.");
+        Alert.alert(t("city.notFoundNow"), t("city.notFoundNowBody"));
       }
     } catch {
-      Alert.alert("Konum alınamadı", "Tekrar dene ya da listeden seç.");
+      Alert.alert(t("city.notFoundNow"), t("city.cantResolveBody"));
     } finally {
       setLocating(false);
     }
@@ -132,8 +150,8 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
             <View style={styles.handle} />
             <View style={styles.headRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>Hangi şehirdesin?</Text>
-                <Text style={styles.sub}>Rotalar, harita ve AI planlama bu şehre göre çalışır.</Text>
+                <Text style={styles.title}>{t("city.title")}</Text>
+                <Text style={styles.sub}>{t("city.subtitle")}</Text>
               </View>
               <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={8}>
                 <Ionicons name="close" size={19} color={colors.textMuted} />
@@ -148,7 +166,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
               style={styles.searchInput}
               value={q}
               onChangeText={setQ}
-              placeholder="Şehir ara — Türkiye + dünya (örn. Antalya, Berlin)"
+              placeholder={t("city.searchPlaceholder")}
               placeholderTextColor={colors.textFaint}
               autoCorrect={false}
             />
@@ -174,7 +192,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{p.label}</Text>
                 <Text style={styles.districts}>
-                  {counts[p.key] != null ? `${counts[p.key]} rota` : "AI bu şehirde senin için üretir"}
+                  {counts[p.key] != null ? t("city.routeCount", { n: counts[p.key] }) : t("city.aiWillGenerate")}
                 </Text>
               </View>
               {p.key === current
@@ -182,6 +200,29 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 : <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />}
             </TouchableOpacity>
           ))}
+          {/* Ülke yazıldıysa o ülkenin büyük şehirleri — anında (API'siz) */}
+          {q.trim().length > 0 && countryCities.map((w, i) => {
+            const busy = resolving === (w.place_id ?? w.name);
+            return (
+              <TouchableOpacity
+                key={`c-${w.name}-${i}`} style={styles.row} activeOpacity={0.85}
+                disabled={!!resolving} onPress={() => pickWorld(w)}
+              >
+                <View style={styles.iconWrap}>
+                  <Ionicons name="globe-outline" size={20} color={colors.textMuted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{w.name}</Text>
+                  <Text style={styles.districts} numberOfLines={1}>{w.country}</Text>
+                </View>
+                {busy
+                  ? <ActivityIndicator size="small" color={colors.primary} />
+                  : canonKey(w.name) === current
+                    ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                    : <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />}
+              </TouchableOpacity>
+            );
+          })}
           {q.trim().length > 0 && world.map((w, i) => {
             const busy = resolving === (w.place_id ?? w.name);
             return (
@@ -209,14 +250,14 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
               </TouchableOpacity>
             );
           })}
-          {q.trim().length >= 2 && searching && world.length === 0 && (
+          {q.trim().length >= 2 && searching && world.length === 0 && countryCities.length === 0 && (
             <View style={styles.searchingRow}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.noResult}>Dünya şehirleri aranıyor…</Text>
+              <Text style={styles.noResult}>{t("city.searching")}</Text>
             </View>
           )}
-          {q.trim().length > 0 && !searching && results.length === 0 && world.length === 0 && (
-            <Text style={styles.noResult}>Şehir bulunamadı — yazımı kontrol et.</Text>
+          {q.trim().length > 0 && !searching && results.length === 0 && world.length === 0 && countryCities.length === 0 && (
+            <Text style={styles.noResult}>{t("city.notFound")}</Text>
           )}
 
           {q.trim().length === 0 && (
@@ -224,9 +265,9 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
             <View style={styles.iconWrap}><Ionicons name="locate-outline" size={20} color={colors.primary} /></View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.name, { color: colors.primaryDark }]}>
-                {locating ? "Konum alınıyor…" : "Konumumdan bul"}
+                {locating ? t("city.locating") : t("city.byLocation")}
               </Text>
-              <Text style={styles.districts}>Türkiye'nin her ilinde çalışır — AI orada rota üretir</Text>
+              <Text style={styles.districts}>{t("city.byLocationHint")}</Text>
             </View>
             {locating
               ? <ActivityIndicator size="small" color={colors.primary} />
@@ -257,7 +298,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 </View>
                 {counts[c.key] != null && (
                   <View style={styles.countPill}>
-                    <Text style={styles.countText}>{counts[c.key]} rota</Text>
+                    <Text style={styles.countText}>{t("city.routeCount", { n: counts[c.key] })}</Text>
                   </View>
                 )}
                 {on ? (

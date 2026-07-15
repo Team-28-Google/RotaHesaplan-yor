@@ -705,7 +705,7 @@ export async function detectCity(lat: number, lng: number): Promise<{ key: strin
       method: "POST",
       headers: { "Content-Type": "application/json", ...appKeyHeader },
       body: JSON.stringify({ lat, lng }),
-    }, 10_000);
+    }, 35_000); // Render soğuk başlangıcı ~30 sn — kısa timeout "bulunamadı" verdiriyordu
     if (!res.ok) return null;
     const j = await res.json();
     return j.city ? { key: j.city, label: j.province ?? j.city } : null;
