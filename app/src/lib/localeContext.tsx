@@ -3,6 +3,7 @@ import { getLocales } from "expo-localization";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { en, tr, type Dict } from "../locales";
+import { setDataLang } from "./api";
 import { setUiLang } from "./ui";
 
 // Dil: cihaz dilinden başlar (tr değilse en), kullanıcı Profil'den değiştirir, kalıcı.
@@ -53,7 +54,8 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       .catch(() => setLangState(deviceLang()));
   }, []);
 
-  setUiLang(lang); // formatlama helper'larını (fmtDuration/transportLabel) senkronla
+  setUiLang(lang);   // formatlama helper'larını (fmtDuration/transportLabel) senkronla
+  setDataLang(lang); // keşif akışı + sayaçlar + yeni rota kaydı bu dile göre
 
   const value = useMemo<LocaleContextValue>(() => {
     const setLang = (l: Lang) => {

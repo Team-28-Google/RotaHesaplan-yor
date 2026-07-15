@@ -45,6 +45,8 @@ export interface Route {
   like_count: number;
   /** false = yalnız sahibi/collaborator görür; "🌍 Rotanı paylaş" ile herkese açılır (3.13) */
   is_public?: boolean;
+  /** İçerik dili — keşif akışı aktif arayüz diline göre filtrelenir (0024). */
+  lang?: "tr" | "en";
 }
 
 // Harita için: rota + sıralı waypoint'leri bir arada

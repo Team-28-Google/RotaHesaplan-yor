@@ -21,7 +21,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   onSelect: (cityKey: string) => void;
 }) {
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, lang } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [locating, setLocating] = useState(false);
@@ -131,15 +131,16 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   ).current;
   useEffect(() => { if (visible) dragY.setValue(0); }, [visible, dragY]);
 
-  // Şehir başına rota sayısı — sunucuda gruplanır (0021); yalnız herkese açık rotalar
+  // Şehir başına rota sayısı — sunucuda gruplanır (0021); yalnız herkese açık rotalar,
+  // aktif dile göre (0024: EN modu İngilizce havuzu sayar)
   useEffect(() => {
     if (!visible) return;
-    supabase.rpc("city_route_counts").then(({ data }) => {
+    supabase.rpc("city_route_counts", { p_lang: lang }).then(({ data }) => {
       const c: Record<string, number> = {};
       for (const r of (data ?? []) as { city: string; n: number }[]) c[r.city] = r.n;
       setCounts(c);
     });
-  }, [visible]);
+  }, [visible, lang]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

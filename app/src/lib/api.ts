@@ -20,6 +20,12 @@ const isAbort = (e: unknown) => e instanceof Error && e.name === "AbortError";
 /** Anonim maliyet uçlarına bot kalkanı header'ı (#3a); APP_KEY boşsa boş obje. */
 const appKeyHeader: Record<string, string> = APP_KEY ? { "X-App-Key": APP_KEY } : {};
 
+/** Aktif içerik dili — LocaleProvider setDataLang ile senkronlar (setUiLang deseni).
+ *  Keşif akışı (feed + şehir sayaçları) ve yeni rota kaydı bu dili kullanır. */
+let _dataLang: "tr" | "en" = "tr";
+export function setDataLang(l: "tr" | "en") { _dataLang = l; }
+export function getDataLang(): "tr" | "en" { return _dataLang; }
+
 /** Servise kimlik (güvenlik): Supabase oturum token'ı — servis user_id'yi gövdeden
  *  değil BU token'dan doğrular. Oturum yoksa boş obje (anonim uçlar çalışmaya devam eder). */
 async function authHeaders(): Promise<Record<string, string>> {
@@ -32,11 +38,13 @@ async function authHeaders(): Promise<Record<string, string>> {
   }
 }
 
-/** Tüm rotaları sıralı waypoint'leriyle birlikte getirir (en yeni önce). */
-export async function fetchRoutes(city?: string): Promise<RouteWithWaypoints[]> {
+/** Keşif akışı rotaları — sıralı waypoint'leriyle (en yeni önce), aktif dile göre.
+ *  lang verilmezse modül seviyesi _dataLang kullanılır (Home/Map çağrıları değişmez). */
+export async function fetchRoutes(city?: string, lang: "tr" | "en" = _dataLang): Promise<RouteWithWaypoints[]> {
   let q = supabase
     .from("routes")
     .select("*, waypoints(*)")
+    .eq("lang", lang) // 4.x: EN modu → İngilizce havuz, TR modu → Türkçe havuz
     .order("created_at", { ascending: false });
   if (city) q = q.eq("city", city); // 3.0c: aktif şehre filtre
   const { data, error } = await q;
@@ -90,7 +98,7 @@ export async function forkRoute(src: RouteWithWaypoints, extra?: PlaceResult): P
     author_id: uid, title: src.title, description: src.description,
     city: src.city, vibe_tags: src.vibe_tags, weather_fit: src.weather_fit,
     budget_level: src.budget_level, is_seed: false, is_public: false,
-    cover_photo_url: src.cover_photo_url,
+    cover_photo_url: src.cover_photo_url, lang: src.lang ?? "tr", // kopya kaynağın dilini korur
     total_distance_m: src.total_distance_m, total_duration_min: src.total_duration_min,
   }).select("id").single();
   if (error || !r) throw error ?? new Error("Kopya oluşturulamadı");
@@ -529,6 +537,7 @@ export async function planRoute(
         gen_lng: gen?.lng,
         gen_district: gen?.district,
         city: await getActiveCity(), // 3.0c: cümlede şehir yoksa bu kullanılır
+        lang: _dataLang, // 4.x: EN modda üretim anlatısı İngilizce + rota EN havuzuna
       }),
     }, forceGenerate ? 150_000 : 90_000);
   } catch (e) {
@@ -798,7 +807,7 @@ export async function enrichRoute(stops: CreateStop[]): Promise<EnrichResult> {
     res = await fetchWithTimeout(`${AI_SERVICE_URL}/enrich-route`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stops }),
+      body: JSON.stringify({ stops, lang: _dataLang }), // 4.x: EN modda anlatı İngilizce
     }, 60_000);
   } catch (e) {
     if (isAbort(e)) throw new Error("AI yanıt vermedi (zaman aşımı). Tekrar dene.");
@@ -846,6 +855,7 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
       city,
       vibe_tags: input.vibe_tags, weather_fit: input.weather_fit, budget_level: 2,
       is_seed: false, is_public: false, // 3.13: özel başlar; "🌍 Rotanı paylaş" ile açılır
+      lang: _dataLang, // 4.x: oluşturulduğu arayüz dilinin havuzuna girer
       total_distance_m: dist, total_duration_min: Math.round(dist / 80),
     })
     .select("id")
