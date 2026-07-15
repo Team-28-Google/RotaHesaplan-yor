@@ -17,6 +17,7 @@ import { cityInfo, getActiveCity } from "../lib/cities";
 import { pop, tap } from "../lib/haptics";
 import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { PlaceResult, PlanResponse, Waypoint } from "../lib/types";
 import Icon from "../components/Icon";
@@ -26,47 +27,30 @@ import type { PlanScreenProps } from "../navigation";
 // 4.0a: sonuç paneli tam ekran haritanın üstünde (aşağı kaydırılıp kapanır)
 const SHEET_H = Math.round(Dimensions.get("window").height * 0.58);
 
-const SUGGESTIONS = [
-  "Kafa dinlemek istiyorum, bütçem az",
-  "Tarihi ve kültürel yerler gezmek",
-  "Açık havada uzun bir yürüyüş",
-  "Müze ve kapalı mekanlar, bütçe orta",
-];
+const SUGGESTION_KEYS = ["plan.sug1", "plan.sug2", "plan.sug3", "plan.sug4"];
 
 // Pipeline'ın GERÇEK aşamaları (servis bunları aynı sırayla yürütür; bekleme ekranı akışı)
-const AGENT_STEPS = [
-  { label: "Niyet çözümleniyor" },
-  { label: "Hafızan taranıyor" },
-  { label: "Hava kontrol ediliyor" },
-  { label: "Rotalar eşleştiriliyor" },
-  { label: "Anlatı yazılıyor" },
-];
-
+const AGENT_STEP_KEYS = ["plan.stepIntent", "plan.stepMemory", "plan.stepWeather", "plan.stepMatch", "plan.stepNarrative"];
 // Üretim modunun aşamaları (2.7) — daha uzun sürer, adımlar farklı akar
-const GEN_STEPS = [
-  { label: "Niyet çözümleniyor" },
-  { label: "Hava kontrol ediliyor" },
-  { label: "Gerçek mekânlar aranıyor" },
-  { label: "Yepyeni rota kuruluyor" },
-  { label: "Foto + sokak geometrisi ekleniyor" },
-];
+const GEN_STEP_KEYS = ["plan.stepIntent", "plan.stepWeather", "plan.stepPlaces", "plan.stepBuild", "plan.stepPhoto"];
 
 /** Plan beklerken agent adımlarını akıtan gösterge — orkestrasyonu görünür kılar (2.6). */
 function AgentProgress({ generating }: { generating?: boolean }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [idx, setIdx] = useState(0);
-  const STEPS = generating ? GEN_STEPS : AGENT_STEPS;
+  const STEPS = generating ? GEN_STEP_KEYS : AGENT_STEP_KEYS;
 
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => Math.min(i + 1, STEPS.length - 1)), generating ? 3200 : 1800);
-    return () => clearInterval(t);
+    const iv = setInterval(() => setIdx((i) => Math.min(i + 1, STEPS.length - 1)), generating ? 3200 : 1800);
+    return () => clearInterval(iv);
   }, [generating, STEPS.length]);
 
   return (
     <View style={styles.agentBox}>
-      {STEPS.map((s, i) => (
-        <View key={s.label} style={styles.agentRow}>
+      {STEPS.map((key, i) => (
+        <View key={key} style={styles.agentRow}>
           {i < idx ? (
             <Text style={styles.agentDone}>✓</Text>
           ) : i === idx ? (
@@ -79,7 +63,7 @@ function AgentProgress({ generating }: { generating?: boolean }) {
             i < idx && styles.agentLabelDone,
             i > idx && styles.agentLabelPending,
           ]}>
-            {s.label}
+            {t(key)}
           </Text>
         </View>
       ))}
@@ -90,6 +74,7 @@ function AgentProgress({ generating }: { generating?: boolean }) {
 export default function PlanScreen({ navigation }: PlanScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -143,7 +128,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
       const res = await planRoute(text.trim(), force, generate, gen);
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Bir hata oluştu");
+      setError(e instanceof Error ? e.message : t("plan.genError"));
     } finally {
       setLoading(false);
     }
@@ -169,7 +154,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   return (
     <View style={styles.screen}>
       <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
-        <Text style={styles.topbarTitle}>AI ile Planla</Text>
+        <Text style={styles.topbarTitle}>{t("plan.topTitle")}</Text>
       </View>
       {result ? (
         <PlanResult
@@ -185,11 +170,9 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <Text style={styles.h1}>Nasıl bir gün istiyorsun?</Text>
+        <Text style={styles.h1}>{t("plan.h1")}</Text>
         <Text style={styles.h2}>
-          {mode === "generate"
-            ? "Ruh halini yaz; SANA gerçek mekânlardan sıfırdan rota kursun."
-            : "Ruh halini yaz; SANA hafızasından sana göre bir rota kursun."}
+          {mode === "generate" ? t("plan.subGenerate") : t("plan.subMatch")}
         </Text>
 
         {/* 2.7b: kaynak seçimi en başta */}
@@ -199,7 +182,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
             onPress={() => { tap(); setMode("match"); }}
           >
             <Text style={[styles.modeText, mode === "match" && styles.modeTextOn]}>
-              Kayıtlı rotalardan
+              {t("plan.modeMatch")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -207,7 +190,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
             onPress={() => { tap(); setMode("generate"); }}
           >
             <Text style={[styles.modeText, mode === "generate" && styles.modeTextOn]}>
-              Yepyeni üret
+              {t("plan.modeGenerate")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -215,14 +198,14 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
         {/* 2.7b: üretimde başlangıç konumu sor */}
         {mode === "generate" && (
           <View style={{ gap: 8 }}>
-            <Text style={styles.locLabel}>Nereden başlayalım?</Text>
+            <Text style={styles.locLabel}>{t("plan.whereStart")}</Text>
             <View style={styles.chips}>
               <TouchableOpacity
                 style={[styles.locChip, loc === "ai" && styles.locChipOn]}
                 onPress={() => { tap(); setLoc("ai"); }}
               >
                 <Text style={[styles.locChipText, loc === "ai" && styles.locChipTextOn]}>
-                  AI seçsin
+                  {t("plan.locAi")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -230,7 +213,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
                 onPress={pickMyLocation}
               >
                 <Text style={[styles.locChipText, loc === "me" && styles.locChipTextOn]}>
-                  Konumum{loc === "me" && !myLoc ? " (alınıyor…)" : ""}
+                  {t("plan.locMe")}{loc === "me" && !myLoc ? t("plan.locMeLoading") : ""}
                 </Text>
               </TouchableOpacity>
               {districts.map((d) => (
@@ -252,17 +235,18 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
           style={styles.input}
           value={text}
           onChangeText={setText}
-          placeholder="örn. Bugün yalnızım, kafa dinlemek istiyorum, bütçem az"
+          placeholder={t("plan.inputPlaceholder")}
           placeholderTextColor={colors.textFaint}
           multiline
         />
 
         <View style={styles.chips}>
-          {SUGGESTIONS.map((s) => {
+          {SUGGESTION_KEYS.map((key) => {
+            const s = t(key);
             const on = text === s;
             return (
               <TouchableOpacity
-                key={s}
+                key={key}
                 style={[styles.locChip, on && styles.locChipOn]}
                 onPress={() => { tap(); setText(on ? "" : s); }}
               >
@@ -283,12 +267,12 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.btnText}>{mode === "generate" ? "Rota Üret" : "Planla"}</Text>
+            <Text style={styles.btnText}>{mode === "generate" ? t("plan.generate") : t("plan.plan")}</Text>
           )}
         </TouchableOpacity>
             {loading && <AgentProgress generating={genMode} />}
             {loading && genMode && (
-              <Text style={styles.genHint}>Yepyeni bir rota kuruluyor — bu, hazır eşleştirmeden biraz uzun sürer.</Text>
+              <Text style={styles.genHint}>{t("plan.genHint")}</Text>
             )}
           </ScrollView>
         </KeyboardAvoidingView>
@@ -302,6 +286,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
   onOpenRoute: (id: string, title: string) => void;
 }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [saved, setSaved] = useState(false);
   const planUserLoc = useUserLocation(); // canlı "buradasın" noktası (kullanıcı isteği)
@@ -386,10 +371,10 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
   if (!result.ok || !route) {
     return (
       <View style={styles.center}>
-        <Text style={styles.h1}>Uygun rota bulamadım</Text>
-        <Text style={styles.h2}>Farklı bir ifadeyle tekrar dener misin?</Text>
+        <Text style={styles.h1}>{t("plan.noRoute")}</Text>
+        <Text style={styles.h2}>{t("plan.noRouteHint")}</Text>
         {!!result.reason && <Text style={styles.reason}>{result.reason}</Text>}
-        <TouchableOpacity style={styles.btn} onPress={onReset}><Text style={styles.btnText}>← Yeni plan</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.btn} onPress={onReset}><Text style={styles.btnText}>{t("plan.newPlan")}</Text></TouchableOpacity>
       </View>
     );
   }
@@ -408,24 +393,24 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
         userLocation={planUserLoc} showRecenter
       />
       {/* 4.0a: plan sonucu paneli de aşağı kaydırılıp kapanır — tam harita görünür */}
-      <CollapsibleSheet style={styles.sheet} peekLabel="Plan detayı">
+      <CollapsibleSheet style={styles.sheet} peekLabel={t("plan.detailPeek")}>
         <ScrollView contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
             <Text style={styles.aiTag}>
               {result.generated
-                ? "Az önce senin için ÜRETİLDİ — yepyeni rota"
-                : result.personalized ? "Sana özel · hafızandan" : "Sana özel"}
+                ? t("plan.tagGenerated")
+                : result.personalized ? t("plan.tagPersonalized") : t("plan.tagSpecial")}
             </Text>
             <Text style={styles.title}>{ai.title ?? route.title}</Text>
             {!!ai.summary && <Text style={styles.summary}>{ai.summary}</Text>}
             {!!result.profile && (
               <Text style={styles.profileNote} numberOfLines={2}>
-                Hafızadaki profilin: {result.profile.replace("Kullanıcı profili: ", "")}
+                {t("plan.memoryProfile", { profile: result.profile.replace("Kullanıcı profili: ", "") })}
               </Text>
             )}
             {!!result.steps?.length && (
               <View style={styles.stepsBox}>
-                <Text style={styles.stepsTitle}>AGENT ADIMLARI</Text>
+                <Text style={styles.stepsTitle}>{t("plan.agentSteps")}</Text>
                 {/* Süreler bilinçli gizli (premium his) — s.ms API'de duruyor, gerekirse geri açılır */}
                 {result.steps.map((s) => (
                   <Text key={s.name} style={styles.stepLine}>
@@ -436,7 +421,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
             )}
             <View style={styles.pills}>
               <Text style={styles.pill}>{budgetLabel(route.budget_level)}</Text>
-              <Text style={styles.pill}>{exp.length} durak</Text>
+              <Text style={styles.pill}>{t("common.stopsCount", { n: exp.length })}</Text>
               {result.weather?.temp != null && (
                 <Text style={styles.pill}>{result.weather.temp}° {result.weather.desc}</Text>
               )}
@@ -448,15 +433,15 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
             {result.weather?.rainy && route.weather_fit !== "indoor" && !result.forced_fit && (
               <View style={styles.rainBand}>
                 <Text style={styles.rainText}>
-                  Bugün hava yağışlı{result.weather.desc ? ` (${result.weather.desc})` : ""} — bu rota açık hava ağırlıklı.
+                  {t("plan.rainy", { desc: result.weather.desc ? ` (${result.weather.desc})` : "" })}
                 </Text>
                 <TouchableOpacity style={styles.rainBtn} onPress={onIndoor} activeOpacity={0.85}>
-                  <Text style={styles.rainBtnText}>Kapalı mekân alternatifi öner</Text>
+                  <Text style={styles.rainBtnText}>{t("plan.indoorAlt")}</Text>
                 </TouchableOpacity>
               </View>
             )}
             {!!result.forced_fit && (
-              <Text style={styles.note}>Kapalı mekân tercihinle yeniden planlandı.</Text>
+              <Text style={styles.note}>{t("plan.replannedIndoor")}</Text>
             )}
           </View>
 
@@ -499,18 +484,18 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               disabled={editBusy}
               activeOpacity={0.85}
             >
-              <Text style={styles.addStopText}>{editBusy ? "Güncelleniyor…" : "＋ Durak ekle"}</Text>
+              <Text style={styles.addStopText}>{editBusy ? t("plan.updating") : t("plan.addStop")}</Text>
             </TouchableOpacity>
           )}
 
           {util.length > 0 && (
             <View style={styles.nearby}>
-              <Text style={styles.nearbyTitle}>Yakında pratik noktalar</Text>
+              <Text style={styles.nearbyTitle}>{t("plan.nearbyPractical")}</Text>
               {util.map((w) => (
                 <View key={w.id} style={styles.amenity}>
                   <Icon name={waypointIcon(w)} size={18} color={colors.textMuted} />
                   <Text style={styles.amenityName}>{w.name}</Text>
-                  <Text style={styles.amenityBadge}>ücretsiz</Text>
+                  <Text style={styles.amenityBadge}>{t("plan.free")}</Text>
                 </View>
               ))}
             </View>
@@ -531,7 +516,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               activeOpacity={0.85}
             >
               <Text style={[styles.saveBtnText, saved && { color: colors.primaryDark }]}>
-                {saved ? "✓ Kaydedildi" : "Kaydet"}
+                {saved ? t("plan.saved") : t("common.save")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -539,18 +524,18 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
               onPress={() => { tap(); onOpenRoute(route.id, ai.title ?? route.title); }}
               activeOpacity={0.9}
             >
-              <Text style={styles.goBtnText}>Yolculuğa Başla</Text>
+              <Text style={styles.goBtnText}>{t("plan.startJourney")}</Text>
             </TouchableOpacity>
           </View>
 
           {/* 🎲 Beğenmediysen: havuz yerine gerçek mekânlardan yepyeni rota (2.7) */}
           <TouchableOpacity style={styles.genBtn} onPress={() => { tap(); onGenerate(); }} activeOpacity={0.85}>
-            <Text style={styles.genBtnText}>Bana yeni rota üret</Text>
-            <Text style={styles.genBtnSub}>Kayıtlılardan değil — gerçek mekânlardan sıfırdan kurar</Text>
+            <Text style={styles.genBtnText}>{t("plan.genNew")}</Text>
+            <Text style={styles.genBtnSub}>{t("plan.genNewSub")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.btn, styles.resetBtn]} onPress={onReset}>
-            <Text style={styles.btnText}>← Yeni plan</Text>
+            <Text style={styles.btnText}>{t("plan.newPlan")}</Text>
           </TouchableOpacity>
         </ScrollView>
       </CollapsibleSheet>
@@ -561,20 +546,20 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setAdding(false)} />
           <View style={styles.addSheet}>
             <View style={styles.addHandle} />
-            <Text style={styles.addTitle}>Durak ekle</Text>
+            <Text style={styles.addTitle}>{t("plan.addStopTitle")}</Text>
             <View style={styles.addRow}>
               <TextInput
                 style={styles.addInput}
                 value={q}
                 onChangeText={setQ}
-                placeholder="Mekan ara (örn. Moda Sahili)"
+                placeholder={t("plan.addSearchPlaceholder")}
                 placeholderTextColor={colors.textFaint}
                 autoFocus
                 returnKeyType="search"
                 onSubmitEditing={doSearch}
               />
               <TouchableOpacity style={styles.addSearchBtn} onPress={doSearch} disabled={searching}>
-                {searching ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.addSearchText}>Ara</Text>}
+                {searching ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.addSearchText}>{t("plan.search")}</Text>}
               </TouchableOpacity>
             </View>
             <ScrollView style={{ maxHeight: 300 }} keyboardShouldPersistTaps="handled">
@@ -587,7 +572,7 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
                 </TouchableOpacity>
               ))}
               {places.length === 0 && !searching && (
-                <Text style={styles.addEmpty}>Arama yap — sonuçtan seçtiğin durak rotanın sonuna eklenir.</Text>
+                <Text style={styles.addEmpty}>{t("plan.addEmpty")}</Text>
               )}
             </ScrollView>
           </View>

@@ -8,6 +8,7 @@ import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
 import { fetchUserRoutes } from "../lib/api";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import Icon from "../components/Icon";
@@ -18,6 +19,7 @@ import type { UserRoutesScreenProps } from "../navigation";
 export default function UserRoutesScreen({ route: nav, navigation }: UserRoutesScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { userId, username, avatarUrl } = nav.params;
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
@@ -50,7 +52,7 @@ export default function UserRoutesScreen({ route: nav, navigation }: UserRoutesS
         </View>
         <View>
           <Text style={styles.name}>@{username}</Text>
-          <Text style={styles.meta}>{routes.length} açık rota · {totalLikes} ❤️</Text>
+          <Text style={styles.meta}>{t("userRoutes.meta", { n: routes.length, likes: totalLikes })}</Text>
         </View>
       </View>
 
@@ -60,9 +62,9 @@ export default function UserRoutesScreen({ route: nav, navigation }: UserRoutesS
         </View>
       ) : routes.length === 0 ? (
         <View style={styles.center}>
-          <Text style={{ fontSize: 40 }}>🗺️</Text>
-          <Text style={styles.emptyTitle}>Henüz paylaşılmış rotası yok</Text>
-          <Text style={styles.emptyText}>Rotalarını herkese açtığında burada görünecek.</Text>
+          <Ionicons name="map-outline" size={40} color={colors.textFaint} />
+          <Text style={styles.emptyTitle}>{t("userRoutes.empty")}</Text>
+          <Text style={styles.emptyText}>{t("userRoutes.emptyHint")}</Text>
         </View>
       ) : (
         <FlatList
@@ -89,7 +91,7 @@ export default function UserRoutesScreen({ route: nav, navigation }: UserRoutesS
                   </View>
                   <View style={styles.metaRow}>
                     <Text style={styles.cardMeta}>{budgetLabel(item.budget_level)}</Text>
-                    <Text style={styles.cardMeta}>{exp.length} durak</Text>
+                    <Text style={styles.cardMeta}>{t("common.stopsCount", { n: exp.length })}</Text>
                     <Text style={styles.cardMeta}>{km} km</Text>
                   </View>
                   <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>

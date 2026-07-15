@@ -15,6 +15,7 @@ import {
 import { INVITE_URL } from "../lib/config";
 import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import { budgetLabel, routeColor, waypointIcon } from "../lib/ui";
@@ -24,6 +25,7 @@ import type { CollectionScreenProps } from "../navigation";
 export default function CollectionScreen({ route: nav, navigation }: CollectionScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { collectionId, emoji } = nav.params;
   const [title, setTitle] = useState(nav.params.title);
@@ -52,62 +54,63 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
     tap();
     const opts: { text: string; style?: "destructive" | "cancel"; onPress?: () => void }[] = [];
     if (isOwner) {
-      opts.push({ text: "Yeniden adlandır", onPress: promptRename });
+      opts.push({ text: t("collection.rename"), onPress: promptRename });
     } else if (uid) {
       opts.push({
-        text: "Koleksiyondan ayrıl", style: "destructive",
+        text: t("collection.leave"), style: "destructive",
         onPress: () => {
-          Alert.alert("Ayrıl", `"${title}" koleksiyonundan ayrılınsın mı?`, [
-            { text: "Vazgeç", style: "cancel" },
+          Alert.alert(t("collection.leaveConfirmTitle"), t("collection.leaveConfirmBody", { title }), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-              text: "Ayrıl", style: "destructive",
+              text: t("collection.leaveConfirmTitle"), style: "destructive",
               onPress: async () => {
                 if (await leaveCollection(collectionId)) navigation.goBack();
-                else Alert.alert("Olmadı", "Ayrılınamadı — tekrar dene.");
+                else Alert.alert(t("collection.failed"), t("collection.leaveFailed"));
               },
             },
           ]);
         },
       });
     }
-    opts.push({ text: "Vazgeç", style: "cancel" });
+    opts.push({ text: t("common.cancel"), style: "cancel" });
     Alert.alert(title, undefined, opts);
   };
 
   const promptRename = () => {
     Alert.prompt?.(
-      "Yeniden adlandır", "Koleksiyonun yeni adı:",
+      t("collection.renameTitle"), t("collection.renameBody"),
       async (text?: string) => {
-        const t = (text ?? "").trim();
-        if (!t || t === title) return;
-        if (await renameCollection(collectionId, t)) setTitle(t);
-        else Alert.alert("Olmadı", "Ad değiştirilemedi.");
+        const nt = (text ?? "").trim();
+        if (!nt || nt === title) return;
+        if (await renameCollection(collectionId, nt)) setTitle(nt);
+        else Alert.alert(t("collection.failed"), t("collection.renameFailed"));
       },
       "plain-text", title,
-    ) ?? Alert.alert("Desteklenmiyor", "Yeniden adlandırma bu cihazda kullanılamıyor.");
+    ) ?? Alert.alert(t("collection.notSupported"), t("collection.renameNotSupported"));
   };
 
   const invite = async () => {
     tap();
     const token = await getOrCreateCollectionToken(collectionId);
     if (!token) {
-      Alert.alert("Davet edilemedi", "Yalnız koleksiyonun sahibi davet linki üretebilir.");
+      Alert.alert(t("collection.cantInvite"), t("collection.cantInviteBody"));
       return;
     }
     try {
       await Share.share({
-        message:
-          `SANA'da "${emoji ? `${emoji} ` : ""}${title}" koleksiyonuna katıl!\n` +
-          `Birlikte rota toplayalım — linke tıkla:\n${INVITE_URL}&joinc=${token}`,
+        message: t("collection.inviteMsg", {
+          name: `${emoji ? `${emoji} ` : ""}${title}`,
+          url: `${INVITE_URL}&joinc=${token}`,
+        }),
       });
     } catch { /* iptal */ }
   };
 
   const removeRoute = (r: RouteWithWaypoints) => {
-    Alert.alert("Koleksiyondan çıkar", `"${r.title}" bu koleksiyondan çıkarılsın mı? (Rota silinmez.)`, [
-      { text: "Vazgeç", style: "cancel" },
+    Alert.alert(t("collection.removeTitle"), t("collection.removeBody", { title: r.title }), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Çıkar", style: "destructive",
+        text: t("common.remove"), style: "destructive",
         onPress: async () => {
           tap();
           await removeRouteFromCollection(collectionId, r.id);
@@ -144,11 +147,11 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
             </View>
           ))}
           <Text style={styles.memberText}>
-            {members.length} üye{uid && members.some((m) => m.user_id === uid) ? " · sen de içindesin" : ""}
+            {t("collection.members", { n: members.length })}{uid && members.some((m) => m.user_id === uid) ? t("collection.youIncluded") : ""}
           </Text>
         </View>
         <TouchableOpacity style={styles.inviteBtn} onPress={invite} activeOpacity={0.85}>
-          <Text style={styles.inviteText}>Davet et</Text>
+          <Text style={styles.inviteText}>{t("collection.invite")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -159,10 +162,8 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
       ) : routes.length === 0 ? (
         <View style={styles.center}>
           {emoji ? <Text style={{ fontSize: 40 }}>{emoji}</Text> : <Icon name="folder-open-outline" size={40} color={colors.textFaint} />}
-          <Text style={styles.emptyTitle}>Koleksiyon henüz boş</Text>
-          <Text style={styles.emptyText}>
-            Bir rotayı açıp "Koleksiyona ekle" ile buraya at — davet ettiklerin de ekleyebilir.
-          </Text>
+          <Text style={styles.emptyTitle}>{t("collection.empty")}</Text>
+          <Text style={styles.emptyText}>{t("collection.emptyHint")}</Text>
         </View>
       ) : (
         <FlatList
@@ -188,7 +189,7 @@ export default function CollectionScreen({ route: nav, navigation }: CollectionS
                   </View>
                   <View style={styles.metaRow}>
                     <Text style={styles.meta}>{budgetLabel(item.budget_level)}</Text>
-                    <Text style={styles.meta}>{exp.length} durak</Text>
+                    <Text style={styles.meta}>{t("common.stopsCount", { n: exp.length })}</Text>
                     <Text style={styles.meta}>{km} km</Text>
                   </View>
                   <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>

@@ -16,10 +16,11 @@ import { cityInfo, getActiveCity, getChosenCity, setActiveCity } from "../lib/ci
 import { tap } from "../lib/haptics";
 import { getOnboarding } from "../lib/onboarding";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { LeaderRow, RouteWithWaypoints } from "../lib/types";
 import Icon from "../components/Icon";
-import { fmtDuration, routeColor, waypointIcon } from "../lib/ui";
+import { fmtDuration, routeColor, vibeLabel, waypointIcon } from "../lib/ui";
 import type { HomeScreenProps } from "../navigation";
 
 // Kapaklar yüklenirken gösterilecek yumuşak bulanık yer tutucu
@@ -53,6 +54,7 @@ function MetaLight({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text:
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t, lang } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
   const [leaders, setLeaders] = useState<LeaderRow[]>([]);
@@ -195,7 +197,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </TouchableOpacity>
           <TouchableOpacity onPress={goCreate} style={styles.createBtn} activeOpacity={0.85}>
             <Ionicons name="add" size={17} color="#fff" />
-            <Text style={styles.createBtnText}>Rota Oluştur</Text>
+            <Text style={styles.createBtnText}>{t("home.createRoute")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -215,7 +217,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         <View style={styles.center}>
           <Text style={styles.error}>⚠️ {error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={onRefresh} activeOpacity={0.85}>
-            <Text style={styles.retryText}>Tekrar dene</Text>
+            <Text style={styles.retryText}>{t("common.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -233,8 +235,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                   <Ionicons name="sparkles" size={19} color="#fff" />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.aiTitle}>Bugün ne yapmak istersin?</Text>
-                  <Text style={styles.aiSub}>Yaz, AI senin için planlasın</Text>
+                  <Text style={styles.aiTitle}>{t("home.todayPrompt")}</Text>
+                  <Text style={styles.aiSub}>{t("home.aiSub")}</Text>
                 </View>
                 <Ionicons name="arrow-forward" size={20} color={colors.primaryDark} />
               </TouchableOpacity>
@@ -243,8 +245,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               {forYou.length > 0 && (
                 <View style={{ gap: 12 }}>
                   <View style={styles.sectionRow}>
-                    <Text style={styles.sectionTitle}>Sana özel</Text>
-                    <Text style={styles.sectionHint}>tercihlerine göre</Text>
+                    <Text style={styles.sectionTitle}>{t("home.forYou")}</Text>
+                    <Text style={styles.sectionHint}>{t("home.forYouHint")}</Text>
                   </View>
                   <FlatList
                     data={forYou}
@@ -261,7 +263,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                           <View style={styles.miniBody}>
                             <Text style={styles.miniTitle} numberOfLines={1}>{item.title}</Text>
                             <Text style={styles.miniMeta}>
-                              {[dur, `${exp.length} durak`].filter(Boolean).join(" · ")}
+                              {[dur, t("common.stopsCount", { n: exp.length })].filter(Boolean).join(" · ")}
                             </Text>
                           </View>
                         </PressableScale>
@@ -275,8 +277,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               {mostLiked.length > 0 && (
                 <View style={{ gap: 12 }}>
                   <View style={styles.sectionRow}>
-                    <Text style={styles.sectionTitle}>Çok Beğenilenler</Text>
-                    <Text style={styles.sectionHint}>topluluğun favorileri</Text>
+                    <Text style={styles.sectionTitle}>{t("home.mostLiked")}</Text>
+                    <Text style={styles.sectionHint}>{t("home.mostLikedHint")}</Text>
                   </View>
                   <FlatList
                     data={mostLiked}
@@ -297,7 +299,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                           <View style={styles.miniBody}>
                             <Text style={styles.miniTitle} numberOfLines={1}>{item.title}</Text>
                             <Text style={styles.miniMeta}>
-                              {[dur, `${exp.length} durak`].filter(Boolean).join(" · ")}
+                              {[dur, t("common.stopsCount", { n: exp.length })].filter(Boolean).join(" · ")}
                             </Text>
                           </View>
                         </PressableScale>
@@ -307,14 +309,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 </View>
               )}
 
-              <Text style={styles.sectionTitle}>Popüler Rotalar</Text>
+              <Text style={styles.sectionTitle}>{t("home.popularRoutes")}</Text>
             </View>
           }
           ListEmptyComponent={
             <View style={styles.center}>
               <Icon name="compass-outline" size={40} color={colors.textFaint} />
-              <Text style={styles.emptyTitle}>Henüz rota yok</Text>
-              <Text style={styles.emptyText}>İlk rotayı sen oluştur — "+" ile başla.</Text>
+              <Text style={styles.emptyTitle}>{t("home.empty")}</Text>
+              <Text style={styles.emptyText}>{t("home.emptyHint")}</Text>
             </View>
           }
           ListFooterComponent={
@@ -327,16 +329,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                     onPress={() => { tap(); navigation.navigate("Leaderboard"); }}
                   >
                     <View style={styles.leaderHead}>
-                      <Text style={styles.leaderTitle}>Bu haftanın gezginleri</Text>
-                      <Text style={styles.leaderMore}>Tümü ›</Text>
+                      <Text style={styles.leaderTitle}>{t("home.weeklyTravelers")}</Text>
+                      <Text style={styles.leaderMore}>{t("home.seeAll")}</Text>
                     </View>
-                    <Text style={styles.leaderSub}>yalnız doğrulanmış yolculuklar sayılır</Text>
+                    <Text style={styles.leaderSub}>{t("home.verifiedOnly")}</Text>
                     {leaders.slice(0, 5).map((l, i) => (
                       <View key={l.user_id} style={styles.leaderRow}>
                         <Text style={styles.leaderRank}>{i + 1}</Text>
                         <Text style={styles.leaderName} numberOfLines={1}>{l.username}</Text>
                         <Text style={styles.leaderMeta}>
-                          {(l.total_distance_m / 1000).toFixed(1)} km · {l.journey_count} yolculuk
+                          {t("home.leaderStatWalk", { km: (l.total_distance_m / 1000).toFixed(1), n: l.journey_count })}
                         </Text>
                       </View>
                     ))}
@@ -350,15 +352,15 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                     onPress={() => { tap(); navigation.navigate("Leaderboard"); }}
                   >
                     <View style={styles.leaderHead}>
-                      <Text style={styles.leaderTitle}>❤️ En beğenilen rota yazarları</Text>
-                      <Text style={styles.leaderMore}>Tümü ›</Text>
+                      <Text style={styles.leaderTitle}>{t("home.topAuthors")}</Text>
+                      <Text style={styles.leaderMore}>{t("home.seeAll")}</Text>
                     </View>
                     {authorLeaders.slice(0, 5).map((l, i) => (
                       <View key={l.user_id} style={styles.leaderRow}>
                         <Text style={styles.leaderRank}>{i + 1}</Text>
                         <Text style={styles.leaderName} numberOfLines={1}>{l.username}</Text>
                         <Text style={styles.leaderMeta}>
-                          {l.total_likes} ❤️ · {l.route_count} rota
+                          {t("home.leaderStatLikes", { likes: l.total_likes, n: l.route_count })}
                         </Text>
                       </View>
                     ))}
@@ -377,11 +379,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 {renderCover(item, index, styles.bigCover)}
                 {/* Alt gradyan: fotoğraf ne olursa olsun başlık/meta okunur kalır */}
                 <LinearGradient
-                  colors={["transparent", "rgba(7,10,22,0.55)", "rgba(7,10,22,0.94)"]}
+                  colors={["transparent", "rgba(7,10,22,0.55)", "rgba(7,10,22,1)"]}
                   style={styles.bigShade}
                 />
                 {!!vibe && (
-                  <View style={styles.vibeBadge}><Text style={styles.vibeBadgeText}>{vibe.toUpperCase()}</Text></View>
+                  <View style={styles.vibeBadge}><Text style={styles.vibeBadgeText}>{vibeLabel(vibe, lang).toLocaleUpperCase(lang === "tr" ? "tr" : "en")}</Text></View>
                 )}
                 <View style={styles.likeBadge}>
                   <Ionicons name="heart" size={12} color="#FF6B54" />
@@ -391,7 +393,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                   <Text style={styles.bigTitle} numberOfLines={2}>{item.title}</Text>
                   <View style={styles.bigMetaRow}>
                     {!!dur && <MetaLight icon="time-outline" text={dur} />}
-                    <MetaLight icon="location-outline" text={`${exp.length} durak`} />
+                    <MetaLight icon="location-outline" text={t("common.stopsCount", { n: exp.length })} />
                     <MetaLight icon="walk-outline" text={`${km} km`} />
                   </View>
                 </View>
@@ -494,8 +496,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   leaderMeta: { fontSize: 12.5, fontFamily: font.medium, color: colors.textMuted },
 
   bigCard: { height: 220, borderRadius: radius.xl, overflow: "hidden", backgroundColor: colors.surfaceAlt, ...shadow(10) },
-  bigCover: { ...StyleSheet.absoluteFillObject },
-  bigShade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 130 },
+  bigCover: { ...StyleSheet.absoluteFillObject, borderRadius: radius.xl },
+  bigShade: { position: "absolute", left: 0, right: 0, bottom: -1, height: 132 },
   bigBody: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 16, gap: 8 },
   bigTitle: { fontSize: 20, fontFamily: font.extra, color: "#FFFFFF", lineHeight: 25 },
   bigMetaRow: { flexDirection: "row", gap: 14 },

@@ -8,29 +8,31 @@ import { syncOnboardingMemory } from "../lib/api";
 import { tap, success } from "../lib/haptics";
 import { getOnboarding, markOnboardingSynced, saveOnboarding } from "../lib/onboarding";
 import { font, gradients, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { OnboardingScreenProps } from "../navigation";
 
 const VIBES = [
-  { id: "sakin", label: "Sakin", icon: "leaf-outline" },
-  { id: "tarih", label: "Tarih", icon: "flag-outline" },
-  { id: "deniz", label: "Deniz", icon: "boat-outline" },
-  { id: "kahve", label: "Kahve", icon: "cafe-outline" },
-  { id: "sanat", label: "Sanat", icon: "color-palette-outline" },
-  { id: "gece", label: "Gece", icon: "moon-outline" },
-  { id: "yesil", label: "Yeşil", icon: "flower-outline" },
-  { id: "yuruyus", label: "Yürüyüş", icon: "walk-outline" },
+  { id: "sakin", tkey: "onb.vSakin", icon: "leaf-outline" },
+  { id: "tarih", tkey: "onb.vTarih", icon: "flag-outline" },
+  { id: "deniz", tkey: "onb.vDeniz", icon: "boat-outline" },
+  { id: "kahve", tkey: "onb.vKahve", icon: "cafe-outline" },
+  { id: "sanat", tkey: "onb.vSanat", icon: "color-palette-outline" },
+  { id: "gece", tkey: "onb.vGece", icon: "moon-outline" },
+  { id: "yesil", tkey: "onb.vYesil", icon: "flower-outline" },
+  { id: "yuruyus", tkey: "onb.vYuruyus", icon: "walk-outline" },
 ];
 const BUDGETS = [
-  { level: 1, label: "₺", desc: "Cüzdan dostu" },
-  { level: 2, label: "₺₺", desc: "Orta" },
-  { level: 3, label: "₺₺₺", desc: "Keyfe keder" },
+  { level: 1, label: "₺", tkey: "onb.bLow" },
+  { level: 2, label: "₺₺", tkey: "onb.bMid" },
+  { level: 3, label: "₺₺₺", tkey: "onb.bHigh" },
 ];
 
 /** Onboarding gövdesi — ilk açılışta Root'tan, sonra Profil → "Tercihlerimi düzenle" ile stack'ten açılır. */
 export function OnboardingFlow({ onDone }: { onDone: () => void }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [step, setStep] = useState(0);
   const [vibes, setVibes] = useState<string[]>([]);
@@ -70,7 +72,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
         </View>
         {step < 2 && (
           <TouchableOpacity onPress={finish} hitSlop={10}>
-            <Text style={styles.skip}>Atla</Text>
+            <Text style={styles.skip}>{t("onb.skip")}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -80,23 +82,20 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
           <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.logo}>
             <Text style={styles.logoText}>SANA</Text>
           </LinearGradient>
-          <Text style={styles.h1}>Şehirde yalnız değilsin</Text>
-          <Text style={styles.p}>
-            SANA, İstanbul'un gerçek günlerini keşfetmen için var: insanların yaşadığı rotalar,
-            sana göre planlanan günler.
-          </Text>
+          <Text style={styles.h1}>{t("onb.s0title")}</Text>
+          <Text style={styles.p}>{t("onb.s0body")}</Text>
           <View style={styles.features}>
-            <Feature icon="map" title="Gerçek rotalar" desc="Şehri yaşayanların adım adım günleri" colors={colors} />
-            <Feature icon="sparkles" title="AI ile planla" desc="Ruh halini yaz, günün kurulsun" colors={colors} />
-            <Feature icon="share-social" title="Paylaş" desc="Tamamladığın rotayı tek dokunuşla hikâyene at" colors={colors} />
+            <Feature icon="map" title={t("onb.f1title")} desc={t("onb.f1desc")} colors={colors} />
+            <Feature icon="sparkles" title={t("onb.f2title")} desc={t("onb.f2desc")} colors={colors} />
+            <Feature icon="share-social" title={t("onb.f3title")} desc={t("onb.f3desc")} colors={colors} />
           </View>
         </View>
       )}
 
       {step === 1 && (
         <View style={styles.body}>
-          <Text style={styles.h1}>Nasıl günler seversin?</Text>
-          <Text style={styles.p}>Seçimlerin önerileri kişiselleştirir. Birden fazla seçebilirsin.</Text>
+          <Text style={styles.h1}>{t("onb.s1title")}</Text>
+          <Text style={styles.p}>{t("onb.s1body")}</Text>
           <View style={styles.vibeGrid}>
             {VIBES.map((v) => {
               const on = vibes.includes(v.id);
@@ -108,7 +107,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                   activeOpacity={0.8}
                 >
                   <Ionicons name={v.icon as keyof typeof Ionicons.glyphMap} size={22} color={on ? colors.primary : colors.textMuted} />
-                  <Text style={[styles.vibeLabel, on && styles.vibeLabelOn]}>{v.label}</Text>
+                  <Text style={[styles.vibeLabel, on && styles.vibeLabelOn]}>{t(v.tkey)}</Text>
                   {on && <Ionicons name="checkmark-circle" size={16} color={colors.primary} style={styles.vibeCheck} />}
                 </TouchableOpacity>
               );
@@ -119,8 +118,8 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
 
       {step === 2 && (
         <View style={styles.body}>
-          <Text style={styles.h1}>Bütçen nasıl?</Text>
-          <Text style={styles.p}>Rota önerileri ve AI planları buna göre şekillenir.</Text>
+          <Text style={styles.h1}>{t("onb.s2title")}</Text>
+          <Text style={styles.p}>{t("onb.s2body")}</Text>
           <View style={{ gap: 10, marginTop: 18 }}>
             {BUDGETS.map((b) => {
               const on = budget === b.level;
@@ -132,7 +131,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.budgetLabel, on && { color: colors.primaryDark }]}>{b.label}</Text>
-                  <Text style={[styles.budgetDesc, on && { color: colors.text }]}>{b.desc}</Text>
+                  <Text style={[styles.budgetDesc, on && { color: colors.text }]}>{t(b.tkey)}</Text>
                   {on && <Ionicons name="checkmark-circle" size={20} color={colors.primary} style={{ marginLeft: "auto" }} />}
                 </TouchableOpacity>
               );
@@ -145,16 +144,16 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
       <View style={styles.bottomRow}>
         {step > 0 ? (
           <TouchableOpacity style={styles.ghostBtn} onPress={back}>
-            <Text style={styles.ghostText}>‹ Geri</Text>
+            <Text style={styles.ghostText}>{t("onb.back")}</Text>
           </TouchableOpacity>
         ) : <View style={{ flex: 1 }} />}
         {step < 2 ? (
           <TouchableOpacity style={styles.nextBtn} onPress={next} activeOpacity={0.9}>
-            <Text style={styles.nextText}>Devam →</Text>
+            <Text style={styles.nextText}>{t("onb.next")}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.nextBtn} onPress={finish} activeOpacity={0.9}>
-            <Text style={styles.nextText}>Keşfe Başla</Text>
+            <Text style={styles.nextText}>{t("onb.start")}</Text>
           </TouchableOpacity>
         )}
       </View>

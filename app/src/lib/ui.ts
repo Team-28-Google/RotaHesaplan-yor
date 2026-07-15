@@ -46,22 +46,62 @@ const VEHICLE_ICON: Record<string, string> = {
 };
 export const vehicleIcon = (v: string | null | undefined) => VEHICLE_ICON[v ?? ""] ?? "bus-outline";
 
-const TRANSPORT_LABEL: Record<TransportMode, string> = {
-  start: "Başlangıç", walk: "Yürüyüş", ferry: "Vapur", metro: "Metro",
-  tram: "Tramvay", marmaray: "Marmaray", bus: "Otobüs", metrobus: "Metrobüs",
-  funicular: "Füniküler", teleferik: "Teleferik", minibus: "Minibüs",
-  taxi: "Taksi", bike: "Bisiklet", other: "Ulaşım",
+// Vibe etiketleri (rota #tag'leri) sınırlı kelime dağarcığı — çevrilebilir (rota
+// başlığından farklı). Bilinmeyen/serbest AI etiketi olduğu gibi gösterilir.
+const VIBE_EN: Record<string, string> = {
+  "sakin": "calm", "kafa-dinleme": "unwind", "kafa-dinlemelik": "unwind",
+  "acik-hava": "outdoor", "kapali-mekan": "indoor", "acik": "open-air",
+  "tarih": "history", "tarihi": "historic", "kultur": "culture", "kulturel": "cultural",
+  "sanat": "art", "deniz": "sea", "sahil": "seaside", "manzara": "view", "manzarali": "scenic",
+  "kahve": "coffee", "yesil": "green", "doga": "nature", "dogal": "natural",
+  "yuruyus": "walk", "gece": "night", "fotograf": "photo", "fotografik": "photogenic",
+  "ulasim": "transit", "toplu-tasima": "public transit", "vapur": "ferry", "yaya": "pedestrian",
+  "gizemli": "mysterious", "romantik": "romantic", "huzurlu": "peaceful", "keyifli": "pleasant",
+  "canli": "lively", "eglenceli": "fun", "macera": "adventure", "lezzet": "food",
+  "lezzetli": "tasty", "yeme-icme": "food & drink", "aile": "family", "aileye-uygun": "family-friendly",
+  "spor": "sport", "alisveris": "shopping", "butce-dostu": "budget-friendly", "ucuz": "cheap",
+  "luks": "luxury", "populer": "popular", "sessiz": "quiet", "kalabalik": "crowded",
+  "otantik": "authentic", "modern": "modern", "klasik": "classic", "bohem": "bohemian",
+  "muze": "museum", "park": "park", "cami": "mosque", "kilise": "church",
 };
-export const transportLabel = (m: TransportMode) => TRANSPORT_LABEL[m] ?? "Ulaşım";
 
-/** Dakikayı okunur süreye çevirir: 45 → "45 dk", 287 → "4 sa 47 dk", 120 → "2 sa". */
+/** Vibe etiketini aktif dile çevirir; TR'de aynen, EN'de bilinen slug çevrilir,
+ *  bilinmeyen (serbest AI etiketi) olduğu gibi kalır. */
+export function vibeLabel(tag: string, lang: string): string {
+  if (lang === "tr") return tag;
+  const key = tag.toLocaleLowerCase("tr").replace(/[çğıöşü]/g, (c) => ({ "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u" }[c] ?? c)).replace(/\s+/g, "-");
+  return VIBE_EN[key] ?? tag;
+}
+
+// Formatlama helper'ları context'e erişemez → aktif dili LocaleProvider senkronlar.
+let _uiLang: "tr" | "en" = "tr";
+export const setUiLang = (l: "tr" | "en") => { _uiLang = l; };
+
+const TRANSPORT_LABEL: Record<"tr" | "en", Record<TransportMode, string>> = {
+  tr: {
+    start: "Başlangıç", walk: "Yürüyüş", ferry: "Vapur", metro: "Metro",
+    tram: "Tramvay", marmaray: "Marmaray", bus: "Otobüs", metrobus: "Metrobüs",
+    funicular: "Füniküler", teleferik: "Teleferik", minibus: "Minibüs",
+    taxi: "Taksi", bike: "Bisiklet", other: "Ulaşım",
+  },
+  en: {
+    start: "Start", walk: "Walk", ferry: "Ferry", metro: "Metro",
+    tram: "Tram", marmaray: "Marmaray", bus: "Bus", metrobus: "Metrobus",
+    funicular: "Funicular", teleferik: "Cable car", minibus: "Minibus",
+    taxi: "Taxi", bike: "Bike", other: "Transit",
+  },
+};
+export const transportLabel = (m: TransportMode) => TRANSPORT_LABEL[_uiLang][m] ?? TRANSPORT_LABEL[_uiLang].other;
+
+/** Dakikayı okunur süreye çevirir (dile duyarlı): 45 → "45 dk"/"45 min", 287 → "4 sa 47 dk"/"4 h 47 min". */
 export function fmtDuration(min: number | null | undefined): string {
   if (!min || min <= 0) return "—";
   const m = Math.round(min);
-  if (m < 60) return `${m} dk`;
+  const [hL, mL] = _uiLang === "tr" ? ["sa", "dk"] : ["h", "min"];
+  if (m < 60) return `${m} ${mL}`;
   const h = Math.floor(m / 60);
   const rest = m % 60;
-  return rest ? `${h} sa ${rest} dk` : `${h} sa`;
+  return rest ? `${h} ${hL} ${rest} ${mL}` : `${h} ${hL}`;
 }
 
 // Waypoint kategori/kind → Ionicons adı (harita pini + listeler)

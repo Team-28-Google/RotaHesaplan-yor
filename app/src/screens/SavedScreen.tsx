@@ -14,6 +14,7 @@ import {
 import { cityInfo, getActiveCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import { budgetLabel, routeColor, waypointIcon } from "../lib/ui";
@@ -30,6 +31,7 @@ function distM(a: { lat: number; lng: number }, b: { lat: number; lng: number })
 export default function SavedScreen({ navigation }: SavedScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [favRoutes, setFavRoutes] = useState<RouteWithWaypoints[]>([]);
   const [myRoutes, setMyRoutes] = useState<RouteWithWaypoints[]>([]);
@@ -76,7 +78,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
       });
       Promise.all([fetchFavoriteRoutes(), fetchMyRoutes(), fetchMyCollections()])
         .then(([f, m, c]) => { if (active) { setFavRoutes(f); setMyRoutes(m); setCollections(c); setError(null); } })
-        .catch((e) => { if (active) setError(e instanceof Error ? e.message : "Yüklenemedi"); })
+        .catch((e) => { if (active) setError(e instanceof Error ? e.message : t("saved.loadFailed")); })
         .finally(() => { if (active) setLoading(false); });
       return () => { active = false; };
     }, []),
@@ -120,17 +122,17 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
   }, [routes, filt, myLoc]);
 
   const chipLabel = (key: string) =>
-    key === "all" ? "Tümü" : key === "near" ? `Yakınımda${filt === "near" && !myLoc ? " (alınıyor…)" : ""}` : cityInfo(key).label;
+    key === "all" ? t("common.all") : key === "near" ? `${t("saved.near")}${filt === "near" && !myLoc ? t("saved.nearLoading") : ""}` : cityInfo(key).label;
 
   return (
     <View style={styles.screen}>
       <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
-        <Text style={styles.headerTitle}>Kayıtlı</Text>
+        <Text style={styles.headerTitle}>{t("saved.title")}</Text>
       </View>
 
       {/* ❤️ Kaydettiklerim | 🗺️ Rotalarım | 📁 Koleksiyonlar (3.13/3.10) */}
       <View style={styles.tabRow}>
-        {([["saved", "Kayıtlı"], ["mine", "Rotalarım"], ["col", "Koleksiyon"]] as const).map(([k, label]) => (
+        {([["saved", t("saved.tabSaved")], ["mine", t("saved.tabMine")], ["col", t("saved.tabCol")]] as const).map(([k, label]) => (
           <TouchableOpacity
             key={k}
             style={[styles.tabBtn, tab === k && styles.tabBtnOn]}
@@ -177,7 +179,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
           contentContainerStyle={{ padding: 16, gap: 12, flexGrow: 1 }}
           ListHeaderComponent={
             <TouchableOpacity style={styles.newColBtn} onPress={() => { tap(); setCreating(true); }} activeOpacity={0.85}>
-              <Text style={styles.newColText}>＋ Yeni koleksiyon</Text>
+              <Text style={styles.newColText}>{t("saved.newCollection")}</Text>
             </TouchableOpacity>
           }
           ListEmptyComponent={
@@ -188,10 +190,8 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
             ) : (
               <View style={styles.center}>
                 <Icon name="folder-open-outline" size={40} color={colors.textFaint} />
-                <Text style={styles.emptyTitle}>Henüz koleksiyonun yok</Text>
-                <Text style={styles.emptyText}>
-                  Bir koleksiyon aç ("Gezilecekler" gibi), arkadaşını davet et — birlikte rota toplayın.
-                </Text>
+                <Text style={styles.emptyTitle}>{t("saved.noCollections")}</Text>
+                <Text style={styles.emptyText}>{t("saved.noCollectionsHint")}</Text>
               </View>
             )
           }
@@ -205,7 +205,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
               {item.emoji ? <Text style={styles.colEmoji}>{item.emoji}</Text> : <Icon name="folder-outline" size={24} color={colors.textMuted} />}
               <View style={{ flex: 1 }}>
                 <Text style={styles.colTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.colMeta}>{item.route_count} rota · {item.member_count} üye</Text>
+                <Text style={styles.colMeta}>{t("saved.routeCount", { n: item.route_count })} · {t("saved.memberCount", { n: item.member_count })}</Text>
               </View>
               <Text style={styles.colChevron}>›</Text>
             </PressableScale>
@@ -218,28 +218,24 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
       ) : error ? (
         <View style={styles.center}>
           <Icon name="alert-circle-outline" size={40} color={colors.textFaint} />
-          <Text style={styles.emptyTitle}>Kaydettiklerin yüklenemedi</Text>
+          <Text style={styles.emptyTitle}>{t("saved.loadError")}</Text>
           <Text style={styles.emptyText}>{error}</Text>
         </View>
       ) : routes.length === 0 ? (
         <View style={styles.center}>
           <Icon name={tab === "saved" ? "heart-outline" : "map-outline"} size={40} color={colors.textFaint} />
           <Text style={styles.emptyTitle}>
-            {tab === "saved" ? "Henüz rota kaydetmedin" : "Henüz kendi rotan yok"}
+            {tab === "saved" ? t("saved.noSaved") : t("saved.noMine")}
           </Text>
           <Text style={styles.emptyText}>
-            {tab === "saved"
-              ? "Bir rotayı açıp kalbe dokunarak buraya ekleyebilirsin."
-              : "Rota oluştur, AI'a ürettir ya da beğendiğin bir rotaya durak ekleyip kendi kopyanı yarat."}
+            {tab === "saved" ? t("saved.noSavedHint") : t("saved.noMineHint")}
           </Text>
         </View>
       ) : shown.length === 0 ? (
         <View style={styles.center}>
           <Icon name="location-outline" size={40} color={colors.textFaint} />
-          <Text style={styles.emptyTitle}>Bu filtrede kayıt yok</Text>
-          <Text style={styles.emptyText}>
-            Toplam {routes.length} kaydın var — üstteki çiplerden "Tümü"ne geçebilirsin.
-          </Text>
+          <Text style={styles.emptyTitle}>{t("saved.noneInFilter")}</Text>
+          <Text style={styles.emptyText}>{t("saved.noneInFilterHint", { n: routes.length })}</Text>
         </View>
       ) : (
         <FlatList
@@ -271,7 +267,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
                   </View>
                   <View style={styles.metaRow}>
                     <Text style={styles.meta}>{budgetLabel(item.budget_level)}</Text>
-                    <Text style={styles.meta}>{exp.length} durak</Text>
+                    <Text style={styles.meta}>{t("common.stopsCount", { n: exp.length })}</Text>
                     <Text style={styles.meta}>{km} km</Text>
                     {awayKm && <Text style={[styles.meta, { color: colors.primaryDark }]}>{awayKm} km uzakta</Text>}
                   </View>
@@ -291,12 +287,12 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setCreating(false)} />
           <View style={styles.colSheet}>
             <View style={styles.colHandle} />
-            <Text style={styles.colSheetTitle}>Yeni koleksiyon</Text>
+            <Text style={styles.colSheetTitle}>{t("saved.newColTitle")}</Text>
             <TextInput
               style={styles.colInput}
               value={newTitle}
               onChangeText={setNewTitle}
-              placeholder='Adı — örn. "Gezilecekler"'
+              placeholder={t("saved.newColPlaceholder")}
               placeholderTextColor={colors.textFaint}
               autoFocus
               maxLength={40}
@@ -318,7 +314,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
               disabled={!newTitle.trim() || savingCol}
               activeOpacity={0.9}
             >
-              <Text style={styles.colCreateText}>{savingCol ? "Oluşturuluyor…" : "Oluştur ve aç →"}</Text>
+              <Text style={styles.colCreateText}>{savingCol ? t("saved.creating") : t("saved.createAndOpen")}</Text>
             </TouchableOpacity>
           </View>
         </View>

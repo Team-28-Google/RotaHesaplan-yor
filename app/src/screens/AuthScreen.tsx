@@ -9,13 +9,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { saveProfileDetails, signIn, signUp } from "../lib/auth";
 import { tap } from "../lib/haptics";
+import { useLocale } from "../lib/localeContext";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 
 const GENDERS = [
-  { key: "kadin", label: "Kadın" },
-  { key: "erkek", label: "Erkek" },
-  { key: "belirtmedi", label: "Belirtmek istemem" },
+  { key: "kadin", tkey: "auth.genderFemale" },
+  { key: "erkek", tkey: "auth.genderMale" },
+  { key: "belirtmedi", tkey: "auth.genderNone" },
 ] as const;
 
 /** "05121999" → "05.12.1999" (yazarken otomatik noktalar) */
@@ -37,6 +38,7 @@ const birthToIso = (t: string): string | null => {
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -61,7 +63,7 @@ export default function AuthScreen() {
     // Doğum tarihi girildiyse geçerli olmalı (boş = sorun değil, opsiyonel)
     const birthIso = birth ? birthToIso(birth) : null;
     if (mode === "signup" && birth && !birthIso) {
-      setError("Doğum tarihi GG.AA.YYYY biçiminde olmalı (örn. 05.12.1999).");
+      setError(t("auth.birthErr"));
       return;
     }
     setLoading(true);
@@ -73,12 +75,12 @@ export default function AuthScreen() {
         if (loggedIn) {
           await saveProfileDetails({ birth_date: birthIso, gender });
         } else {
-          setInfo("Hesap oluşturuldu! E-postana gelen onay linkine tıkla, sonra giriş yap.");
+          setInfo(t("auth.accountCreated"));
           setMode("login");
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Bir hata oluştu");
+      setError(e instanceof Error ? e.message : t("auth.genericErr"));
     } finally {
       setLoading(false);
     }
@@ -103,7 +105,7 @@ export default function AuthScreen() {
             <View style={styles.brandDot} />
             <Text style={styles.brand}>SANA</Text>
           </View>
-          <Text style={styles.tagline}>Şehirde yalnız değilsin.</Text>
+          <Text style={styles.tagline}>{t("auth.tagline")}</Text>
 
           <View style={styles.card}>
             {/* Giriş / Kayıt segmenti */}
@@ -116,13 +118,13 @@ export default function AuthScreen() {
                   activeOpacity={0.85}
                 >
                   <Text style={[styles.segmentText, mode === m && styles.segmentTextOn]}>
-                    {m === "login" ? "Giriş yap" : "Kayıt ol"}
+                    {m === "login" ? t("auth.loginTab") : t("auth.signupTab")}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.h2}>{mode === "login" ? "Tekrar hoş geldin" : "Aramıza katıl"}</Text>
+            <Text style={styles.h2}>{mode === "login" ? t("auth.welcomeBack") : t("auth.join")}</Text>
 
             <View style={styles.inputRow}>
               <Ionicons name="mail-outline" size={18} color={colors.textFaint} />
@@ -130,7 +132,7 @@ export default function AuthScreen() {
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="E-posta"
+                placeholder={t("auth.email")}
                 placeholderTextColor={colors.textFaint}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -144,7 +146,7 @@ export default function AuthScreen() {
                 style={styles.input}
                 value={pw}
                 onChangeText={setPw}
-                placeholder="Şifre (en az 6 karakter)"
+                placeholder={t("auth.password")}
                 placeholderTextColor={colors.textFaint}
                 secureTextEntry={!showPw}
               />
@@ -160,15 +162,15 @@ export default function AuthScreen() {
                   <TextInput
                     style={styles.input}
                     value={birth}
-                    onChangeText={(t) => setBirth(formatBirth(t))}
-                    placeholder="Doğum tarihi — GG.AA.YYYY (opsiyonel)"
+                    onChangeText={(x) => setBirth(formatBirth(x))}
+                    placeholder={t("auth.birthDate")}
                     placeholderTextColor={colors.textFaint}
                     keyboardType="number-pad"
                     maxLength={10}
                   />
                 </View>
 
-                <Text style={styles.fieldLabel}>Cinsiyet <Text style={styles.fieldOpt}>(opsiyonel)</Text></Text>
+                <Text style={styles.fieldLabel}>{t("auth.gender")} <Text style={styles.fieldOpt}>{t("auth.optional")}</Text></Text>
                 <View style={styles.genderRow}>
                   {GENDERS.map((g) => {
                     const on = gender === g.key;
@@ -180,7 +182,7 @@ export default function AuthScreen() {
                         activeOpacity={0.85}
                       >
                         <Text style={[styles.genderText, on && styles.genderTextOn]}>
-                          {g.label}
+                          {t(g.tkey)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -200,13 +202,13 @@ export default function AuthScreen() {
             >
               {loading ? <ActivityIndicator color="#fff" /> : (
                 <Text style={styles.btnText}>
-                  {mode === "login" ? "Giriş yap" : "Keşfe başla →"}
+                  {mode === "login" ? t("auth.login") : t("auth.signupCta")}
                 </Text>
               )}
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.footer}>Kaydolarak rotalarını toplulukla paylaşabilirsin</Text>
+          <Text style={styles.footer}>{t("auth.footer")}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

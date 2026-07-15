@@ -17,10 +17,11 @@ import { cityInfo, getActiveCity } from "../lib/cities";
 import { AUTH_ENABLED } from "../lib/config";
 import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import Icon from "../components/Icon";
-import { budgetLabel, legSegments, routeColor, segmentsToPath, waypointIcon } from "../lib/ui";
+import { budgetLabel, legSegments, routeColor, segmentsToPath, vibeLabel, waypointIcon } from "../lib/ui";
 import type { MapScreenProps } from "../navigation";
 
 const { width } = Dimensions.get("window");
@@ -31,6 +32,7 @@ const SNAP = CARD_W + GAP;
 export default function MapScreen({ navigation }: MapScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t, lang } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const userLoc = useUserLocation();
   const [routes, setRoutes] = useState<RouteWithWaypoints[]>([]);
@@ -45,7 +47,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
     getActiveCity()
       .then((c) => { setCity(c); return fetchRoutes(c); })
       .then((r) => { setRoutes(r); setError(null); })
-      .catch((e) => setError(e instanceof Error ? e.message : "Rotalar yüklenemedi"))
+      .catch((e) => setError(e instanceof Error ? e.message : t("map.loadError")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -127,7 +129,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
       <View style={styles.center}>
         <Text style={styles.error}>⚠️ {error}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }} activeOpacity={0.85}>
-          <Text style={styles.retryText}>Tekrar dene</Text>
+          <Text style={styles.retryText}>{t("common.retry")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -155,16 +157,16 @@ export default function MapScreen({ navigation }: MapScreenProps) {
         activeOpacity={0.9}
         onPress={() => {
           if (!AUTH_ENABLED) return; // dev modunda çıkış yok
-          Alert.alert("Hesap", "Çıkış yapmak istiyor musun?", [
-            { text: "Vazgeç", style: "cancel" },
-            { text: "Çıkış", style: "destructive", onPress: () => { signOut(); } },
+          Alert.alert(t("map.accountTitle"), t("map.logoutConfirm"), [
+            { text: t("common.cancel"), style: "cancel" },
+            { text: t("map.logout"), style: "destructive", onPress: () => { signOut(); } },
           ]);
         }}
       >
         <View style={styles.brandDot} />
         <View>
           <Text style={styles.brand}>SANA</Text>
-          <Text style={styles.brandSub}>{cityInfo(city).label} · {routes.length} rota keşfet</Text>
+          <Text style={styles.brandSub}>{t("map.cityRoutes", { city: cityInfo(city).label, n: routes.length })}</Text>
         </View>
       </TouchableOpacity>
 
@@ -180,10 +182,10 @@ export default function MapScreen({ navigation }: MapScreenProps) {
       {/* Rota yoksa: davet kartı */}
       {routes.length === 0 && (
         <View style={[styles.emptyCard, { bottom: insets.bottom + 24 }]}>
-          <Text style={styles.emptyTitle}>Haritada henüz rota yok</Text>
-          <Text style={styles.emptyText}>İlk rotayı sen çiz — durakları ekle, AI gerisini yazsın.</Text>
+          <Text style={styles.emptyTitle}>{t("map.emptyTitle")}</Text>
+          <Text style={styles.emptyText}>{t("map.emptyBody")}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.navigate("CreateRoute")} activeOpacity={0.9}>
-            <Text style={styles.retryText}>＋ Rota Oluştur</Text>
+            <Text style={styles.retryText}>{t("map.createRoute")}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -191,7 +193,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
       {/* Alt: sayfa noktaları + kart karüseli — aşağı kaydırılıp kapanabilir (4.0a) */}
       <CollapsibleSheet
         style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}
-        peekLabel={`${routes.length} rota`}
+        peekLabel={t("map.routeCount", { n: routes.length })}
       >
         <View style={styles.dots}>
           {routes.map((r, i) => (
@@ -234,14 +236,14 @@ export default function MapScreen({ navigation }: MapScreenProps) {
                 <View style={styles.cardBody}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
                   <View style={styles.tagRow}>
-                    {(item.vibe_tags ?? []).slice(0, 3).map((t) => (
-                      <Text key={t} style={styles.tag}>#{t}</Text>
+                    {(item.vibe_tags ?? []).slice(0, 3).map((tag) => (
+                      <Text key={tag} style={styles.tag}>#{vibeLabel(tag, lang)}</Text>
                     ))}
                   </View>
                   <View style={styles.metaRow}>
-                    <Text style={styles.meta}>{expStops.length} durak</Text>
+                    <Text style={styles.meta}>{t("common.stopsCount", { n: expStops.length })}</Text>
                     <Text style={styles.meta}>{km} km</Text>
-                    <Text style={styles.go}>Keşfet →</Text>
+                    <Text style={styles.go}>{t("map.explore")}</Text>
                   </View>
                 </View>
               </PressableScale>
@@ -306,11 +308,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   coverBudget: { fontSize: 15, color: "#fff", fontFamily: font.extra },
   cardBody: { padding: 14 },
   cardTitle: { fontSize: 16, fontFamily: font.extra, color: colors.text },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 8 },
   tag: {
-    fontSize: 11.5, color: colors.primaryDark, fontFamily: font.semibold,
-    backgroundColor: colors.primarySoft, paddingHorizontal: 9, paddingVertical: 3,
+    fontSize: 11.5, lineHeight: 15, color: colors.primaryDark, fontFamily: font.semibold,
+    backgroundColor: colors.primarySoft, paddingHorizontal: 9, paddingVertical: 4,
     borderRadius: radius.pill, overflow: "hidden",
+    includeFontPadding: false, textAlignVertical: "center",
   },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10 },
   meta: { fontSize: 13, color: colors.textMuted, fontFamily: font.semibold },

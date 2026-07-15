@@ -10,6 +10,7 @@ import {
 } from "../lib/api";
 import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { LeaderRow } from "../lib/types";
 import type { LeaderboardScreenProps } from "../navigation";
@@ -20,6 +21,7 @@ const RANK_COLOR = ["#E7B913", "#9AA4B2", "#C4763B"];
 export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [tab, setTab] = useState<"walk" | "likes">("walk");
   const [walkers, setWalkers] = useState<LeaderRow[]>([]);
@@ -40,13 +42,13 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Text style={styles.back}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Liderlik</Text>
+        <Text style={styles.headerTitle}>{t("leaderboard.title")}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {/* İki dünya: gezenler (doğrulanmış yolculuk) · rota yazarları (❤️) */}
       <View style={styles.segment}>
-        {([["walk", "En Çok Gezen"], ["likes", "En Beğenilen"]] as const).map(([k, label]) => (
+        {([["walk", t("leaderboard.tabWalk")], ["likes", t("leaderboard.tabLikes")]] as const).map(([k, label]) => (
           <TouchableOpacity
             key={k}
             style={[styles.segmentBtn, tab === k && styles.segmentBtnOn]}
@@ -59,8 +61,8 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
       </View>
       <Text style={styles.hint}>
         {tab === "walk"
-          ? "Son 7 gün · yalnız doğrulanmış yolculuklar sayılır"
-          : "Paylaştığın rotaların topladığı toplam beğeni"}
+          ? t("leaderboard.hintWalk")
+          : t("leaderboard.hintLikes")}
       </Text>
 
       <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
@@ -70,12 +72,12 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
           <View style={styles.empty}>
             <Ionicons name={tab === "walk" ? "walk-outline" : "heart-outline"} size={40} color={colors.textFaint} />
             <Text style={styles.emptyTitle}>
-              {tab === "walk" ? "Bu hafta henüz doğrulanmış yolculuk yok" : "Henüz beğeni toplayan rota yok"}
+              {tab === "walk" ? t("leaderboard.emptyWalk") : t("leaderboard.emptyLikes")}
             </Text>
             <Text style={styles.emptyText}>
               {tab === "walk"
-                ? "Bir rotayı gerçekten yürüyüp bitiren ilk kişi sen ol!"
-                : "Rota paylaş, beğeni topla — adın burada parlasın."}
+                ? t("leaderboard.emptyWalkHint")
+                : t("leaderboard.emptyLikesHint")}
             </Text>
           </View>
         ) : (
@@ -104,8 +106,8 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
                 <Text style={styles.name} numberOfLines={1}>@{l.username}</Text>
                 <Text style={styles.meta}>
                   {tab === "walk"
-                    ? `${(((l as LeaderRow).total_distance_m ?? 0) / 1000).toFixed(1)} km · ${(l as LeaderRow).journey_count} yolculuk`
-                    : `${(l as AuthorLeaderRow).total_likes} beğeni · ${(l as AuthorLeaderRow).route_count} rota`}
+                    ? t("leaderboard.statWalk", { km: (((l as LeaderRow).total_distance_m ?? 0) / 1000).toFixed(1), n: (l as LeaderRow).journey_count })
+                    : t("leaderboard.statLikes", { likes: (l as AuthorLeaderRow).total_likes, n: (l as AuthorLeaderRow).route_count })}
                 </Text>
               </View>
               {i === 0 ? <Ionicons name="trophy" size={18} color="#E7B913" />

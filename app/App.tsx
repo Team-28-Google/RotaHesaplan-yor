@@ -19,6 +19,7 @@ import { ensureProfile, signIn } from "./src/lib/auth";
 import { getOnboarding, markOnboardingSynced } from "./src/lib/onboarding";
 import { supabase } from "./src/lib/supabase";
 import { font } from "./src/lib/theme";
+import { LocaleProvider, useLocale } from "./src/lib/localeContext";
 import { ThemeProvider, useTheme } from "./src/lib/themeContext";
 import type { RootStackParamList, TabParamList } from "./src/navigation";
 import AuthScreen from "./src/screens/AuthScreen";
@@ -48,6 +49,7 @@ function tabIcon(outline: IconName, filled: IconName) {
 
 function Tabs() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -58,11 +60,11 @@ function Tabs() {
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: "Akış", tabBarIcon: tabIcon("home-outline", "home") }} />
-      <Tab.Screen name="Map" component={MapScreen} options={{ title: "Harita", tabBarIcon: tabIcon("map-outline", "map") }} />
-      <Tab.Screen name="Plan" component={PlanScreen} options={{ title: "AI Plan", tabBarIcon: tabIcon("sparkles-outline", "sparkles") }} />
-      <Tab.Screen name="Saved" component={SavedScreen} options={{ title: "Kayıtlı", tabBarIcon: tabIcon("heart-outline", "heart") }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Profil", tabBarIcon: tabIcon("person-outline", "person") }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: t("tabs.home"), tabBarIcon: tabIcon("home-outline", "home") }} />
+      <Tab.Screen name="Map" component={MapScreen} options={{ title: t("tabs.map"), tabBarIcon: tabIcon("map-outline", "map") }} />
+      <Tab.Screen name="Plan" component={PlanScreen} options={{ title: t("tabs.plan"), tabBarIcon: tabIcon("sparkles-outline", "sparkles") }} />
+      <Tab.Screen name="Saved" component={SavedScreen} options={{ title: t("tabs.saved"), tabBarIcon: tabIcon("heart-outline", "heart") }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: t("tabs.profile"), tabBarIcon: tabIcon("person-outline", "person") }} />
     </Tab.Navigator>
   );
 }
@@ -180,9 +182,11 @@ function Root() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <Root />
-      </ThemeProvider>
+      <LocaleProvider>
+        <ThemeProvider>
+          <Root />
+        </ThemeProvider>
+      </LocaleProvider>
     </SafeAreaProvider>
   );
 }

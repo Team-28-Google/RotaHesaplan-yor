@@ -5,6 +5,7 @@ import {
 } from "react-native";
 
 import { searchPlaces } from "../lib/api";
+import { useLocale } from "../lib/localeContext";
 import { font, radius, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
 import type { PlaceResult } from "../lib/types";
@@ -16,6 +17,7 @@ export default function AddStopSheet({ visible, onClose, onPick }: {
   onPick: (p: PlaceResult) => void;
 }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [q, setQ] = useState("");
   const [places, setPlaces] = useState<PlaceResult[]>([]);
@@ -40,20 +42,20 @@ export default function AddStopSheet({ visible, onClose, onPick }: {
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Durak ekle</Text>
+          <Text style={styles.title}>{t("plan.addStopTitle")}</Text>
           <View style={styles.row}>
             <TextInput
               style={styles.input}
               value={q}
               onChangeText={setQ}
-              placeholder="Mekan ara (örn. Moda Sahili)"
+              placeholder={t("plan.addSearchPlaceholder")}
               placeholderTextColor={colors.textFaint}
               autoFocus
               returnKeyType="search"
               onSubmitEditing={doSearch}
             />
             <TouchableOpacity style={styles.searchBtn} onPress={doSearch} disabled={searching}>
-              {searching ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.searchText}>Ara</Text>}
+              {searching ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.searchText}>{t("plan.search")}</Text>}
             </TouchableOpacity>
           </View>
           <ScrollView style={{ maxHeight: 300 }} keyboardShouldPersistTaps="handled">
@@ -66,7 +68,7 @@ export default function AddStopSheet({ visible, onClose, onPick }: {
               </TouchableOpacity>
             ))}
             {places.length === 0 && !searching && (
-              <Text style={styles.empty}>Arama yap — seçtiğin durak rotanın sonuna eklenir.</Text>
+              <Text style={styles.empty}>{t("plan.addEmpty")}</Text>
             )}
           </ScrollView>
         </View>

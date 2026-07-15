@@ -8,7 +8,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "../components/Icon";
 import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import { createRoute, enrichRoute, searchPlaces } from "../lib/api";
+import { vibeLabel } from "../lib/ui";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
+import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { CreateStop, EnrichResult, PlaceResult } from "../lib/types";
 import type { CreateRouteScreenProps } from "../navigation";
@@ -34,6 +36,7 @@ function placeIcon(type?: string): string {
 export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t, lang } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [stops, setStops] = useState<CreateStop[]>([]);
   const [pending, setPending] = useState<{ lat: number; lng: number } | null>(null);
@@ -59,10 +62,10 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
       const r = await searchPlaces(q);
       if (id !== reqId.current) return; // eskimiş yanıtı yoksay
       setResults(r);
-      if (r.length === 0) setError("Sonuç yok. Farklı bir ifade dene.");
+      if (r.length === 0) setError(t("create.noResults"));
     } catch (e) {
       if (id !== reqId.current) return;
-      setError(e instanceof Error ? e.message : "Arama başarısız");
+      setError(e instanceof Error ? e.message : t("create.searchFailed"));
     } finally {
       if (id === reqId.current) setSearching(false);
     }
@@ -113,7 +116,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
       setEnriched(e);
       setTitle(e.title);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
+      setError(err instanceof Error ? err.message : t("create.error"));
     } finally {
       setBusy(false);
     }
@@ -135,11 +138,11 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
         })),
       });
       setBusy(false); // Alert geri tuşuyla kapatılırsa buton spinner'da kalmasın
-      Alert.alert("Rotan paylaşıldı!", "Artık haritada ve akışta görünüyor.", [
-        { text: "Rotaya git", onPress: () => navigation.replace("RouteFlood", { routeId, title: title.trim() || enriched.title }) },
+      Alert.alert(t("create.published"), t("create.publishedBody"), [
+        { text: t("create.goToRoute"), onPress: () => navigation.replace("RouteFlood", { routeId, title: title.trim() || enriched.title }) },
       ]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kaydedilemedi");
+      setError(err instanceof Error ? err.message : t("create.saveFailed"));
       setBusy(false);
     }
   };
@@ -150,16 +153,16 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
       <View style={styles.screen}>
         <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
           <TouchableOpacity onPress={() => setEnriched(null)} hitSlop={12}><Text style={styles.back}>‹ Düzenle</Text></TouchableOpacity>
-          <Text style={styles.topTitle}>Rotanı Onayla</Text>
+          <Text style={styles.topTitle}>{t("create.confirmTitle")}</Text>
           <View style={{ width: 64 }} />
         </View>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 110 }}>
-          <Text style={styles.label}>Başlık</Text>
-          <TextInput style={styles.titleInput} value={title} onChangeText={setTitle} placeholder="Rota başlığı" placeholderTextColor={colors.textFaint} />
+          <Text style={styles.label}>{t("create.label")}</Text>
+          <TextInput style={styles.titleInput} value={title} onChangeText={setTitle} placeholder={t("create.titlePlaceholder")} placeholderTextColor={colors.textFaint} />
           <View style={styles.tagRow}>
-            {enriched.vibe_tags.map((t) => <Text key={t} style={styles.tag}>#{t}</Text>)}
+            {enriched.vibe_tags.map((tag) => <Text key={tag} style={styles.tag}>#{vibeLabel(tag, lang)}</Text>)}
           </View>
-          <Text style={[styles.label, { marginTop: 18 }]}>Duraklar</Text>
+          <Text style={[styles.label, { marginTop: 18 }]}>{t("create.stopsLabel")}</Text>
           {stops.map((s, i) => (
             <View key={i} style={styles.reviewStop}>
               <View style={styles.num}><Text style={styles.numText}>{i + 1}</Text></View>
@@ -173,7 +176,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
         </ScrollView>
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 10 }]}>
           <TouchableOpacity style={[styles.cta, busy && styles.ctaOff]} onPress={save} disabled={busy} activeOpacity={0.9}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>Kaydet ve Paylaş</Text>}
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>{t("create.saveShare")}</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -184,8 +187,8 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
   return (
     <View style={styles.screen}>
       <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}><Text style={styles.back}>‹ Geri</Text></TouchableOpacity>
-        <Text style={styles.topTitle}>Rota Oluştur</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}><Text style={styles.back}>{t("onb.back")}</Text></TouchableOpacity>
+        <Text style={styles.topTitle}>{t("create.title")}</Text>
         <View style={{ width: 64 }} />
       </View>
 
@@ -197,7 +200,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={() => runSearch(query.trim())}
-            placeholder="Mekan, sokak ya da semt ara…"
+            placeholder={t("create.searchPlaceholder")}
             placeholderTextColor={colors.textFaint}
             returnKeyType="search"
             autoCorrect={false}
@@ -215,7 +218,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
       <View style={styles.mapWrap}>
         <OSMMap markers={markers} polylines={polylines} onMapPress={(lat, lng) => setPending({ lat, lng })} padding={40} />
         <View style={styles.hint} pointerEvents="none">
-          <Text style={styles.hintText}>Ara ya da haritaya dokun</Text>
+          <Text style={styles.hintText}>{t("create.hint")}</Text>
         </View>
       </View>
 
@@ -223,8 +226,8 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
         {results.length > 0 ? (
           <>
             <View style={styles.resultsHead}>
-              <Text style={styles.panelTitle}>Arama sonuçları</Text>
-              <TouchableOpacity onPress={clearSearch} hitSlop={10}><Text style={styles.back}>Kapat</Text></TouchableOpacity>
+              <Text style={styles.panelTitle}>{t("create.results")}</Text>
+              <TouchableOpacity onPress={clearSearch} hitSlop={10}><Text style={styles.back}>{t("common.close")}</Text></TouchableOpacity>
             </View>
             <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               {results.map((p, i) => (
@@ -245,9 +248,9 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
           </>
         ) : (
           <>
-            <Text style={styles.panelTitle}>{stops.length} durak</Text>
+            <Text style={styles.panelTitle}>{t("create.stopsCount", { n: stops.length })}</Text>
             <ScrollView style={{ flex: 1 }}>
-              {stops.length === 0 && <Text style={styles.empty}>Henüz durak yok. Ara ya da haritaya dokun.</Text>}
+              {stops.length === 0 && <Text style={styles.empty}>{t("create.noStops")}</Text>}
               {stops.map((s, i) => (
                 <View key={i} style={styles.stopRow}>
                   <View style={styles.num}><Text style={styles.numText}>{i + 1}</Text></View>
@@ -263,7 +266,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
               disabled={stops.length < 2 || busy}
               activeOpacity={0.9}
             >
-              {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>AI ile Tamamla ({stops.length})</Text>}
+              {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>{t("create.aiComplete", { n: stops.length })}</Text>}
             </TouchableOpacity>
           </>
         )}
@@ -273,13 +276,13 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
       <Modal visible={!!pending} transparent animationType="fade" onRequestClose={() => setPending(null)}>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Durak ekle</Text>
-            <TextInput style={styles.input} value={mName} onChangeText={setMName} placeholder="Mekan adı (örn. Moda Sahili)" placeholderTextColor={colors.textFaint} autoFocus />
-            <TextInput style={styles.input} value={mNote} onChangeText={setMNote} placeholder="Kişisel not (opsiyonel)" placeholderTextColor={colors.textFaint} />
+            <Text style={styles.modalTitle}>{t("create.addStop")}</Text>
+            <TextInput style={styles.input} value={mName} onChangeText={setMName} placeholder={t("create.stopNamePlaceholder")} placeholderTextColor={colors.textFaint} autoFocus />
+            <TextInput style={styles.input} value={mNote} onChangeText={setMNote} placeholder={t("create.stopNotePlaceholder")} placeholderTextColor={colors.textFaint} />
             <View style={styles.modalRow}>
-              <TouchableOpacity onPress={() => setPending(null)} style={styles.modalBtnGhost}><Text style={styles.modalGhostText}>Vazgeç</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setPending(null)} style={styles.modalBtnGhost}><Text style={styles.modalGhostText}>{t("common.cancel")}</Text></TouchableOpacity>
               <TouchableOpacity onPress={addStop} style={[styles.modalBtn, !mName.trim() && styles.ctaOff]} disabled={!mName.trim()}>
-                <Text style={styles.modalBtnText}>Ekle</Text>
+                <Text style={styles.modalBtnText}>{t("create.add")}</Text>
               </TouchableOpacity>
             </View>
           </View>
