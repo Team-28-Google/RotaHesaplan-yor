@@ -595,7 +595,7 @@ export async function fetchNavRoute(
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/nav-route`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...appKeyHeader },
-      body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng, mode }),
+      body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng, mode, lang: _dataLang }),
     }, 15_000);
     if (res.ok) {
       const data = await res.json();
@@ -607,7 +607,7 @@ export async function fetchNavRoute(
       const legacy = await fetchWithTimeout(`${AI_SERVICE_URL}/walk-route`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...appKeyHeader },
-        body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng }),
+        body: JSON.stringify({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng, lang: _dataLang }),
       }, 12_000);
       if (!legacy.ok) return null;
       const d = await legacy.json();
@@ -637,13 +637,13 @@ export interface CityHit {
 
 /** DÜNYA şehir OTOMATİK-TAMAMLAMA (şehir seçicideki kutu): yazdıkça ön-ek eşleştirmeli
  *  çoklu şehir önerisi. Servise ulaşılamazsa boş — TR listesi çevrimdışı çalışır. */
-export async function searchCities(q: string): Promise<CityHit[]> {
+export async function searchCities(q: string, lang: "tr" | "en" = "tr"): Promise<CityHit[]> {
   if (q.trim().length < 2) return [];
   try {
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/search-city`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...appKeyHeader },
-      body: JSON.stringify({ q: q.trim() }),
+      body: JSON.stringify({ q: q.trim(), lang }),
     }, 10_000);
     if (!res.ok) return [];
     const j = await res.json();

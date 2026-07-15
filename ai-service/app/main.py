@@ -65,6 +65,7 @@ class WalkRouteRequest(BaseModel):
     from_lng: float
     to_lat: float
     to_lng: float
+    lang: str = Field("tr", pattern="^(tr|en)$")  # 4.x: yön talimatları dili
 
 
 class NavRouteRequest(WalkRouteRequest):
@@ -114,6 +115,7 @@ class DetectCityRequest(BaseModel):
 
 class CitySearchRequest(BaseModel):
     q: str = Field(..., min_length=2)
+    lang: str = Field("tr", pattern="^(tr|en)$")  # 4.x: sonuç adları app diline uysun
 
 
 class CityLatLngRequest(BaseModel):
@@ -236,7 +238,7 @@ def embed_route(req: EmbedRouteRequest, authorization: str | None = Header(None)
 def walk_route(req: WalkRouteRequest, x_app_key: str | None = Header(None)) -> dict:
     """Canlı navigasyon: kullanıcı konumu → hedef durak yürüme rotası (journey modu)."""
     _guard_app_key(x_app_key)
-    leg = google_walk_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng)
+    leg = google_walk_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng, req.lang)
     return {"ok": bool(leg), **(leg or {})}
 
 
@@ -244,7 +246,7 @@ def walk_route(req: WalkRouteRequest, x_app_key: str | None = Header(None)) -> d
 def nav_route(req: NavRouteRequest, x_app_key: str | None = Header(None)) -> dict:
     """Çok modlu canlı navigasyon (4.0): 🚶 walk / 🚌 transit (+hat bilgisi) / 🚗 drive."""
     _guard_app_key(x_app_key)
-    leg = google_nav_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng, req.mode)
+    leg = google_nav_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng, req.mode, req.lang)
     return {"ok": bool(leg), **(leg or {})}
 
 
@@ -333,9 +335,9 @@ def search_city(req: CitySearchRequest, x_app_key: str | None = Header(None)) ->
     Autocomplete boş dönerse Geocoding'e düşer (tam ad yazıldıysa yine bulur)."""
     _guard_app_key(x_app_key)
     env = load_env()
-    hits = google_autocomplete_city(env, req.q)
+    hits = google_autocomplete_city(env, req.q, lang=req.lang)
     if not hits:  # yedek: tam ad girildiyse Geocoding koordinatla döner
-        hits = google_search_city(env, req.q)
+        hits = google_search_city(env, req.q, lang=req.lang)
     return {"results": hits}
 
 

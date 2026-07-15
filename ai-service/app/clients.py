@@ -230,9 +230,10 @@ _TRAVEL_MODES = {"walk": "WALK", "transit": "TRANSIT", "drive": "DRIVE"}
 
 
 def google_nav_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float,
-                   mode: str = "walk"):
+                   mode: str = "walk", lang: str = "tr"):
     """İki nokta arası rota, seçilen ULAŞIM MODUNDA (4.0: 🚶🚌🚗) — geometri +
     gerçek mesafe/süre; TRANSIT'te ilk hat bilgisi (hat adı, biniş durağı, yön).
+    lang: adım talimatlarının dili (EN modunda 'turn right' — 4.x).
     Anahtar yoksa/hata olursa None (çağıran kuş uçuşuna düşer)."""
     key = _google_server_key(env)
     if not key:
@@ -242,6 +243,7 @@ def google_nav_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: f
         "origin": {"location": {"latLng": {"latitude": a_lat, "longitude": a_lng}}},
         "destination": {"location": {"latLng": {"latitude": b_lat, "longitude": b_lng}}},
         "travelMode": travel,
+        "languageCode": "en" if lang == "en" else "tr",  # 4.x: yönlendirmeler app diline uysun
     }
     mask = "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline"
     if travel == "TRANSIT":
@@ -361,9 +363,10 @@ def _nav_route_payload(rt: dict, with_steps: bool = False) -> dict:
     return out
 
 
-def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float):
+def google_walk_leg(env: dict, a_lat: float, a_lng: float, b_lat: float, b_lng: float,
+                    lang: str = "tr"):
     """Yürüme kısayolu (geometri yazımı vb. eski çağıranlar için)."""
-    return google_nav_leg(env, a_lat, a_lng, b_lat, b_lng, "walk")
+    return google_nav_leg(env, a_lat, a_lng, b_lat, b_lng, "walk", lang)
 
 
 # --------------------------- Google Places (New) — foto + puan (3.2a) ---------------------------
@@ -616,15 +619,17 @@ def google_reverse_geocode_city(env: dict, lat: float, lng: float) -> str | None
     return p["name"] if p else None
 
 
-def google_autocomplete_city(env: dict, q: str, limit: int = 6) -> list[dict]:
+def google_autocomplete_city(env: dict, q: str, limit: int = 6, lang: str = "tr") -> list[dict]:
     """DÜNYA şehir OTOMATİK-TAMAMLAMA (Places Autocomplete New) — yazdıkça ön-ek
     eşleştirmeli çoklu şehir önerisi ('berl' → Berlin, Bern...). Koordinat DÖNMEZ;
-    seçimde google_place_latlng ile çözülür. Anahtar/sonuç yoksa []."""
+    seçimde google_place_latlng ile çözülür. lang: sonuç adlarının dili (EN → 'Munich').
+    Anahtar/sonuç yoksa []."""
     key = _google_server_key(env)
     if not key or len(q.strip()) < 2:
         return []
     headers = {"Content-Type": "application/json", "X-Goog-Api-Key": key}
-    body = {"input": q.strip(), "includedPrimaryTypes": ["(cities)"], "languageCode": "tr"}
+    body = {"input": q.strip(), "includedPrimaryTypes": ["(cities)"],
+            "languageCode": "en" if lang == "en" else "tr"}
     try:
         r = _req("https://places.googleapis.com/v1/places:autocomplete", "POST", headers, body, timeout=12)
     except Exception:
@@ -660,14 +665,16 @@ def google_place_latlng(env: dict, place_id: str) -> dict | None:
     return None
 
 
-def google_search_city(env: dict, q: str, limit: int = 5) -> list[dict]:
+def google_search_city(env: dict, q: str, limit: int = 5, lang: str = "tr") -> list[dict]:
     """DÜNYA geneli şehir arama (Geocoding forward): yalnız şehir/il tipindeki
-    sonuçlar → [{name, country, lat, lng}]. LLM şehir doğrulamasında da kullanılır."""
+    sonuçlar → [{name, country, lat, lng}]. LLM şehir doğrulamasında da kullanılır.
+    lang: sonuç adlarının dili (EN → 'Munich', 'Germany')."""
     key = _google_server_key(env)
     if not key or not q.strip():
         return []
     url = ("https://maps.googleapis.com/maps/api/geocode/json?"
-           + urllib.parse.urlencode({"address": q.strip(), "language": "tr", "key": key}))
+           + urllib.parse.urlencode({"address": q.strip(),
+                                     "language": "en" if lang == "en" else "tr", "key": key}))
     try:
         r = _req(url, timeout=15)
     except Exception:
