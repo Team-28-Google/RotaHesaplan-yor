@@ -1,0 +1,2942 @@
+[
+  {
+    "title": "A Quiet Day in Kadıköy",
+    "description": "A themed day in Istanbul: Moda Beach Park and Promenade, Mephisto Bookstore - Bahariye, Cool Cafe Moda, Moda Park.",
+    "city": "Istanbul",
+    "vibe_tags": [
+      "sakin",
+      "kafa-dinleme",
+      "butce-dostu"
+    ],
+    "budget_level": 2,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFfM3DbBgk2mY9JRUFyCL_6fiHDhvnrWP5Z3k4lBwYp8JtVscCA8o51npr9R4oLBssQHtXC799AxlIX-_MoBXv2R4x0n0TSULJMjX6azS_lifpuXpZMTjAsnvZgu0afGWk1EdEU04jvoCN5=w1000-h1000-c-n",
+    "total_distance_m": 2606,
+    "total_duration_min": 32,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Moda Sahil Parkı ve Yürüyüş Yolu",
+        "place_id": "ChIJxX8aa4q4yhQRKiIKntQmhCo",
+        "lat": 40.980058,
+        "lng": 29.0269558,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Start with a slow walk along the sea, taking in the views.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFfM3DbBgk2mY9JRUFyCL_6fiHDhvnrWP5Z3k4lBwYp8JtVscCA8o51npr9R4oLBssQHtXC799AxlIX-_MoBXv2R4x0n0TSULJMjX6azS_lifpuXpZMTjAsnvZgu0afGWk1EdEU04jvoCN5=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Caferağa, Küçükmoda Burnu Sok. X2HH+XG No:21, 34710 Kadıköy/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Mephisto Kitabevi - Bahariye",
+        "place_id": "ChIJhZ9Mhse5yhQRMElVMC20yCg",
+        "lat": 40.9885982,
+        "lng": 29.028791499999997,
+        "category": "bookstore",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Get lost among the shelves, and mix up a few books.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFlFLJyXEPEcLCTSC2HMzYCb3_G-3qtuR7n4EbRdeUWnlv9EhnB3WFDXqoqXlVjfbC2bqnnSh6T82Op5Ft48dDeiKCweDcGPj_Kffqswe1Rr5AuL8kcLqVCOcISlGz7s2scd3mMpA=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.2,
+          "address": "Osmanağa, Gen. Asım Gündüz Caddesi No:23, 34714 Kadıköy/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Cool Cafe Moda",
+        "place_id": "ChIJAebVXAC5yhQRHvvJx1nEnG4",
+        "lat": 40.985798599999995,
+        "lng": 29.0245495,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Savor a cup of filtered coffee in a quiet corner.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHJe25bQHHkWj5rh16e5nLlb9EZm7ZAzxdxCFDwyeZKmyNd7oMZK2klzgf2I_ifdZ6Tee1zRCLhqiNOX8yanmoreFZB9iJWiGJOBpTFX6Sjt1SezsN2AhpJWxQgBnBxuBzLOBY=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Caferağa, Fırıldak Sk. No:1, 34710 Kadıköy/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Moda Parkı",
+        "place_id": "ChIJT9lBPfW4yhQRcpHboDKdjhQ",
+        "lat": 40.981004999999996,
+        "lng": 29.021327,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Sit back on the bank, and take a breather.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEpSpvu3uolUavvPHhljqm2KAV9lHowO3_FDEgOcAYrWW6r6696nKRGtEoiX1VgXP3D_6ajwnFBciXYdIHEidNEIwYO05K70b7kuPgX2zLmudPnjQoPu_h21mGkfwXchXo2Hcvw=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Caferağa, 34710 Kadıköy/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "İBB Tuvalet",
+        "place_id": "ChIJhSMrcsS5yhQRmWKumCH_MQ4",
+        "lat": 40.9798431,
+        "lng": 29.0280079,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public toilets are available along the way.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGs-qYRZ5CIBJlYs1ONhSyJFG0csczwrkeZH9TBwgzfxm145ePpGCpWVpWBPV70v1Jn0-sb1oA-W8_dCflKi0mSX4pEOQ2y41xVFFGsm2-YXk4q4CbBq03AfZ-UO8C7AVXFWgI=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Walk Through History in Sultanahmet",
+    "description": "Spend a day in Istanbul with a theme: Hagia Sophia, Blue Mosque, Yerebatan Cistern, Gülhane Park.",
+    "city": "Istanbul",
+    "vibe_tags": [
+      "kultur",
+      "tarih",
+      "fotograf"
+    ],
+    "budget_level": 1,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGxYddAOShwgo9VmI28K5-mjvhsPBvmPGNiIH-rIowWfl4by12HXq6UQVHy5bvCKCmXCoywt03cE59F__XxFg9YULTOG2O-IszVCPGf94dSkNratm1QhjdtU5q40EnL0kNoL4iDOQ=w1000-h1000-c-n",
+    "total_distance_m": 2310,
+    "total_duration_min": 28,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Ayasofya-i Kebir Cami-i Şerifi",
+        "place_id": "ChIJJxwBkr65yhQRrk9EN29vbiM",
+        "lat": 41.008583,
+        "lng": 28.980175,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Stand under the centuries-old dome.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGxYddAOShwgo9VmI28K5-mjvhsPBvmPGNiIH-rIowWfl4by12HXq6UQVHy5bvCKCmXCoywt03cE59F__XxFg9YULTOG2O-IszVCPGf94dSkNratm1QhjdtU5q40EnL0kNoL4iDOQ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Sultan Ahmet, Ayasofya Meydanı No:1, 34122 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Sultanahmet Camii",
+        "place_id": "ChIJ4fRwZb25yhQRpHwVijb3LeU",
+        "lat": 41.0054096,
+        "lng": 28.9768138,
+        "category": "mosque",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Feel the serenity of the blue tiles.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGRldJ9xlpM4cy-7ZoP9JbMOE3wGhHluuGqkYrYiCfwTfVnbpcTvZtzi3vZ3mpYiEcXPo0cUPODc2FpLuJzRnPmdryN67z9REQMJXDMTN5R6nnYsJPcfzTKGOSWb1qTfHygUteG6A=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Cankurtaran, At Meydanı Cd No:7, 34122 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Yerebatan sarnıcı",
+        "place_id": "ChIJ-QJKBwC5yhQRtKS1uhnsRCw",
+        "lat": 41.0089585,
+        "lng": 28.9774045,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Listen to the silence in the cool, dim cistern.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFW3sW89qINrdVnIscNZVvvkOlz5TQ0CUcvXUaqhvg5TagaPdpmfCfDJwnC7AlG1cA77aMnFIyGVPfY-Synsd1kN22Qh3-8GqvL261Evt5kfLHMk3LqsBKUe_ad52nIDt8jfkge02n1fibM=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 5,
+          "address": "Alemdar, Yerebatan Cd., 34110 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Gülhane Parkı",
+        "place_id": "ChIJK9q8Nce5yhQRy0am325qXgY",
+        "lat": 41.0133079,
+        "lng": 28.981510099999998,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a rest beside the historic walls.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHJKX4j-9ypk7NAJakY2zl5p1FgbEehnHWiiSiqubft58qZYmB5QueYrtuD6VWQetP3fuUIJyJYuQaGT6PGSPbwmNYN0eQxBxaLz3FYl7aiqCLCL9ADtbiP9atON128OR_k2svR7iFwAKHR=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Cankurtaran, Kennedy Cad., 34122 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "İBB Sultanahmet Meydan Şehir Tuvaleti",
+        "place_id": "ChIJlZqzcuS5yhQR07JEiiOHbiM",
+        "lat": 41.006798499999995,
+        "lng": 28.9757629,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restroom at the park exit.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAH4TQZBDvcW1fMrS8vVIKelnPZhhDsmlXijsVAFOYN7SQYmhOkyK2k9IXNtt6TAfR7mLFPuPjZ0nLi5Qb_M2YULOPkQnZ0TJCVm1tnh4-gRXzAKPqvOTFVErj6xmFLLXNqqQ0g=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Rainbow Streets of Balat",
+    "description": "Spend a themed day in Istanbul: colorful houses of Balat, Aziz George Cathedral, Istanbul, Maison Balat, Dea Cafe Balat.",
+    "city": "Istanbul",
+    "vibe_tags": [
+      "fotograf",
+      "kesif",
+      "sakin"
+    ],
+    "budget_level": 4,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFhnfijMO_TuUS5TJ6AbKdiRGYkvkwSkpXtuSd8QRk3qXWOy06wpMeq_LHRkFEmVlOJ7you5NcxoouHGjoGmUKdQYGfWpi4N8kEgYmCBxyTDPChGW9LivbhtXDoS47THHAZ7-M7MrEB-4gI=w1000-h1000-c-n",
+    "total_distance_m": 1288,
+    "total_duration_min": 16,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Balat renkli evler",
+        "place_id": "ChIJTSGTcgC7yhQRC6PeDZRFoOk",
+        "lat": 41.0292106,
+        "lng": 28.9484978,
+        "category": "viewpoint",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Snap photos between the colorful facades.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFhnfijMO_TuUS5TJ6AbKdiRGYkvkwSkpXtuSd8QRk3qXWOy06wpMeq_LHRkFEmVlOJ7you5NcxoouHGjoGmUKdQYGfWpi4N8kEgYmCBxyTDPChGW9LivbhtXDoS47THHAZ7-M7MrEB-4gI=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Balat, 34087 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Aziz George Katedrali, İstanbul",
+        "place_id": "ChIJeVp8SR26yhQRNPDtEH3LWIU",
+        "lat": 41.029221799999995,
+        "lng": 28.9517316,
+        "category": "church",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Get a feel for the neighborhood's historic atmosphere.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHqa6wJA8zbtqqjFQJCYJG-pZHgm39v5GfSQcg_jrg3gfXcYgf_CtVYF5h0mky4Q_UPbkP_GJTFcj9SJWZ4Z3IFwX0TtdvHoJYwl0dHS14ctw0fpxy9G9P2IzyQDON3rMBmM77Q-g=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Yavuz Sultan Selim, Dr. Sadık Ahmet Cd. No:19, 34083 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Maison Balat",
+        "place_id": "ChIJn1EmJAO6yhQRfLhqdBfARnA",
+        "lat": 41.03083,
+        "lng": 28.9495695,
+        "category": "gallery",
+        "kind": "experience",
+        "price_level": 4,
+        "note": "Discover hidden treasures among old antiques.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHxNl_ER2BrkOkOWRMoL76h8zMLxr2j2ch0KqF6cqCFDkP7qLL5jlxeb7bOWh7eQv9sQlNBib4j7Bs8e1v7K8FBx91zXrge-TQLVw5uU0suim2UNF2mKPF7l7DsQ7cnaDyh5aNbqQ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Balat, Vodina Cd. No:50, 34087 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Dea Cafe Balat",
+        "place_id": "ChIJadBTgAO6yhQRaDDV087iE9M",
+        "lat": 41.033142,
+        "lng": 28.9472307,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Take a break at a modest cafe on the street.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFsrWz2taOU04vJLoZ7jzgaQdWJ0MFR6JTw-YSJ1oT90q4B1We5z67V-POy2cICIO_bSfdBuB_IBoJ__c1tEZwYixlkN5HpjDjy4Jso670HRiylLxmMKaXj4C3E7JQYWgFgrW_YnCi5fy_z=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Balat, Mürselpaşa Cd. No:173, 34087 Fatih/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Tarihi Çeşme",
+        "place_id": "ChIJQ7_x1Ry6yhQR9Wu_kJ089PQ",
+        "lat": 41.029740499999996,
+        "lng": 28.949913799999997,
+        "category": "water_fountain",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Visit the historic fountain for a refreshing break.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHl5pO5HitdQyZf_fxy9QJ-hCH2nf-aLn0vxEiSZD6hHcqID1A69VbogwSM2HOfYgBoYGPV6npLCIT2GcK0wrTQi0gGZAQwGCRby2tAwonrhMqB6LRQ0YYGl7IazukabvQUOWo=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Ortaköy Bosphorus Breeze",
+    "description": "Spend a themed day in Istanbul: Hagia Sophia, Ortaköy Square, Ortaköy Kumpir 14, The House Cafe Ortaköy.",
+    "city": "Istanbul",
+    "vibe_tags": [
+      "acik-hava",
+      "manzara",
+      "sosyal"
+    ],
+    "budget_level": 3,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEhrTtJI7hY3U9O7jeFXC087idM9YccwmBOvbK9yJF9F2usIF9wjJPHirYhx-dv1PfnfrPMCE707d0jRqVyVaK7qYnBzhoYZvlKpITP7Mi8Whhi04BG3_Oye5pD-JF-I61BZxye=w1000-h1000-c-n",
+    "total_distance_m": 500,
+    "total_duration_min": 6,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Büyük Mecidiye Camii",
+        "place_id": "ChIJrYco5Mi3yhQRvMivnqLyc_0",
+        "lat": 41.047215099999995,
+        "lng": 29.0269478,
+        "category": "mosque",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A picturesque pose, epitomized by the bridge views.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEhrTtJI7hY3U9O7jeFXC087idM9YccwmBOvbK9yJF9F2usIF9wjJPHirYhx-dv1PfnfrPMCE707d0jRqVyVaK7qYnBzhoYZvlKpITP7Mi8Whhi04BG3_Oye5pD-JF-I61BZxye=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Mecidiye, İskele Sk. No: 6, 34347 Beşiktaş/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Ortaköy Meydanı",
+        "place_id": "ChIJuZd_9Mi3yhQRttg5hEG81fU",
+        "lat": 41.0475105,
+        "lng": 29.025813199999998,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Watch the seagulls by the Bosphorus coast.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEOGhn9UlwUGPdgYkXCwM4Jet9DVidQRrQ-0rZADjPVyQ_59oZhorgi5FokfHDQ7kVGUH8i5RyNwqMuWb8I8a-vsXuB6C4FDu3IliHrIeOz8D6tj0zm7Wb-175MPIz4_F_qgyRJ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Mecidiye, İskele Sk., 34347 Beşiktaş/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Ortaköy Kumpir 14",
+        "place_id": "ChIJ91DOO4a3yhQRjgSyQhK_eOI",
+        "lat": 41.048113799999996,
+        "lng": 29.026873,
+        "category": "street_food",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Classic roasted potatoes + Bosphorus views = perfect match.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGuni9SpuKSJopMmT9KtFJHhDnAdJZyUedlcKQsVk1_J9LZv15a5EQOqydoWsyFpVDh3qXvpBTkx064BKe51Oj_g8eUXZW6uoXsGcxJ1m7xHxo27P1MfXk42GtrjSKT6xtLPEw=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.1,
+          "address": "Ortaköy, Ortaköy Sahil No:14, 34930 Beşiktaş/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "The House Cafe Ortaköy",
+        "place_id": "ChIJ16t1Xsi3yhQR5NiQPEvEQj4",
+        "lat": 41.0475281,
+        "lng": 29.0252667,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Finish with a coffee overlooking the view.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF0Tl7RohKSXxBNYYsm2h3Qx1G8fwJFoqcx_iIQU3gnf3J3c3taqCZf0FBbI5PZQcZH1sqr_H3iJuV1KvwIOvIYk8r9mGDGjATJzE-luu4wGPa48JAqgq8BTIl8CUObez34tExX9A=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 3.9,
+          "address": "Yıldız, Ortaköy Salhanesi Sk. No:1, 34349 Beşiktaş/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "İBB Ortaköy Camii Şehir Tuvaleti",
+        "place_id": "ChIJbRRkdRq3yhQRjNsjE0Q0Y6c",
+        "lat": 41.0475451,
+        "lng": 29.0269408,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "There's free public restroom near the square.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAERsffwku726bZFg-dlxbXkNVMEybjTKhoTiv_aFPGCNK8DjQggtcM-wUE7UVY0j44tnPnj0lRB8ekcngn2jFGKqcb062E8eXNh86lfZjGLMxG8iqQMMZ8kcfnjyNX79B_yJpDZ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Cultural Stroll in Galata & Beyoğlu",
+    "description": "Spend a themed day in Istanbul: Galata Tower, SALT Galata, Mephisto Bookstore & Café - Beyoğlu, charming Galata.",
+    "city": "Istanbul",
+    "vibe_tags": [
+      "kultur",
+      "sanat",
+      "kalabalik"
+    ],
+    "budget_level": 2,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEet0JXQVAbggD4bsVMgYcG0NF9zErfY_suGXTOWKvDwiZJX1hws0zHzCBGlmb3XNaLmKXTwDxCgssGe3HPxGsSJVRGsWyGGITGuwQa0P_eolj4dszjyHq37AmpdvDmfIVMDABz-cKgfPc=w1000-h1000-c-n",
+    "total_distance_m": 2929,
+    "total_duration_min": 36,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Galata Kulesi",
+        "place_id": "ChIJQ3x3p-e5yhQRCzOLzD3Pdkw",
+        "lat": 41.025569,
+        "lng": 28.9741286,
+        "category": "viewpoint",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Look out over the city's rooftops.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEet0JXQVAbggD4bsVMgYcG0NF9zErfY_suGXTOWKvDwiZJX1hws0zHzCBGlmb3XNaLmKXTwDxCgssGe3HPxGsSJVRGsWyGGITGuwQa0P_eolj4dszjyHq37AmpdvDmfIVMDABz-cKgfPc=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Bereketzade, 34421 Beyoğlu/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "SALT Galata",
+        "place_id": "ChIJ9XlKFOi5yhQRpjqu9uyObWE",
+        "lat": 41.0239214,
+        "lng": 28.973488699999997,
+        "category": "gallery",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Spend some time browsing contemporary exhibitions.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAE8PpFvmtuUtvzd_GnoN-v0XK0OfMY6eKFYkvJqfd5qzwPSocyXextrh5vo_HRTP7sdJiAM-rcJgWznhe6-Cylvmtc2600nF3DSlKfXW0qga23XocokgX6rA_4-ZZM6F6XMink=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Arap Cami, Bankalar Cd. No:11, 34420 Beyoğlu/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Mephisto Kitabevi & Kafe - Beyoğlu",
+        "place_id": "ChIJFc0TGWG3yhQRsQRcWrofCCk",
+        "lat": 41.0343235,
+        "lng": 28.9796116,
+        "category": "bookstore",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a book break on Istiklal Street.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEcRg1VqE8Az8KLZgq1VPppSbcVq2pDN6oXJrbda4aVcTihXz50WOpG3ariMB5d5LJ-yQZtrgTupfoTHBqnH95IpzPo6_LeIl8ZVWN6-EiaLc7AoS1fxQe52ojRyJ7xJXzuhtW0=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Kuloğlu, İstiklal Cd. No:125, 34435 Beyoğlu/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Gallant Galata",
+        "place_id": "ChIJs-9nqRe5yhQRsWpnPg8uLAo",
+        "lat": 41.0260062,
+        "lng": 28.973651999999998,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Enjoy a quiet coffee in a narrow street.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHhz8ILvkZ1-ySMmK81e0lZSvKkm8rFoiKRznbUymGzYcg1Cobh2rQAEU9e3-afoBHqNpJeQsCXEc4uCo4sIw25WOLJWfv2M8jw95YEwfBjFBRaGhXnavbEMCUi5joBLIC29giB-N4pAkU=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Bereketzade, Büyük Hendek Cd. 15 /A, 34421 Beyoğlu/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "İBB Galata Karaköy Şehir Tuvaleti",
+        "place_id": "ChIJfVLBEre5yhQRLO67XdTVlPc",
+        "lat": 41.02221,
+        "lng": 28.974027,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms on the upper floor.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFuQjOp4ivA_xwyQbYiqaciZgFKa-wwTLmiP0LC_0YAyG-HhU4AVfe18XU-KCfciLQY81C4aMM_VBKf3IqrsuH2Kc_Eft0UGHHKLxYX-zmQRhIEnUIxlWnNir6BHWhBdkQ2iKaxSc1Xihua=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "One-Way by Ferry: Karaköy to Kadıköy",
+    "description": "Spend a themed day in Istanbul: Karaköy Coast Park, Kadıköy, Kadıköy Bazaar, Moda Coast Park, and the Walking Path.",
+    "city": "Istanbul",
+    "vibe_tags": [
+      "acik-hava",
+      "manzara",
+      "ulasim",
+      "sosyal"
+    ],
+    "budget_level": 1,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHHNLPGGyyDFfK4vp-_7Ro3Ggz5BfLvkhk58D5YQ59J68sXTWwse124VVS5nSIDJb8Sr0IVYJ0r6olse0qsGw81sA3mCYBpWhrQ8qjHNkTKoDMhC_xFbv9BKkOZA-s_GTiii11u=w1000-h1000-c-n",
+    "total_distance_m": 7316,
+    "total_duration_min": 91,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "İBB Karaköy Sahil Parkı",
+        "place_id": "ChIJdWFVcG-5yhQRaFg0woJJZZw",
+        "lat": 41.023758099999995,
+        "lng": 28.968758899999997,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a short stroll along the Bosphorus waterfront before boarding the ferry.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHHNLPGGyyDFfK4vp-_7Ro3Ggz5BfLvkhk58D5YQ59J68sXTWwse124VVS5nSIDJb8Sr0IVYJ0r6olse0qsGw81sA3mCYBpWhrQ8qjHNkTKoDMhC_xFbv9BKkOZA-s_GTiii11u=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Arap Cami, Yelkenciler Cd. No:69, 34421 Beyoğlu/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Kadıköy",
+        "place_id": "ChIJbRdiS124yhQR_UVvvgXwzzw",
+        "lat": 40.992824,
+        "lng": 29.022921,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Enjoy a cup of tea and a simit on the ferry, and watch the seagulls as you cross to the other side.",
+        "transport_mode": "ferry",
+        "transport_note": "Karaköy–Kadıköy ferry ~20 minutes",
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEBpklub1ioDSsIshVf-qPtELF2vHmkaRi2Bx_joc4id4GvwetigGmYbExTjb41zL-k4bf6VmCcbR8Spe4dpFAjMIjToe4y22njLeCx5RKZfhK1N1xpdpo5U-LiEv7PNoamBKIX=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Caferağa, 34710 Kadıköy/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Kadıköy Çarşı",
+        "place_id": "ChIJX9ugiGi4yhQRfBZ63YYzIe8",
+        "lat": 40.99102,
+        "lng": 29.02563,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Get lost in the lively streets of the bazaar.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEPprdTrxFFauJj-gOKcMD_kSvzoehGDiJ7gZIWVcX60BGrCDWx_Pbgv8yRkI8R37LCAEm7RCotrMeG1lxc-zdQd-voaQiqvi1aRvmoQBP4UCj0y4k8Dj6Di5OY-3yzFa8KQ1XP=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Osmanağa, Söğütlüçeşme Cad., 34714 Kadıköy/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Moda Sahil Parkı ve Yürüyüş Yolu",
+        "place_id": "ChIJxX8aa4q4yhQRKiIKntQmhCo",
+        "lat": 40.980058,
+        "lng": 29.0269558,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Finish off with a coastal walk towards Moda.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFfM3DbBgk2mY9JRUFyCL_6fiHDhvnrWP5Z3k4lBwYp8JtVscCA8o51npr9R4oLBssQHtXC799AxlIX-_MoBXv2R4x0n0TSULJMjX6azS_lifpuXpZMTjAsnvZgu0afGWk1EdEU04jvoCN5=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Caferağa, Küçükmoda Burnu Sok. X2HH+XG No:21, 34710 Kadıköy/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "İBB Tuvalet",
+        "place_id": "ChIJhSMrcsS5yhQRmWKumCH_MQ4",
+        "lat": 40.9798431,
+        "lng": 29.0280079,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free/public WC.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGs-qYRZ5CIBJlYs1ONhSyJFG0csczwrkeZH9TBwgzfxm145ePpGCpWVpWBPV70v1Jn0-sb1oA-W8_dCflKi0mSX4pEOQ2y41xVFFGsm2-YXk4q4CbBq03AfZ-UO8C7AVXFWgI=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Escape to Green Emirgan",
+    "description": "Spend a themed day in Istanbul: Emirgan Grove, Emirgan Coast, Coffee Gate Emirgan.",
+    "city": "Istanbul",
+    "vibe_tags": [
+      "sakin",
+      "doga",
+      "acik-hava"
+    ],
+    "budget_level": 2,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEcWVPNY244NfYAaUBeAl-nPufPF6QrC_WMwEha4XUPtuGBKdDLnkcZF4mR6rURU75l3ceRlRCkOM5p25Jbr31qS4j5R0XfYBJBe6x6EUIkDbDDYAIpQltixyX2N7TD912Vk2qr=w1000-h1000-c-n",
+    "total_distance_m": 1121,
+    "total_duration_min": 14,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Emirgân Korusu",
+        "place_id": "ChIJgbO-UnHKyhQRuxVN_8igPRY",
+        "lat": 41.1086496,
+        "lng": 29.053112,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a long walk under the trees.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEcWVPNY244NfYAaUBeAl-nPufPF6QrC_WMwEha4XUPtuGBKdDLnkcZF4mR6rURU75l3ceRlRCkOM5p25Jbr31qS4j5R0XfYBJBe6x6EUIkDbDDYAIpQltixyX2N7TD912Vk2qr=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Reşitpaşa, Emirgan Sk., 34467 Sarıyer/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Emirgan Sahil",
+        "place_id": "ChIJ8XgEWHHKyhQRyEniingUzyc",
+        "lat": 41.107079999999996,
+        "lng": 29.057906799999998,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Sit and rest by the Bosphorus coast.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGGNWrl_8V-4iWm6009ue6qMtPqxWAVYN47HD4nxl2RV6xQgcZW-kDA-GITSDen8TgWjX1xcdbaT6xRVNntA-XO5B20H75kJ3fNlOVmLnmSlgCYyO4RCTcBuWs7z_5KI4iNXHyi=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Emirgan, 34467 Sarıyer/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Coffee Gate Emirgan",
+        "place_id": "ChIJJ4X7rffLyhQR5KsENzmVbl0",
+        "lat": 41.105026599999995,
+        "lng": 29.056275799999998,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Take a break for tea or coffee at the grove exit.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFPIkPDnGnwjMLNz3QjTC_xEMRzZvTljNT_A_Q6SMz377qDZxFbWzIX9F57RgCJ4R2pAUfgLksomtK5PPfRaCWrgZkDOWAWDYXe8aKim0evHiV-5XhpAHvGBNngyTYwlUlF9CUlF1ifCbE=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Emirgan, Doğru Muvakkithane Cd. No: 6, 34467 Sarıyer/İstanbul, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "İBB Emirgan Havuz Altı Şehir Tuvaleti",
+        "place_id": "ChIJByZ5XDnLyhQRNbuRbNOg_gg",
+        "lat": 41.108714,
+        "lng": 29.0552605,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms are available around the grove.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEHyXV_jlIs9CdoObNysfh7PW-w5jnn2dnR0WZLhRYb2fIdX3_jL_HB7QmjJ0Pzl-fYzTzD1fvzn66--1hmtuycAAWFW_-uw5iJceE3Q5lE8R9i87lAyacx5UjznaEJtqKR7cG1=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "From Anıtkabir to Seğmenler",
+    "description": "Spend a themed day in Ankara: Anıtkabir, Seğmenler Park, Kakule Coffee.",
+    "city": "Ankara",
+    "vibe_tags": [
+      "tarih",
+      "sakin",
+      "yesil"
+    ],
+    "budget_level": 3,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAECu_7fj1lJRUNhKC8OMWngE3Ieu2eo56DyYuw3lt_ho-Qp7CcmFRwBXitPwhoCusz5XvAqKh_k1hzhWE7iae7eR_LJcrVFmohnA4y8shht-4nYxm7Up2ewzIIPm5ehYLO8t6rT=w1000-h1000-c-n",
+    "total_distance_m": 7735,
+    "total_duration_min": 96,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Anıtkabir",
+        "place_id": "ChIJj-qcChlP0xQRoAiNJKguhtM",
+        "lat": 39.924882499999995,
+        "lng": 32.8370786,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Start with a respectful salute at the heart of the Republic.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAECu_7fj1lJRUNhKC8OMWngE3Ieu2eo56DyYuw3lt_ho-Qp7CcmFRwBXitPwhoCusz5XvAqKh_k1hzhWE7iae7eR_LJcrVFmohnA4y8shht-4nYxm7Up2ewzIIPm5ehYLO8t6rT=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.9,
+          "address": "Mebusevleri, Anıttepe, Anıtkabir, 06570 Çankaya/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Seğmenler Parkı",
+        "place_id": "ChIJN26nO5pP0xQRllqZX2CDKaU",
+        "lat": 39.894834599999996,
+        "lng": 32.862981999999995,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a breather in the valley at the city's center.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHgif90lu6myKOo2B8UJgV6plcaEuuy4IZM8fgD9YPsYJ62Bbp-vD7oQIJYkWw2n3AHQ6ruJn1rXsaEpNcOb60hLgl4jwzBjNsyCrs3bJ-XjD8xjEiR22DLVlei4y_6m_568hQ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Çankaya, 06680 Çankaya/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Kakule Kahve",
+        "place_id": "ChIJU75WQalP0xQRzu65_QiRvDc",
+        "lat": 39.914938899999996,
+        "lng": 32.8578139,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Take a peaceful coffee break in the Tunalı area.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEcBRn5a6-f__9-tZ8ZYZaclQE1eQOemoEpee0F5WvGa1H1oQqaSVlKkavk8Ari-fpYBW-5ReUXShpzkvxja7iux4WKzlq7i7736Ip69cckj684GAE3VzJlbzOMYXrq7mURbHk=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Kavaklıdere, Kızılırmak Cd. No:17, 06680 Çankaya/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Kuğulu Park",
+        "place_id": "ChIJT7AhDqJP0xQRfUIL_yqAcTM",
+        "lat": 39.902000099999995,
+        "lng": 32.8601762,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms near the park.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHVpvCQ3Q43M7JekaPCrGXhSG435Etq-AwaZpc20r-CTbvzsd4FnX1FsnSXwDikntb7O861hPDk76EY0zHFA9Pq4oWeKFz3tJQeK3Rp5pOsZ-wx3JSkav4QIeDcxzvQPJFrgflz-w=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Hamamönü & Historical Fortifications Tapestry",
+    "description": "Spend a themed day in Ankara: explore the restored Historical Ankara Houses in Hamamönü, visit Ankara Castle, Rahmi M. Koç Museum in Ankara, and Neşe Çay House.",
+    "city": "Ankara",
+    "vibe_tags": [
+      "tarih",
+      "kesif",
+      "fotograf"
+    ],
+    "budget_level": 1,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEFZiPOa9gXa0oy-hfz2AJy3ssbC5H0S8_XIozv7oJF69mrCXGBMWerQGfospqcUKp9LmvfeQ-RnSdqfXRmM8T3RwVOKVqKJpAwx9U2Abqzyssy3yr8WCr8PXRAyd06NnjE5vuT=w1000-h1000-c-n",
+    "total_distance_m": 2807,
+    "total_duration_min": 35,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Hamamönü Tarihi Ankara Evleri",
+        "place_id": "ChIJSxhUe0NO0xQRXwTCW64axC8",
+        "lat": 39.9317783,
+        "lng": 32.866988,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Wander through restored Ankara houses.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEFZiPOa9gXa0oy-hfz2AJy3ssbC5H0S8_XIozv7oJF69mrCXGBMWerQGfospqcUKp9LmvfeQ-RnSdqfXRmM8T3RwVOKVqKJpAwx9U2Abqzyssy3yr8WCr8PXRAyd06NnjE5vuT=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Hacettepe, Sarıkadı Sk. No:31, 06230 Altındağ/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Ankara Kalesi",
+        "place_id": "ChIJezGjUW9O0xQRwAGUkwTgFXQ",
+        "lat": 39.9390359,
+        "lng": 32.8654212,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Look out over old Ankara from the walls.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEHzldE10quJtkVBjFfd7FivWTuAnQZmrdfhLm_2ctIKiUV9Ia4L7KqqOiNQ68wHiifN7sXqWB0fhDRxMF6KvbAQvDmVgD1u-FXvARNGYx9ZtVSwzvlLtkY4h4nsae8JoWNd8Yj=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Kale, 06240 Altındağ/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Rahmi M. Koç Müzesi Ankara",
+        "place_id": "ChIJ9b_Z9mdO0xQRNU5BMBpIICo",
+        "lat": 39.9372464,
+        "lng": 32.8634883,
+        "category": "museum",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a nostalgic tour of Çengelhan.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWn_vWYnnH7tmG_TkwZUxdxV9ai8dyW6yMPTd3HDeRtmicBeSW6k00h_8Vzr9H2p454rON7wc8ElwYpuZuqjQV1tMEgaP0Ct8DF-UFjwFGuh30GofgkxJjRUA_KBqPCljtb7qspfmg=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Kale, Hacettepe, Depo Sokak No:1, 06230 Altındağ/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Neşe Çay Evi",
+        "place_id": "ChIJAa1tzVxO0xQR7AyQ76RGZyE",
+        "lat": 39.933895,
+        "lng": 32.8649439,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a break in a courtyard mansion with a cup of tea.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFdfh8cnuJBDNKaryDBgz2uH7oRyf2C1gk_mJp1oRoXxQ9CkKYKncOnHDqTPkQ3MrJpE8mC6gHeCu8RRh-1e1FdDzyZoLUWT8ue5nd4b_MZFudaVmcC1L8d5hthUCR6Qi8CFX2W=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Hacettepe, Hamam Arkası Sk. No:2, 06080 Altındağ/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Umumi Tuvalet",
+        "place_id": "ChIJL033OvVO0xQRyXj7ajJGTC8",
+        "lat": 39.940284,
+        "lng": 32.851614999999995,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms near the square.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh4.googleusercontent.com/E7rVeWyqlWWlVbkl_2iMZ3I8g0QfpUPA9JIPeON_IMAwq5Xk8j7pAW-fwHnYavQVtQ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "CerModern & Gençlik Park",
+    "description": "Spend a themed day in Ankara: visit CerModern, Gençlik Park, and Verte Coffee House.",
+    "city": "Ankara",
+    "vibe_tags": [
+      "sanat",
+      "sosyal",
+      "kultur"
+    ],
+    "budget_level": 1,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF2KVImvaaO-Ivhu28TLf6Ni5zJ3VizW8DkYMFFEOGnWeVLUjAWAmz8vGyEbWf-Ndwh_lo84LiKHXSaSCLmtraQV2om5ChlEIBzqtGY_HHmxs5FvjJw7GBAFgzRBiTP5QuH-LDk=w1000-h1000-c-n",
+    "total_distance_m": 3806,
+    "total_duration_min": 47,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Cermodern",
+        "place_id": "ChIJtXHx6_lO0xQRrPnb4V4RjX8",
+        "lat": 39.9318309,
+        "lng": 32.8491314,
+        "category": "gallery",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Contemporary art in a former ceramics workshop.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF2KVImvaaO-Ivhu28TLf6Ni5zJ3VizW8DkYMFFEOGnWeVLUjAWAmz8vGyEbWf-Ndwh_lo84LiKHXSaSCLmtraQV2om5ChlEIBzqtGY_HHmxs5FvjJw7GBAFgzRBiTP5QuH-LDk=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Hacı Bayram, Altınsoy Cd. No:3, 06101 Sıhhıye / Altındağ/Altındağ/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Gençlik Parkı",
+        "place_id": "ChIJLbRQIfRO0xQRIZZ2_dlkOqk",
+        "lat": 39.9370104,
+        "lng": 32.849759399999996,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A classic Ankara stroll along the poolside.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEw4Yw4g0gA4GQsUnEFjtDL8YmEdKcIc6D1pb9-iJDglLjS8rRczNLal4FpasBR9RAosis9m_WD2H3uC6LDUxf7f0UloPSFC__O-RbGkzJjNyfFNMW_b2V9UFN3hxyJbTM_b5SM7g=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.1,
+          "address": "Doğanbey Mahallesi, Atatürk Blv No:50, 06050 Altındağ/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Verte Coffee House",
+        "place_id": "ChIJu38xAyhP0xQRjRIRycvj29M",
+        "lat": 39.9224919,
+        "lng": 32.850206899999996,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A breather in the heart of the city.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGeEFqoB9MpyhuCtH7YJbdhmPjzZM_CCACeekV1wR7sYl46y6q3_b6lKeRwzAf71BpUioykV8jutkz6V8iBtaprGm-lE3E70hl26pwonp3ZglwpDlTRcMyEu11vRUmN3LR2pvk2bbdJwY_E=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.9,
+          "address": "Kızılay, Sümer-2 Cd. 24-A, 06420 Çankaya/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Gençlik Parkı",
+        "place_id": "ChIJLbRQIfRO0xQRIZZ2_dlkOqk",
+        "lat": 39.9370104,
+        "lng": 32.849759399999996,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms inside the park.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFF5kvHzJ5R5zmEpOT0okoM2r-91dTGCQoILLrKL_cRiRKZ50gS3Z2PB1hI2ZcqqQd54gWq8lx50te9jVryXQJKbAreet5Kkr0GRRaSfNO9UvUKwu-b6YaVsXCaH-6WJo2APiN_=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Kuğulu Park & Tunalı Delight",
+    "description": "Spend a themed day in Ankara: Kuğulu Park, Tunalı Hilmi Street, Kakule Coffee.",
+    "city": "Ankara",
+    "vibe_tags": [
+      "sakin",
+      "kahve",
+      "sosyal"
+    ],
+    "budget_level": 3,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHVpvCQ3Q43M7JekaPCrGXhSG435Etq-AwaZpc20r-CTbvzsd4FnX1FsnSXwDikntb7O861hPDk76EY0zHFA9Pq4oWeKFz3tJQeK3Rp5pOsZ-wx3JSkav4QIeDcxzvQPJFrgflz-w=w1000-h1000-c-n",
+    "total_distance_m": 2380,
+    "total_duration_min": 29,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Kuğulu Park",
+        "place_id": "ChIJT7AhDqJP0xQRfUIL_yqAcTM",
+        "lat": 39.902000099999995,
+        "lng": 32.8601762,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Start your day gently by watching the swans at Kuğulu Park.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHVpvCQ3Q43M7JekaPCrGXhSG435Etq-AwaZpc20r-CTbvzsd4FnX1FsnSXwDikntb7O861hPDk76EY0zHFA9Pq4oWeKFz3tJQeK3Rp5pOsZ-wx3JSkav4QIeDcxzvQPJFrgflz-w=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Çankaya, Kuğulu Park, 06690 Çankaya/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Tunalı Hilmi Cd.",
+        "place_id": "ChIJxR3TUaRP0xQRp0ao0yKHSKQ",
+        "lat": 39.9090718,
+        "lng": 32.861831599999995,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Stroll along the street, popping into shops along the way.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGdd9ePIB1CydD80c9yGayZR2qjyARuzfGgkUP9dH9utb6GOBbNA9cS42YAwfznLTLRS9bo31GAM4KhWVwmhCaPhZTfkpyrCpijRjSbPxWXTRKvnMkufaDatZgA7wLPMq9831ny=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Çankaya/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Kakule Kahve",
+        "place_id": "ChIJU75WQalP0xQRzu65_QiRvDc",
+        "lat": 39.914938899999996,
+        "lng": 32.8578139,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "A great filter coffee in a side alley.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEcBRn5a6-f__9-tZ8ZYZaclQE1eQOemoEpee0F5WvGa1H1oQqaSVlKkavk8Ari-fpYBW-5ReUXShpzkvxja7iux4WKzlq7i7736Ip69cckj684GAE3VzJlbzOMYXrq7mURbHk=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Kavaklıdere, Kızılırmak Cd. No:17, 06680 Çankaya/Ankara, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Pub Locale Ankara",
+        "place_id": "ChIJlxs7ytBP0xQRK6R-ze50p-0",
+        "lat": 39.9073576,
+        "lng": 32.8586999,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms nearby.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEERTxumw0YrJoNNDoYCjSnUsaD2NCBU6kjbaRpVwXdtoBwW8RKgKI9TOHU6AsccO769uOfnbEhjm5ETbbh5RiJ2JDflqshZtmrIwOj3Ktl1LLHODrjzk3tI35_oIP0r1CJEs20xx_IDip8=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Day of Culture at Zeugma & the Fortress",
+    "description": "Spend a themed day in Gaziantep: Zeugma Mosaic Museum, Gaziantep Castle, Historic Tea House.",
+    "city": "Gaziantep",
+    "vibe_tags": [
+      "tarih",
+      "kultur",
+      "fotograf"
+    ],
+    "budget_level": 1,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFsVrKD3BfWs4JWr3Ll-ae1fJcjM-TDcQvzkHmsHkozmLsnFUNcvBFWUxbZiN9q1oIq_4QAuPfAYxHKmIzNouOp-NBoX-OdOVEieFLoFhavIxrvzf2RszmL3B7mF9u3MKWtvOg=w1000-h1000-c-n",
+    "total_distance_m": 1186,
+    "total_duration_min": 14,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Zeugma Mozaik Müzesi",
+        "place_id": "ChIJyaU5d6rmMRURVotkWaeUJ7E",
+        "lat": 37.075220099999996,
+        "lng": 37.385246699999996,
+        "category": "museum",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Catch a glimpse with Çingene Kızı.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFsVrKD3BfWs4JWr3Ll-ae1fJcjM-TDcQvzkHmsHkozmLsnFUNcvBFWUxbZiN9q1oIq_4QAuPfAYxHKmIzNouOp-NBoX-OdOVEieFLoFhavIxrvzf2RszmL3B7mF9u3MKWtvOg=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Hacı, Hacıbaba, Sani Konukoğlu Blv., 27500 Şehitkamil/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Gaziantep Kalesi",
+        "place_id": "ChIJP__QMU3hMRURGSnqQ-TLVxc",
+        "lat": 37.0663109,
+        "lng": 37.3832161,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take in the view of the city from around the castle.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAG8qhLpu6_3R9u0F87M14KcauO290krBt2lSkjTa3bKf7nkPnItIsZ-LQwJ_AmaqRzkUsKS6sDz3JG0YY5wE71BBo5lGbWVnliVrUG3ubaGhW_hMR2n1jd8wuEzD0lFsu39LNOx=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Karagöz, Naip Hamamı Sk. No:1, 27400 Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Tarihi Kır Kahvesi",
+        "place_id": "ChIJWapVRU3hMRURgTXozgEc-94",
+        "lat": 37.0670466,
+        "lng": 37.382183399999995,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Enjoy menengiç coffee at the foot of the castle.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHIfWFGr5cP5KqUsAZJEdChLSRzwQ8aKB_4sKzvB5UBjm1zbHBef1kFs_3wEOUbeJWO9jhon0CIMsgL4i43aEZRXo2m3VR5HrzFY6lkEQP5B4o20_VRUe6n3eC7YZ_TmuVgqD6yKQ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 3.9,
+          "address": "Karagöz, Köprübaşı Sk. No:4, 27400 Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "WC",
+        "place_id": "ChIJPTIkIVnhMRURA4bla5UrSPs",
+        "lat": 37.067561399999995,
+        "lng": 37.3820579,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms near the city center.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGbXjYOw2lVhI5rRs8rF_fgjLBFnOWGpC7To6mifX0Iv-Y31b1mGVC3ezlEKntjgQ5jke1FDj06n_yW8VzvufNix_duEGJL9DHC5vl8gqBjRIrJTudDs_W-5RwECmf8F-rcPjsFMITCQNNo=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Spice Market Flair in Antep",
+    "description": "Spend a themed day in Gaziantep: Almacı Market, Bakırcılar Bazaar, İmam Çağdaş Kebab and Baklava Salon, Köz Antep Kunafeh - Kadaif.",
+    "city": "Gaziantep",
+    "vibe_tags": [
+      "lezzet",
+      "kesif",
+      "sosyal"
+    ],
+    "budget_level": 3,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAH6MNBMIe5yZ4zHy1dEKM3lWYLj9R3mqbc6ntvTWclf8OriQoCvc3JAlx9OjeBnKIFPw0_RRyLzDmo4jS6ZmCC5R4PQFgmr6ZXnwtX02qMIm-aNBw-_g2LPGIQ1OEvvTxw12EmwCBmI65Xg=w1000-h1000-c-n",
+    "total_distance_m": 7871,
+    "total_duration_min": 98,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Almacı Pazarı",
+        "place_id": "ChIJz6a-9LPmMRURO0G4lTp94rs",
+        "lat": 37.0615027,
+        "lng": 37.3868139,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Start your day amidst the aromatic scents of spices.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAH6MNBMIe5yZ4zHy1dEKM3lWYLj9R3mqbc6ntvTWclf8OriQoCvc3JAlx9OjeBnKIFPw0_RRyLzDmo4jS6ZmCC5R4PQFgmr6ZXnwtX02qMIm-aNBw-_g2LPGIQ1OEvvTxw12EmwCBmI65Xg=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Şekeroğlu Mah, Merkez, 27220 Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Bakırcılar Çarşısı",
+        "place_id": "ChIJ51KvdbPmMRURjA_si3jDxR4",
+        "lat": 37.0619833,
+        "lng": 37.3866826,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Experience the sound of hammering alongside copper craftsmanship.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGU5wagQO8trIhFBkG5ZEleR0uXa_AyptB_2P520vHGCKEGYJPMeK2y-9yrtWCZ3g0euqsutjC8S9u8kDhpppGsbKdR9dzJfqx5VMrlV5puYFkMzL515oBP6dLIQrDHmWSrIaBqnSabY5sS=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Boyacı, Eskici Çarşısı Sk., 27400 Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "İmam Çağdaş Kebap Ve Baklava Salonu",
+        "place_id": "ChIJJfZ_PLrmMRURtQHmGRFj2-8",
+        "lat": 37.0634665,
+        "lng": 37.3852237,
+        "category": "restaurant",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Baklava and kebabs: the essence of Antep.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGzPY3eHKqwNr5rS29EP8hal8YvfRZuTzZyQjEuLJN2wvaa-6OFCDeFVX56H7TstU-YBwH4O3d7xpqgHnTyD57unRdeSEJhQmbS5HegXJ_8EjiSpDozHELiggMVEZdy_3NnUrzq=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4,
+          "address": "Şekeroğlu Mahallesi, Uzun Çarşı Caddesi No:49, 27010 Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Köz Antep Künefe - Kadayıf",
+        "place_id": "ChIJi0Hg2nrhMRURGNZhWQZgLvQ",
+        "lat": 37.0811449,
+        "lng": 37.3498163,
+        "category": "street_food",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A sweet finale with warm kunafeh.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEC-Z7nDt9A3lPtX0_reI_8YzGTHrCd8ONEF_aZI-fibq7ikABjyrweePOzL6sSloqXB-Blq14HxCqS8OAyStJuwlFf2eVbZskxXqeCPvPeb5e62FsdpzKpK_F9dHS0WzwsyJQXu9kDqXLz=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Pancarlı, Ali Nadi Ünler Blv. No:116/A, 27060 Şehitkamil/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Bakırcılar Çarşısı",
+        "place_id": "ChIJ51KvdbPmMRURjA_si3jDxR4",
+        "lat": 37.0619833,
+        "lng": 37.3866826,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms in the bazaar area.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAERAl4sH_Sxcfa3_ulZ5oaT6CZLqmzwR8NVO2MNN-aecPkiBFwpqF9FlE3AfZmqeWlFJvZHEw65AYTDv1pnWFy1fZ_UhVAARw7ViTW162ViqtlZwW9ih2teF8FEeRluwk87rZQ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Winding Streets of Bey Mahallesi",
+    "description": "Spend a themed day in Gaziantep: explore Bey, Gaziantep Emine Göğüş Culinary Museum, and historic Bey Mahallesi.",
+    "city": "Gaziantep",
+    "vibe_tags": [
+      "tarih",
+      "fotograf",
+      "sakin"
+    ],
+    "budget_level": 1,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFJcu5Ffd_aD8xWiEtRA-71ISvvXg8YlsqJuxMpLJw1jdDDYRChhk7tbCPglhfsebv80zOjNr2hkDYbaMwRJ11qKTAZaiydmvl-mwfgWxRxnrLgczrl_rh1RsPHrQhtp_8Haqkg=w1000-h1000-c-n",
+    "total_distance_m": 1335,
+    "total_duration_min": 16,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Bey",
+        "place_id": "ChIJ7fZxZUnhMRURRhCTvDh8X4k",
+        "lat": 37.0629711,
+        "lng": 37.376713699999996,
+        "category": "viewpoint",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Stroll slowly between stone houses.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFJcu5Ffd_aD8xWiEtRA-71ISvvXg8YlsqJuxMpLJw1jdDDYRChhk7tbCPglhfsebv80zOjNr2hkDYbaMwRJ11qKTAZaiydmvl-mwfgWxRxnrLgczrl_rh1RsPHrQhtp_8Haqkg=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Gaziantep Emine Göğüş Mutfak Müzesi",
+        "place_id": "ChIJZ2vK00zhMRURI1f-QF51PbU",
+        "lat": 37.0645214,
+        "lng": 37.3824889,
+        "category": "museum",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Listen to the story of Gaziantep's cuisine.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEtOG6nB8mK_c5ZrcgLYi9v6JLLFHKfhgblfHFR6K9RJ-uowOBTncctc8toEvB5AcJEOLjDF8XSN8nNa-dWW2Me5YVrx3MgP5Df9K66fdPrvHrp76ZRdMvxS7BrzBB3VD4uGAc8=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Karagöz Mh., 27240 Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Tarihi Bey Mahallesi",
+        "place_id": "ChIJzZxlUcLhMRURfXfG_Z0fSVk",
+        "lat": 37.0612728,
+        "lng": 37.377747,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a break in a courtyard house.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGdharD9k-jLe354jIdRt9iGAwfnGFtd_EFIZQ1CRVtsuIBaUwjkchMbARz6k7_EmZfq7tB6OFWbQH43vcNGkc5RZmTdeBYllRogQFPhfZatZJhPJrBFLlcp635iI29pP0g47GcPfzdBDzy=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Bey, Tepe Sk., 27010 Şahinbey/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "WC Tuvalet BayBayan",
+        "place_id": "ChIJWfUu3_nhMRURCbVLaoYXvwE",
+        "lat": 37.0611789,
+        "lng": 37.3804623,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms are available in the surrounding area.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=4KBk44uVfj4HHC7TD0TxnQ&cb_client=search.gws-prod.gps&w=80&h=92&yaw=253.45491&pitch=0&thumbfov=100"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Breather at 100. Yıl Park",
+    "description": "Spend a themed day in Gaziantep: 100. Yıl Atatürk Kültür Park, Botanical Garden, 100. Yıl Park.",
+    "city": "Gaziantep",
+    "vibe_tags": [
+      "yesil",
+      "sakin",
+      "acik-hava"
+    ],
+    "budget_level": 1,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEGL4kd6TREAji6UVb-glkkLGf8v8lwLYJNs7d6bwKcDZjLxQWVySC7TKyS5rhSUfhxGFNDyDhoN9Dn8-zV-vkEyKggGkwL9mReywybNwkJVsblPf-Hki7zFmD7ScA7krWTFpC0=w1000-h1000-c-n",
+    "total_distance_m": 4241,
+    "total_duration_min": 53,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "100. Yıl Atatürk Kültür Parkı",
+        "place_id": "ChIJu2sF-VDhMRURQJqRgdvNvfk",
+        "lat": 37.0645337,
+        "lng": 37.371255399999995,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a stroll through the city's green corridor.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEGL4kd6TREAji6UVb-glkkLGf8v8lwLYJNs7d6bwKcDZjLxQWVySC7TKyS5rhSUfhxGFNDyDhoN9Dn8-zV-vkEyKggGkwL9mReywybNwkJVsblPf-Hki7zFmD7ScA7krWTFpC0=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Değirmiçem, Gazi Muhtar Paşa Blv., 27090 Şehitkamil/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Botanik Bahçesi",
+        "place_id": "ChIJf-QoMQ7hMRURv-rZe8pCTVo",
+        "lat": 37.0635087,
+        "lng": 37.349632799999995,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Walk through the peaceful gardens amidst the plants.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEi3q1SXi-7_tyxo6QKk660H78qljkWx51NgMBceKfAHd2mTSDauA_rqP_d6gpb6Y_AnDMCxaWG9V4PI2FYoM8tJTVrwlH12nc1qENUdG0ifbdYTMJuaweKgtZ-1mvGH67CSzAv=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Sarıgüllük, 27060 Şehitkamil/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "100. Yıl Parkı",
+        "place_id": "ChIJMVffaUnhMRUR3oohtgQE5xA",
+        "lat": 37.0645412,
+        "lng": 37.375751099999995,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Catch your breath at the park exit.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGXt8CrYgPe31Vuh7NVMax4atjKJfQ1vsDOHfJpTuQpkmJ_X5LpkkLeYdFDRR030ArC9Hkj8dYtpsQPWi1DQRGLbJDTKc10j7l4yTPfrBPuYVTF7lSqJXtfUC0N5UMJz38BsPRTvK80aZ4a=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Bey, Çınarlı Sk. No:2, 27010 Şahinbey/Şehitkamil/Gaziantep, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "100. Yıl Parkı",
+        "place_id": "ChIJMVffaUnhMRUR3oohtgQE5xA",
+        "lat": 37.0645412,
+        "lng": 37.375751099999995,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms are available inside the park.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGXt8CrYgPe31Vuh7NVMax4atjKJfQ1vsDOHfJpTuQpkmJ_X5LpkkLeYdFDRR030ArC9Hkj8dYtpsQPWi1DQRGLbJDTKc10j7l4yTPfrBPuYVTF7lSqJXtfUC0N5UMJz38BsPRTvK80aZ4a=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Kordon Sunset",
+    "description": "Spend a themed day in Izmir: visit the Clock Tower of Izmir, enjoy a coffee at Kordon Alsancak Izmir, and relax at Kordon Cafe bar.",
+    "city": "Izmir",
+    "vibe_tags": [
+      "deniz",
+      "manzara",
+      "sosyal"
+    ],
+    "budget_level": 1,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFs3bwlazcIuKerXWNsiNP9363hMu4GehYTnP27S7aMmm4_vLX0Ccrv7HnH0L6MFUzm0vlSmaHiwnlnTkccpR4d79lx5ipppQAyeZGv5vtJNdUy92c4HcEVW5lWT6rHTcdExq8=w1000-h1000-c-n",
+    "total_distance_m": 2790,
+    "total_duration_min": 34,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "İzmir Saat Kulesi",
+        "place_id": "ChIJLVn3L-LYuxQRegvv_rHXvcM",
+        "lat": 38.4189,
+        "lng": 27.1287,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Start with the symbol of Izmir.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFs3bwlazcIuKerXWNsiNP9363hMu4GehYTnP27S7aMmm4_vLX0Ccrv7HnH0L6MFUzm0vlSmaHiwnlnTkccpR4d79lx5ipppQAyeZGv5vtJNdUy92c4HcEVW5lWT6rHTcdExq8=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Konak, 35360 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Kordon Alsancak İzmir",
+        "place_id": "ChIJjcvmHlvYuxQRcOJSV83Im2o",
+        "lat": 38.4381638,
+        "lng": 27.1414413,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Walk on the grass overlooking the sea, and wait for sunset.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFyxbR9KtofCbhUoQlu8ruo0A3pLhzX1fqO_ZEweSAhJ8cLl_mSfEey6H7GST6WJbrz7wffLWJWj-znB290e_XSHWykWl1Q2Ai4Q21Cufe58Ce_VUij8fI8gO7PpYHGmVYf=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Alsancak, 35250 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Kordon Cafe bar",
+        "place_id": "ChIJ75bq_1rYuxQRhiubhipqa20",
+        "lat": 38.4364862,
+        "lng": 27.141087,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A coffee with a view of the gulf.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAE7lOO2a7lF_R2tvc2gvEgOqfJ3ks8Hq77Zgcb4MxmZTMa7-c_fZRtvk2_8pCa83tjnvKNQ8pGzW3gvKjy6XxBbDFYp6zvGmH4sV-9QVeBQ-nSOqRCz3FRjk8MiZXeLuuPA7i6b=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4,
+          "address": "Alsancak, Atatürk Cd. No: 266/b, 35220 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Kordon Alsancak İzmir",
+        "place_id": "ChIJjcvmHlvYuxQRcOJSV83Im2o",
+        "lat": 38.4381638,
+        "lng": 27.1414413,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms along the coast.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFyxbR9KtofCbhUoQlu8ruo0A3pLhzX1fqO_ZEweSAhJ8cLl_mSfEey6H7GST6WJbrz7wffLWJWj-znB290e_XSHWykWl1Q2Ai4Q21Cufe58Ce_VUij8fI8gO7PpYHGmVYf=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Day of Discovery in Kemeraltı",
+    "description": "Spend a themed day in İzmir: explore Kemeraltı Bazaar, visit Kızlarağası Han, Agora Archaeological Site, and Kızlarağası Dibek Café.",
+    "city": "Izmir",
+    "vibe_tags": [
+      "tarih",
+      "kesif",
+      "butce-dostu"
+    ],
+    "budget_level": 1,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHL_AqLbrLbaoRETPDJgmPf5qH-qPZ7Jb3G6SaX2jQ5__e25_maCFBsh5LGA6x7FNtg6eR_eScWY0SHwdpRM5LLpFWzdzwwcM9QkFKp37Z3FOQMsgD_Sq1ZJGTnkeAd8N70t_Ic=w1000-h1000-c-n",
+    "total_distance_m": 1516,
+    "total_duration_min": 18,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Kemeraltı Çarşısı",
+        "place_id": "ChIJ50QX-uPYuxQRyBM2_ZLjFfw",
+        "lat": 38.418699,
+        "lng": 27.1330088,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Get lost in the labyrinthine streets.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHL_AqLbrLbaoRETPDJgmPf5qH-qPZ7Jb3G6SaX2jQ5__e25_maCFBsh5LGA6x7FNtg6eR_eScWY0SHwdpRM5LLpFWzdzwwcM9QkFKp37Z3FOQMsgD_Sq1ZJGTnkeAd8N70t_Ic=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Konak, Anafartalar Cd., 35250 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Kızlarağası Hanı",
+        "place_id": "ChIJ4X3zvOTYuxQRIW0mwDcQjpM",
+        "lat": 38.421203,
+        "lng": 27.132794,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Breathe in the scent of Turkish coffee in an Ottoman han.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFuFa8B-H_h_wfNvJZs4jao9MIZvGRcHv0asNdEmXCs4VqJ7f6LIq5LObNP8ZLVZaxBoWsqWhkBQTDpya7y9Psi9yShnqpZ-__tiC5aa0a_CJfrBlv775X8p3wOy_uqVj4sLnTG6w=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Kızlarağası Hanı Hanı 871 Sokak No:19/106 Hisarönü, 35250 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Agora Ören Yeri",
+        "place_id": "ChIJz4HKgu_YuxQRbTOT_QxqU4U",
+        "lat": 38.4197774,
+        "lng": 27.1384233,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Stand at the heart of ancient Smyrna.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFURd8xT00G0Kmy5nXZW_X1-5js2h4OpDx9KDnx1kYCJ2_x-AxiqZAVJj4x0yb2tEds0xni-mul6dSL2Nx05N3ugz4-lgz1CE2DCaI48yoTl0ZMLYmH5rCywV1V47TNF9IFvLdJ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Namazgah, Tarik Sari Sokağı No:29, 35240 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Kızlarağası Dibek Kahvesi",
+        "place_id": "ChIJ94AHoeTYuxQR1R5dg43JBr0",
+        "lat": 38.4187193,
+        "lng": 27.1336606,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Savor coffee over an open flame in the han courtyard.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGJ4bm_TCSZd8kQgqkLCnzUpgDSAmSH_bij98QQuhfOyGaYoFVtvCEJaVMgNUddIA-X8e6wze7hprPf3a0vNjOjfDKN8kEf8KgPw83_neCAXul9N9mBewZjEkUoueFcTJlI9iPz=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Konak, 871. Sk. No: 135, 35250 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Hygeina Wc Tuvalet",
+        "place_id": "ChIJr_AADWXZuxQRVVLwpagdG2M",
+        "lat": 38.4180127,
+        "lng": 27.1304384,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms are available within the bazaar.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGlclkMWpd7tF-RScZjH1ghUqQa5m3_9rPNtgJzDqFTEozErIou5szk0yBD0XN5VhZo0TUserJ_x_mpWR8HCdylShbrExuG-Edqsw3jwVOdgYHBUHsZlAlcwtAUTa6sZId4Tq5Y-OelC7IB=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Alsancak Art Trail",
+    "description": "Spend a themed day in Izmir: visit Arkas Sanat Alsancak, stroll along Kıbrıs Şehitleri Boulevard, and stop by Dalga Alsancak.",
+    "city": "Izmir",
+    "vibe_tags": [
+      "sanat",
+      "kahve",
+      "sosyal"
+    ],
+    "budget_level": 4,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHe-do1r-Rzoqvr01hEK-rOwPxdjqzMHMm4Z1M-XZwReE2fssdxvQYCtTpALkZm43hU1un-iAv47YfG07znGP4hn4pCwd2jcmHB-8Fp-NymHSXV6IkRl2nSO62ngdIVQG_f8x9bw-smkRLd=w1000-h1000-c-n",
+    "total_distance_m": 1304,
+    "total_duration_min": 16,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Arkas Sanat Alsancak",
+        "place_id": "ChIJy20mmlfYuxQRZvUFG4A_bZ8",
+        "lat": 38.431978699999995,
+        "lng": 27.136829199999998,
+        "category": "gallery",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Admire the fine art exhibitions in a Levantine mansion.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHe-do1r-Rzoqvr01hEK-rOwPxdjqzMHMm4Z1M-XZwReE2fssdxvQYCtTpALkZm43hU1un-iAv47YfG07znGP4hn4pCwd2jcmHB-8Fp-NymHSXV6IkRl2nSO62ngdIVQG_f8x9bw-smkRLd=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Fransa, Kültür, 1380 . Sk. No:1, 35220 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Kıbrıs Şehitleri Cd.",
+        "place_id": "ChIJKbvtT1vYuxQRA8E63LCgJ1o",
+        "lat": 38.438485799999995,
+        "lng": 27.1436061,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Wander through the lively streets of Alsancak.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEWVgBZs4pvZRbq5M2RR7gGDxhRMZWA5MTW5SKBNx-H_fpDzMYKQEu6EOfgdwS-nigDjI2_lOabycFflL78aIR-qSuWDruC7_ur7aQybNJreFjgLifSzhQDRjNi0nyvPRCIymyE=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Alsancak, 35220 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Dalga Alsancak",
+        "place_id": "ChIJww7nPcfZuxQRICTMoBZ280Y",
+        "lat": 38.438951599999996,
+        "lng": 27.1443087,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 4,
+        "note": "Grab a good espresso in a side alley.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHrVXeiOahKWgnIcORE8V425SM40fmmZcljfQ3_BQzQplX76jRZ5e7zVF--IlRscYRuB1pth-agIUiPvz2wD9SoVIcvK9Jmn-2cK-mPJOETBVg7x5XJgLtOcpDlvC5HJG0WsctvXGzXai0q=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.2,
+          "address": "Alsancak, 1485. Sk. No:22, 35220 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Tuvaletmatik",
+        "place_id": "ChIJD3RZPELZuxQR3RveiMtJ2LE",
+        "lat": 38.4390715,
+        "lng": 27.140967699999997,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms are available nearby.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGP96DxfoTnWjkU7oGJaDGcgOrVBatMf3SiwdngE-Ty4Nx6ahosceTh1oMETJZizQBDHEcpxNH8gJ3nWnR_wYRpqizXQuC7ZcHpasoR1EvMP4HISzpJJBKRzR9YVXuQHcLIbxBRZIX_BaJ4=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "From Asansör to Karataş",
+    "description": "Spend a themed day in Izmir: visit the Izmir Historical Elevator, stroll down Dario Moreno Street, stop by Karataş Tram Stop, and relax at Hoi Coffee and Plants.",
+    "city": "Izmir",
+    "vibe_tags": [
+      "manzara",
+      "fotograf",
+      "sakin"
+    ],
+    "budget_level": 2,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGbb0XGLked7CUjJ4hprDJn4T0FmkeinjkJMQ08K_MEYlvRDUee0UQWKsoJKNOxDFXpfbtXO05nRNv4g5IwdyNXG6Zci4jE5EQ6xhOMyUHP0zCZZ71n36IRSjjjqlBpGd1EBd57=w1000-h1000-c-n",
+    "total_distance_m": 4797,
+    "total_duration_min": 59,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "İzmir Tarihi Asansör",
+        "place_id": "ChIJ9yZupyXZuxQRRy6zC9zfQLU",
+        "lat": 38.4086587,
+        "lng": 27.1176455,
+        "category": "viewpoint",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take in the views of the gulf from above.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGbb0XGLked7CUjJ4hprDJn4T0FmkeinjkJMQ08K_MEYlvRDUee0UQWKsoJKNOxDFXpfbtXO05nRNv4g5IwdyNXG6Zci4jE5EQ6xhOMyUHP0zCZZ71n36IRSjjjqlBpGd1EBd57=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Turgut Reis, Şht. Nihatbey Cd. 76/A, 35000 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Dario Moreno Sokağı",
+        "place_id": "ChIJb-QH_yTZuxQRdv2lN1LOxsI",
+        "lat": 38.4090673,
+        "lng": 27.1175115,
+        "category": "viewpoint",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Snap a photo on the begonville staircase street.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlk7MYelk408pu43cNJVG8O_Am7L4XenWdsHYS5llCDgAAhK79F5T23vqiHQ7F2TFODLj-GJD80SuUvZpmsr00XlMLdgB2AjWUOdZQblmCU8Exa-8v5NbxmGhM7y5QzYjZ5rmCBXE2XuEWZ=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Turgut Reis, 305. Sk. No:81, 35280 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Karataş Tramvay Durağı",
+        "place_id": "ChIJCeuBZSTZuxQR-0CQqphHbjg",
+        "lat": 38.4103723,
+        "lng": 27.1183682,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Finish the day with a peaceful walk along the shoreline.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGOnfwLLAf6GvkCF1Venbu68LlQimwI56El7-o4uItc8BjjBAVnqbMHj7F-EF74N0-af5btYPjk0FO024wtq57nSCuwdU_7haUk-hqlLxOFnYW-smae3KRNzTAJUSFhwFUg7ue_=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Turgut Reis, Mustafa Kemal Sahil Blv. No:115, 35280 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Hoi Coffee and Plants",
+        "place_id": "ChIJzdxzxXHZuxQR_vTmjk6b2AQ",
+        "lat": 38.410463799999995,
+        "lng": 27.1215315,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Take a breather at the local café in the neighborhood.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAE1HbVIhOL3555HyiRL_ZEAbSrahC0E-_PWjmkNoenpARbDXMJexVPLaDrL_GDq48rZ1ObMLE7W8dkip0MwFPEKCQ_PGGKeMAEILN7wIaKs_4F7z7OZca_yUSwF81yF2ZYlO0IV=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Barbaros, 331. Sk. No:5 D:1, 35260 Konak/İzmir, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Tuvalet",
+        "place_id": "ChIJ_ZANbHzYuxQR3PvHTfs7Qeo",
+        "lat": 38.42769,
+        "lng": 27.165889,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "There's a free public restroom near the coastal area.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/bgDVPqiU8XM26CyvTy79s7lgKHYvfAV1uDkGULND5IvuvERo6cx40oYgTiFmUtfl=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "The Hans District & Koza Han",
+    "description": "A themed day in Bursa: Bursa Grand Mosque, Koza Han, Bursa Covered Market, Kozahan Abone cafe.",
+    "city": "Bursa",
+    "vibe_tags": [
+      "tarih",
+      "kultur",
+      "sosyal"
+    ],
+    "budget_level": 2,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEH9FqMw_gcj53dmCqsVd7pJkEOt9eVrX5PsfP-AnUQGMfiai5KxD1k45n4mAjg8p2cZ8e-a2ih56sE2KRlv9nvY0YZJPDNPpnCfVLZ-noNh-8_6Fh4VrXkJkgpsnW6x2SN0MdT=w1000-h1000-c-n",
+    "total_distance_m": 535,
+    "total_duration_min": 6,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Bursa Ulu Cami",
+        "place_id": "ChIJ3RmyGj84yhQR4x4TfWyU8SY",
+        "lat": 40.1838595,
+        "lng": 29.061868699999998,
+        "category": "mosque",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A silence under twenty domes.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEH9FqMw_gcj53dmCqsVd7pJkEOt9eVrX5PsfP-AnUQGMfiai5KxD1k45n4mAjg8p2cZ8e-a2ih56sE2KRlv9nvY0YZJPDNPpnCfVLZ-noNh-8_6Fh4VrXkJkgpsnW6x2SN0MdT=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.9,
+          "address": "Nalbantoğlu, Ulucami Cd. No:2, 16010 Osmangazi̇/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Koza Han",
+        "place_id": "ChIJSw0QgOE9yhQRzQN7LU1DH8M",
+        "lat": 40.1844815,
+        "lng": 29.0635282,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Have a cup of tea in the courtyard of the Silk Han.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEtEyOS-PU2ZowXpLODh6Ac2jeooDbb00-_YGKPkDwn8rsYoqxhQgIBmSYEUAJsGmpyKskHmu-9s5pAZAz_bqX888zyd_oLgG48hkPfXRDiwPBlLvPtMhMpw4mTWB4LJH-6dt3ZUA=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Osmangazi, Uzunçarşı Cd., 16010 Osmangazi̇/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Bursa Kapalı Çarşı",
+        "place_id": "ChIJaVFANeI9yhQR-CThVzriC-Y",
+        "lat": 40.1848455,
+        "lng": 29.061613299999998,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A market tour from cutlers to haberdashers.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGNs0A867MItS2T5-7BYrdciom9Q5z232JqwcjyRLLDmNITtb5WhQMo3QBCV2J2i2i1Tf4C8Dg0u0Gf3LbXtZau0meV2fsRne695e9nDm8KuYs0BAEFhznJwAtDBaiEM4UYP11utMD5dIvs=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Nalbantoğlu, Kapalı Çarşı Cad., 16010 Osmangazi̇/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Kozahan Abone cafe",
+        "place_id": "ChIJlXtM7sc9yhQRoJ1kcvu5Q7I",
+        "lat": 40.1844104,
+        "lng": 29.063889099999997,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Another cup in the courtyard.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAH9wEr5Bj7fPxDsUxm0O3MOC4XH3sg7wGZ18IGCyhWYbl14XmicuF2MhW8lKmbKdb9cXCYLfsj0PG-TZQQQlMSd3xxUMDmVwpAqRbC4M8d0QGd7Wcz0T8Jh5e7g0YUun2c-7-Ek=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 3,
+          "address": "Nalbantoğlu, Uzunçarşı Cd. No:59 D:72, 16010 Osmangazi̇/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Halka Açık Umimi Tuvalet",
+        "place_id": "ChIJ7YfTTwA9yhQRKFTyeUyFVYs",
+        "lat": 40.184404699999995,
+        "lng": 29.0637376,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms around the market area.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=49rqbRfRyJdL7aXcrWy0HQ&cb_client=search.gws-prod.gps&w=80&h=92&yaw=40.82379&pitch=0&thumbfov=100"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "From Yeşil to Irgandı",
+    "description": "Spend a themed day in Bursa: visit the Yeşil Tomb, Yeşil Mosque, Irgandı Bridge, and Yeşilçam Cafe.",
+    "city": "Bursa",
+    "vibe_tags": [
+      "tarih",
+      "sakin",
+      "fotograf"
+    ],
+    "budget_level": 2,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAERI6MmC3zpuOWZhW64gHF_tFhrHwpdHiWqzZrURk9Ke7tIvQEvch0IKyj1K825_K5w-xSAueAJshCb24csxuslxhQCxkytLjj7jbrCPi3H6OGy0-jxIYBbE3mAjKMhHyT9Mis=w1000-h1000-c-n",
+    "total_distance_m": 3021,
+    "total_duration_min": 37,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Yeşil Türbe",
+        "place_id": "ChIJM38n1N49yhQRcnCWi3B03g4",
+        "lat": 40.181396199999995,
+        "lng": 29.0748829,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Stand in awe of the turquoise tiled tomb.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAERI6MmC3zpuOWZhW64gHF_tFhrHwpdHiWqzZrURk9Ke7tIvQEvch0IKyj1K825_K5w-xSAueAJshCb24csxuslxhQCxkytLjj7jbrCPi3H6OGy0-jxIYBbE3mAjKMhHyT9Mis=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.8,
+          "address": "Yeşil, 1. Yeşil Cd. 66-1, 16360 Yıldırım/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Yeşil Cami",
+        "place_id": "ChIJoeuTL989yhQRN008C26WO7A",
+        "lat": 40.182162999999996,
+        "lng": 29.0741497,
+        "category": "mosque",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Experience the refined elegance of early Ottoman architecture.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEkjVDMsuJxB4TPbFZOrM860Be9WsOx1T4awBQqikKTwdYTyPXCKhqCaPtASM0Dtu0gV0Ba7945EAvUCj0LDTe4qlP20-YkjO5zhM7Bli_I5EUWcnxkZwp0aIGyiOztmMYWE08=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Yeşil, 16360 Yıldırım/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Irgandı Köprüsü",
+        "place_id": "ChIJS0lARt49yhQR1LruSgYHKsE",
+        "lat": 40.1819479,
+        "lng": 29.0708123,
+        "category": "viewpoint",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Walk across the artist studio-lined stone bridge.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEB4Wtz3PXqvAN7U8GhYzmmq_Rf9k97gNIr6Or_YAmNZwJAx3WwRJ9hsmh3IvJ7tXEBKIMk-9HVsSkw_FZHiWVx7kok0dVj8F-lYxFbgx9Q4TZIRO_lVAPnkxW-3cBvIGSd3xQje8YPB57k=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Kurtoğlu, Gökdere Blv. No:14, 16360 Yıldırım/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Yeşilçam Cafe",
+        "place_id": "ChIJvw81swk-yhQRcFEZQD96lVQ",
+        "lat": 40.1894144,
+        "lng": 29.060529799999998,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Take a break with a view of the tomb.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF1Pr-4VOxrDEJA4qS8hhKAYvdv_ZUEWKUcAWxh9y3Kf3d_Fqt8Zb84wCG3n736x0gAJpAbjbOgOZJNRL3Ip0lG5XdSUSdD2V_UmhpBTHmZWk4RIKziucMOimi7_5AjlBxEaDIO=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.2,
+          "address": "Aktarhüssam Mahallesi Fevzi Çakmak Caddesi Halıcıoğlu Dıbıdık İşhanı, D:33/713, 16050 Osmangazi̇, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Yeşil WC",
+        "place_id": "ChIJW4oXGBs9yhQRIT-SI_fc4VI",
+        "lat": 40.1818464,
+        "lng": 29.0741004,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "There's free public restroom near the square.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=tjgKTBbbZIGe9cqYRcrFVw&cb_client=search.gws-prod.gps&w=80&h=92&yaw=317.89746&pitch=0&thumbfov=100"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Breath of Culture at Kültürpark",
+    "description": "A themed day in Bursa: Reşat Oyal Culture Park, Bursa City Museum, Grain Cafe Altıparmak.",
+    "city": "Bursa",
+    "vibe_tags": [
+      "yesil",
+      "sakin",
+      "kultur"
+    ],
+    "budget_level": 1,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHnaWZf2GBRRFsdDPVfzQWfe2L0XBxC4nQmMsXFSbEqiPWwNvGRPdB2o6YNtacBELoWt_09vglWsGpno2nQjJNVqdlCr3VVrF8GhOcV6Wh0zLG0Td261BWngp9pWmkED8kahyw=w1000-h1000-c-n",
+    "total_distance_m": 4706,
+    "total_duration_min": 58,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Reşat Oyal Kültür Parkı",
+        "place_id": "ChIJUVUFdf8VyhQRnqjMQh52x3w",
+        "lat": 40.1946716,
+        "lng": 29.0446745,
+        "category": "park",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A wide tour around the lake.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHnaWZf2GBRRFsdDPVfzQWfe2L0XBxC4nQmMsXFSbEqiPWwNvGRPdB2o6YNtacBELoWt_09vglWsGpno2nQjJNVqdlCr3VVrF8GhOcV6Wh0zLG0Td261BWngp9pWmkED8kahyw=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.4,
+          "address": "Gaziakdemir, Çekirge Cd. No:6, 16190 Osmangazi̇/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Bursa Kent Müzesi",
+        "place_id": "ChIJHzNOwOA9yhQRdMKFcQdb1fw",
+        "lat": 40.1823757,
+        "lng": 29.0664314,
+        "category": "museum",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A brief dive into the city's history.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAE51pZZNXCb9xW63vAU550_AALgn3kd_vVZTnpieJmXc5_hPXD7iFe8zaQVjmmolLH-CZAjxpHImMDJBMy_G58xC2rggjm3cvVcDI-CrKzjAnRTLZbz8949xGmSYTwghReElhll=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Hocaalizade, 6. Kültür Sk. No:8, 16010, 16010 Osmangazi̇/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Grain Cafe Altıparmak",
+        "place_id": "ChIJWcoCf4E9yhQRJxvf1Z3fDbI",
+        "lat": 40.188943099999996,
+        "lng": 29.054702199999998,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A coffee break on the main street.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFACMEBSwTlm4mC6N31ALr4SjLqEYTWW-pXa76AwCXZMNIeJeUdmQY6TRqm7jhQicLH3MA1y6v5-OnRnG9li6alLIrsEh9_UVP4Mia3IIRPfAUF_PPL0alibcoju2IXwB220U0z47ZfcyV2=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 5,
+          "address": "Kuruçeşme, Sakarya Cd. No:46, 16050 Osmangazi̇/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Kültürpark WC",
+        "place_id": "ChIJP7DApW8VyhQR1sSKG0BxWjU",
+        "lat": 40.1959029,
+        "lng": 29.0443225,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms inside the park.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFdXhzBJC5FoTj0kPaEVQGJVusJXxQYkkIUJ4JprX13e1GfX7NuukuIVoMorvUb2u4PlL-7OHHzBiUfkQ4WxAFnxUooDBHkxIhT1JMJ7bNOcZAbgRoKP1qY872kSNN_dJ92OJkd=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Exploring Bodrum Castle and Marina",
+    "description": "A themed day in Muğla: Bodrum Castle, Bodrum Marina, Bazaar, Espressolab Bodrum Marina.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "deniz",
+      "tarih",
+      "sosyal"
+    ],
+    "budget_level": 4,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFWPgXKAf4jjsPFJZpZGjInImxNHP2YsCfXEqprvtzMPy46_utzQJ4wFLLs2ePKPvUr8WZhvkwdQQNM7XZa3CRufeCSu01WYNmHtmdBJJcZtdLaHrJC1KZk9dKDEI9i_NFUHeA=w1000-h1000-c-n",
+    "total_distance_m": 2644,
+    "total_duration_min": 33,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Bodrum kalesi",
+        "place_id": "ChIJN2AI8zhtvhQRfO3RUOAfwqE",
+        "lat": 37.032052199999995,
+        "lng": 27.4287611,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Kick off your day at the castle museum with underwater archaeology.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFWPgXKAf4jjsPFJZpZGjInImxNHP2YsCfXEqprvtzMPy46_utzQJ4wFLLs2ePKPvUr8WZhvkwdQQNM7XZa3CRufeCSu01WYNmHtmdBJJcZtdLaHrJC1KZk9dKDEI9i_NFUHeA=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Çarşı, Kale Cd. No:43, 48400 Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Bodrum marina",
+        "place_id": "ChIJR65WVrFtvhQRROyiNFDA4w8",
+        "lat": 37.0319285,
+        "lng": 27.4261308,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a stroll along the shore amidst the yachts.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAG89ngv77YRURE-c_R_fbRtPkcwyomlwqOY89kFPa-uu2F7egyxZMFtSJCpjtj8zBCBULVLZlLxp9K6PUerV_a3b2He6-SwijeJPIBqDX_dUtdJ7oOBXAlCj27GzGFIIlzMI3Wx3g=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Bodrum Neyzen Tevfik Caddesi No :9, D:3, 48400 Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Çarşı",
+        "place_id": "ChIJd9_mLEBsvhQR6pGYjxFgJ0o",
+        "lat": 37.0355643,
+        "lng": 27.4336137,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Wander through the white streets lined with begonvilles.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWl49U6ERN2VFP1dM7qEQsZm4duuwjSduaygEr4xCRqsUrs6eFDzLtGpfV71mmXbH38jyV-HsIwwsGNg8LU-KJIGtWYyeH-fHTSDHZB1h338LscdPll2GjxciC137WZaZa_LQnUU=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Espressolab Bodrum Marina",
+        "place_id": "ChIJlQHC_kxtvhQRyyoLTkqYW_Q",
+        "lat": 37.0356302,
+        "lng": 27.4226961,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 4,
+        "note": "Take a break by the sea with a coffee.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAG2sWnmOcKQ2mXoI6QxZHxM_8C2oCCdPLKzH_QLcbIlCJ-kIyTaqqCWiCoBfigne5Zydbm0Y70yZdf5HuQqovwuXmb66awyTmEK01KZQ6cCih5heFH0jL5wrUJIB5qesxv7tRHwfSc6hbca=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Eskiçeşme, Neyzen Tevfik Cd. No: 142/1, 48400 Bodrum/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Toilet Wc Tuvalet",
+        "place_id": "ChIJcT9ZPDFtvhQR5jPu9ZAB9uI",
+        "lat": 37.034647299999996,
+        "lng": 27.4300867,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms near the marina.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmD_f5oUm9nJD6QTyWgmsJ_cYE8bkPBXpdZdxx9Hx7jQsKkYG-IFMKTHx6nso_lBLUd1sQqbe0_HfULZ9OLbIGKPPASABv83ZKFc6o76ySEDKoy1IViecMsG7TSdXUzSw7ywlPDezwumxUu=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Stroll Along Marmaris Coast",
+    "description": "Spend a themed day in Muğla: Marmaris Castle and Archaeology Museum, Marmaris Public Beach, Netsel Marina, Panaroma View Cafe.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "deniz",
+      "yuruyus",
+      "manzara"
+    ],
+    "budget_level": 2,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkf5OHfyORFvtpiOUJ0thnY9m6x-KFAsTiXHnjgYEeAzpDyREzaH8jR2Ip2yEOF6ZVii_EkDniddu_HVCy2KPSIuUY9f3A8FQ-G3prIkBHfQtw31NviLG_Gu1n96lsxK84Xew=w1000-h1000-c-n",
+    "total_distance_m": 3220,
+    "total_duration_min": 40,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Marmaris Kalesi ve Arkeoloji Müzesi",
+        "place_id": "ChIJgaHLoN29vxQR2YBWDNbMgXE",
+        "lat": 36.8505514,
+        "lng": 28.2742787,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take in the view of the gulf from the old town's hilltop.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkf5OHfyORFvtpiOUJ0thnY9m6x-KFAsTiXHnjgYEeAzpDyREzaH8jR2Ip2yEOF6ZVii_EkDniddu_HVCy2KPSIuUY9f3A8FQ-G3prIkBHfQtw31NviLG_Gu1n96lsxK84Xew=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Tepe, 30. Sk No:54, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Marmaris Halk Plajı",
+        "place_id": "ChIJ7ey9C9e9vxQRyBUJJxUZnEU",
+        "lat": 36.8511878,
+        "lng": 28.2659311,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Enjoy a long walk along the palm-lined promenade.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGok5qcx299-SKNPZKBuVHlN-SDWWMrVmSXckb-MllS6BoZ7jF2IkZoMaxS9Xs2JAHtiyPiMnXwzUPi9dEl1BTzZw0TYFy13GLoiMNJtKV0kxzgo4TxaM_TKjbN5drve1aWFq7Pvg=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.1,
+          "address": "Kemeraltı, 105. Sk. No:23, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Netsel Marina",
+        "place_id": "ChIJsWQYMua9vxQR3rIzvpS7of0",
+        "lat": 36.851115,
+        "lng": 28.2813303,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Browse the shop windows in the marina market.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlphBrKg0istdqNP1L8oYpweduNnCU3M8HjlwfqAb2wCQuXDRY04O7gSvAJRr241miu0ZcFwx801yPBVshSEgtd9vX9DOt-U5CH4qthehYbp5QN_F02wjITg1SqiXFG_yqm0kEty-hnnqKR=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Sarıana, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Panaroma Manzara Kafe",
+        "place_id": "ChIJMTMN5Qe9vxQR5Zo90dtOwew",
+        "lat": 36.8507902,
+        "lng": 28.274842399999997,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Catch your breath with the sea view.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnqCsCsNAJoWps0wVlRY8EqZHX9L-d7OarGVwAkPUdPLGb8WBOWlkwbTy8E0iS7KDRSnPOKCldSEY6Rxxr8P54gbWFHVMe6pOc1qdAjnVnxMoSkwkmj08zm3h2SjMBjXU1Ota2N=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Tepe, 48700 Marmaris/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Emre Ustanın Meşhur Public Toiletı",
+        "place_id": "ChIJRznBcgC9vxQRh9wcKGTtUiA",
+        "lat": 36.8532133,
+        "lng": 28.2697595,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms are available along the coast.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFyBQP5kS1iUSJpb6S3ykLATC3x2Ic5D42m9QyLG05fXWuNWslBkZE7weMY6BBXa6ZjTgL99eYsY9mWVDtEufE80MNk5gn2cumeOCMjlxUoyTU2A5OSA85ISwIH_M4ir692X6GOUrELvns=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Datça Quiet Coves",
+    "description": "A day out in Muğla: Datça Harbour, Old Datça, Kumluk Beach, Eski Ev Cafe Bistro.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "sakin",
+      "deniz",
+      "kafa-dinleme"
+    ],
+    "budget_level": 3,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmMTRbxm06hdRB7t1wKmp1bXCHKQg-9rLnsCiLX8A1pGjqibmdX986pGmPYfN6msfPCv6FVWOAZHw0Cv20yKADOybyLYbw9LjPYe_sVtvUnXiC-nQXtkathRs-xwz6-0WxqhfHD=w1000-h1000-c-n",
+    "total_distance_m": 10620,
+    "total_duration_min": 132,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Datça Liman Başkanlığı",
+        "place_id": "ChIJq3kv3eMkvhQRKPkhAJQ2Hek",
+        "lat": 36.7221623,
+        "lng": 27.690679799999998,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Start with the tranquility of boat sounds.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmMTRbxm06hdRB7t1wKmp1bXCHKQg-9rLnsCiLX8A1pGjqibmdX986pGmPYfN6msfPCv6FVWOAZHw0Cv20yKADOybyLYbw9LjPYe_sVtvUnXiC-nQXtkathRs-xwz6-0WxqhfHD=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "İskele, Atatürk Cd. No:112, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Eski Datça",
+        "place_id": "ChIJsb9C-b8kvhQRiL2XG6I_QQM",
+        "lat": 36.740021,
+        "lng": 27.666636399999998,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Get lost in the stone houses with cobblestone streets.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkf08hh1HEroHX_vSbtkfi7hWZwQ17WdzIRGNkXixLc_Qs7It81vq30684Q1Pl6WFbcMyY1JliEMS58oANBemNKSyrPyXJ-i3Tg78B_u9YVK6W2g5ZAkZSAslDmm8URFzytgK8d2A=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "Datça, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Kumluk Plajı",
+        "place_id": "ChIJl-NVXTElvhQRZQp9hn_DASQ",
+        "lat": 36.7249779,
+        "lng": 27.6863472,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Sit by the sea in the town centre's beach.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlS36YyBD4xULQul0VqawqGC7GlSNJxJvKjEixRLFeYQRdgtRhnPe6eS3W7ZSB0ygg6BxpWvxC9dB4D-eVsT1pADm3Hgfd0eESdlhVE-LxxOgNB8FngR-NbUFGDH_srb7VcHn18twrNvgax=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "İskele, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Eski Ev Cafe Bistro",
+        "place_id": "ChIJd9IqrIolvhQREl0T5qtylq0",
+        "lat": 36.739648599999995,
+        "lng": 27.6646234,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Coffee under the almond trees.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkeB1RwpvO_RHwCzJFhG73KguUcdQSHcyONxv1zpRsT4rKDOG69ebhVlPPqNfrDx3I5aNQ3lhss7LGINp4eiWA347QoRSo9esn-WQJkNwY4SFrY7VBjqvmQQy_DxRx4KthW7VdD4Q=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.7,
+          "address": "Datça, Dere Sk. No:10, 48900 Datça/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Tuvalet & Duş & Çamaşırhane & bebek bakım odası",
+        "place_id": "ChIJqwJLu84lvhQR_OIkFlfib6k",
+        "lat": 36.7229892,
+        "lng": 27.6873251,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public toilets near the harbour.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkCg4FErEz_tW19tm9x_sMYm1jXhFdkE8I0FpjdPAIAr7WZyNIkRQ6mITeuXKqsk_PJ85wfSgW8GLlJITu37STvo24VeWYNuX7Qz88P3NQMJCQV_KrghuyuEs36ldllH1lbLJSe7Q=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "A Day in Fethiye's Harbor and Rock Tombs",
+    "description": "Spend a themed day in Muğla: Fethiye Harbor, Paspatur Old Town (Old City), Amintas Rock Tombs, Understone Coffee Fethiye.",
+    "city": "Mugla",
+    "vibe_tags": [
+      "deniz",
+      "tarih",
+      "fotograf"
+    ],
+    "budget_level": 3,
+    "weather_fit": "any",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmBADwaS8wc_jamNACxsoHz1Pig3LuDWUF4VHPj5XQErh9x4fKzR6RytUPQ0x7u4nipsGzOz5ErNuzr5olsvkLQgwEOYlJ3rTqsgp-FBk31qQWVf7kS-vmYjD_DcqaF-48NhKk=w1000-h1000-c-n",
+    "total_distance_m": 8999,
+    "total_duration_min": 112,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Fethiye Kordon",
+        "place_id": "ChIJ4Qzuz_ZDwBQRddn2DQwVvi8",
+        "lat": 36.6321782,
+        "lng": 29.1189502,
+        "category": "waterfront",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Take a stroll along the bay.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmBADwaS8wc_jamNACxsoHz1Pig3LuDWUF4VHPj5XQErh9x4fKzR6RytUPQ0x7u4nipsGzOz5ErNuzr5olsvkLQgwEOYlJ3rTqsgp-FBk31qQWVf7kS-vmYjD_DcqaF-48NhKk=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Babataşı, 48300 Fethiye/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Paspatur Old Town (Eski Şehir)",
+        "place_id": "ChIJY-PU5g1BwBQRkyD49-FLIcY",
+        "lat": 36.620272199999995,
+        "lng": 29.1093142,
+        "category": "bazaar",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Explore the narrow shopping streets of the old city.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlNWHsGc2nIWwAXVgc2zOnsJIycdjd2ovcBoys6TGPDphyZGXEzAVi4213QTY5mXmm7Z8NAH0ymtWtP8Nw6k3Sdl1nfk-ZR6dxq4CsPx4OAlmQWpycabhnNgMfDXG-i0H6NPN0xLASwbqeU=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Cumhuriyet Mah Çarşı Caddesi No:48/B Fethiye, 48300 Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Amintas Kaya Mezarları",
+        "place_id": "ChIJT2INUF5BwBQROqI6I92vvII",
+        "lat": 36.6189981,
+        "lng": 29.118323999999998,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "A legacy of ancient Lycia, carved into the rock.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWluliitvSzppTtvxDMcggnpjM-fCAZAasuNe97Wyu7BY83t1r0Zt37mCmAHMAwH_N2DVAZB6rxOyvuMxSgTYrCubb4YbSkYbBh155hf5hSq_7BL9PuxXrbvtNz58jtVpdPYd2o=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Kesikkapı, 117. Sk. No:3, 48300 Fethiye/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Understone Coffee Fethiye",
+        "place_id": "ChIJrQlQJIhDwBQRSku_dmmEHRo",
+        "lat": 36.659551,
+        "lng": 29.120155999999998,
+        "category": "cafe",
+        "kind": "experience",
+        "price_level": 3,
+        "note": "Take a break in the market square.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkQql1WoIQwdnjIRJHkeWoRQgiTH9UORldkG_NTz796XGTQ91zukRzmFHASMpcTc2YeR9YXVYjUqMFdBqX9lH-W9NPyWgYO3nXtzlhaaK8jOcBARWHn1tnUut5Fa0phF-scxVIe0BSS6PUn=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.6,
+          "address": "Foça, Yerguzlar Cd. 53A, 48300 Fethiye/Muğla, Türkiye"
+        }
+      },
+      {
+        "seq": 4,
+        "name": "Umumi Tuvalet",
+        "place_id": "ChIJt9JCU-tDwBQRrQpjuiNHSlg",
+        "lat": 36.640737099999996,
+        "lng": 29.1211728,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "Free public restrooms near the harbor.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnhXGTFITcN5ZzZgXAaWmub9Flg5J7lN90gYa-R81GqKuWz6OgR0ALoJ5YuwymkZKPNt_Z-LdgqVvDbXNuPFBSWjd4Q-Wu9WKZwa9qPA46LtI4F0iVC_c43mkn-DqFBrrwD1gAGOA=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  },
+  {
+    "title": "Morning in Cumalıkızık Village",
+    "description": "Spend a themed day in Bursa: Cumalıkızık, Cumalıkızık Nature Village Breakfast, Cumalıkız Village Museum.",
+    "city": "Bursa",
+    "vibe_tags": [
+      "doga",
+      "tarih",
+      "kesif"
+    ],
+    "budget_level": 2,
+    "weather_fit": "outdoor",
+    "cover_photo_url": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAH84zV0HK4D-mji-g8iGN1OTHu9zcWNba9rxoL02FGMZ3WyS6tzOWN7q35ighFm0Tk9QZjc_9dkO2MyCHjtnexCB16MZYk4G3J-R_Lnw8HAZDs6Bud_DYGCr3vvFb591uoP0hot=w1000-h1000-c-n",
+    "total_distance_m": 1077,
+    "total_duration_min": 13,
+    "is_seed": true,
+    "waypoints": [
+      {
+        "seq": 0,
+        "name": "Cumalıkızık",
+        "place_id": "ChIJKWW46RM5yhQRZDAPFyiJzIc",
+        "lat": 40.1776245,
+        "lng": 29.172147499999998,
+        "category": "historical_site",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Walk along the cobblestone streets of this 700-year-old village.",
+        "transport_mode": "start",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAH84zV0HK4D-mji-g8iGN1OTHu9zcWNba9rxoL02FGMZ3WyS6tzOWN7q35ighFm0Tk9QZjc_9dkO2MyCHjtnexCB16MZYk4G3J-R_Lnw8HAZDs6Bud_DYGCr3vvFb591uoP0hot=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": null,
+          "address": "16370 Yıldırım/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 1,
+        "name": "Cumalıkızık Doğa Köy Kahvaltısı",
+        "place_id": "ChIJbYRawy49yhQRr67QrneZHMo",
+        "lat": 40.175791,
+        "lng": 29.1708762,
+        "category": "restaurant",
+        "kind": "experience",
+        "price_level": 2,
+        "note": "Start your day with a village breakfast.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFBwzvkZJC_IK_zcPTRHhJxzaiFv4SY9Dow4pHXJ7CpDzldX1v-tMSXRrPyjLOyO_xpcjlIXS54twrgFyG26JQkfxtrIbd2gi0_pam0qniPJ-KN248IHyjg89vxCQ_95p-V04EGp3ce6Xhk=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.5,
+          "address": "Cumalıkızık, 2. Hamam sokak:16, 16350 Yıldırım/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 2,
+        "name": "Cumalıkız Köy Müzesi",
+        "place_id": "ChIJD_M7Q5c5yhQRPLgS_SSdJVU",
+        "lat": 40.1749453,
+        "lng": 29.1718801,
+        "category": "museum",
+        "kind": "experience",
+        "price_level": 1,
+        "note": "Traces of village life.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEasXbTnJquvqFkmVx95cum9wNLyg9QGQ8gkYocfc9OztuFxQW5T2OK0INv4Rvq3LN3FZ2SZU_Ewc6TD1gLRdIGCeh2E5MQGaiAot8w4HITgMSHG_6de_56XnDI_7WC1oEPAc_cqw=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "rating": 4.3,
+          "address": "Cumalıkızık, 16370 Yıldırım/Bursa, Türkiye"
+        }
+      },
+      {
+        "seq": 3,
+        "name": "Cumalıkızık Orman Parkı",
+        "place_id": "ChIJdxwOfJ85yhQRlSnNo7u6cPg",
+        "lat": 40.1798474,
+        "lng": 29.1663186,
+        "category": "public_toilet",
+        "kind": "utility",
+        "price_level": null,
+        "note": "The village square has free public restrooms.",
+        "transport_mode": "walk",
+        "transport_note": null,
+        "photo_urls": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHW811r-GA6BDA2ukXeMwdYjYbQZcuIkxjm3mhXrL7xBSHDWsj9BSKo9pZeB4qnFJnRmBveceZ_C8BsKjEt6L-Hpe_BeyRj7kjU0FCM0l7PFmQQOoJNfL7kiF6Wenkg1h3o7KNq=w1000-h1000-c-n"
+        ],
+        "metadata": {
+          "is_free": true
+        }
+      }
+    ]
+  }
+]

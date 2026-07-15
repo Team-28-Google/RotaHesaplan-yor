@@ -50,6 +50,8 @@ class PlanRouteRequest(BaseModel):
     gen_district: str | None = None
     # 3.0c: app'in aktif şehri (cümlede açıkça başka şehir geçmiyorsa bu kullanılır)
     city: str | None = None
+    # 4.x: üretilen anlatının dili + rotanın havuz etiketi (EN modda İngilizce yaz)
+    lang: str = Field("tr", pattern="^(tr|en)$")
 
 
 class OnboardingMemoryRequest(BaseModel):
@@ -84,6 +86,7 @@ class EnrichStop(BaseModel):
 
 class EnrichRequest(BaseModel):
     stops: list[EnrichStop] = Field(..., min_length=2)
+    lang: str = Field("tr", pattern="^(tr|en)$")  # 4.x: anlatı dili (EN modda İngilizce)
 
 
 class EmbedRouteRequest(BaseModel):
@@ -173,7 +176,7 @@ def plan_route(req: PlanRouteRequest, authorization: str | None = Header(None),
     try:
         gen_center = (req.gen_lat, req.gen_lng) if req.gen_lat is not None and req.gen_lng is not None else None
         return run_pipeline(req.text, uid, req.force_weather_fit, req.force_generate,
-                            gen_center, req.gen_district, req.city)
+                            gen_center, req.gen_district, req.city, req.lang)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
 
@@ -213,7 +216,7 @@ def summarize(req: EmbedRouteRequest) -> dict:
 def enrich_route(req: EnrichRequest) -> dict:
     """Kullanıcının eklediği duraklar → AI başlık/etiket/kategori/anlatı."""
     try:
-        return run_enrich_route([s.model_dump() for s in req.stops])
+        return run_enrich_route([s.model_dump() for s in req.stops], req.lang)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Enrich hatası: {e}") from e
 

@@ -48,6 +48,25 @@ COMPOSER_SYS = (
 
 
 BUDGET_LABELS = {1: "çok uygun (₺)", 2: "uygun (₺₺)", 3: "orta (₺₺₺)", 4: "lüks (₺₺₺₺)"}
+BUDGET_LABELS_EN = {1: "very budget (₺)", 2: "affordable (₺₺)", 3: "mid (₺₺₺)", 4: "premium (₺₺₺₺)"}
+
+
+def _budget_label(level, lang: str = "tr") -> str:
+    return (BUDGET_LABELS_EN if lang == "en" else BUDGET_LABELS).get(level, "affordable" if lang == "en" else "uygun")
+
+
+def _lang_directive(lang: str) -> str:
+    """EN modda: tüm anlatı metnini İngilizce yaz; ama vibe_tags kanonik Türkçe kalsın
+    (app istemci tarafında vibeLabel ile çeviriyor) ve gerçek mekan adları korunur."""
+    if lang != "en":
+        return ""
+    return (
+        "\n\nOUTPUT LANGUAGE: Write ALL prose string values in natural, fluent ENGLISH "
+        "(title, description, summary, narrative, weather_note, budget_note, social_signal). "
+        "Keep real place names as-is. IMPORTANT EXCEPTION: keep every item in 'vibe_tags' EXACTLY "
+        "as the given short Turkish canonical tag (e.g. sakin, kafa-dinleme, kultur, acik-hava) — "
+        "do NOT translate or change the tags."
+    )
 
 # --------------------------- Kullanıcı hafızası (onboarding) ---------------------------
 # Onboarding tercihleri doğal dil cümlesine çevrilip embed'lenir; plan_route bu profili
@@ -339,7 +358,8 @@ def _gather_candidates(env: dict, district: dict, vibe_tags: list, mood: str) ->
 
 def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_max: int,
                     user_id: str | None, profile_text: str, _mark, city: str = "Istanbul",
-                    gen_center: tuple | None = None, gen_district: str | None = None) -> dict | None:
+                    gen_center: tuple | None = None, gen_district: str | None = None,
+                    lang: str = "tr") -> dict | None:
     """Yepyeni rota üret + kalıcılaştır + zenginleştir. Başarısızsa None (çağıran no_match döner).
     Merkez önceliği: kullanıcı konumu > seçilen semt > AI semt seçimi (2.7b; 3.0c şehir-bazlı)."""
     if gen_center:
@@ -385,7 +405,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     gen = None
     for temp in (0.7, 0.4):  # ilk deneme yaratıcı; bozuk JSON'da daha soğuk tekrar
         try:
-            raw = nvidia_chat(env, GENERATOR_SYS, json.dumps(gen_input, ensure_ascii=False),
+            raw = nvidia_chat(env, GENERATOR_SYS + _lang_directive(lang), json.dumps(gen_input, ensure_ascii=False),
                               json_mode=True, temperature=temp, max_tokens=500, timeout=35)
             d = json.loads(raw)
             picks = []
@@ -406,7 +426,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     _mark("Yeni rota kuruldu", f"{len(picks)} durak · {d['title']}")
 
     # Anlatı + kategori: kanıtlanmış Rota Ortak-Yazarı (enrich_route) ile
-    enriched = enrich_route([{"name": c["name"], "note": None} for c in picks])
+    enriched = enrich_route([{"name": c["name"], "note": None} for c in picks], lang)
     e_stops = enriched.get("stops") or []
 
     # Kalıcılaştır: yazar = isteyen kullanıcı (yoksa seed hesabı)
@@ -426,6 +446,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         "weather_fit": d.get("weather_fit") if d.get("weather_fit") in ("indoor", "outdoor", "any") else "any",
         "budget_level": min(max(budget, 1), 4), "is_seed": False,
         "is_public": False,  # 3.13: üretilen rota da ÖZEL başlar; kullanıcı paylaşınca açılır
+        "lang": lang,  # 4.x: üretildiği dilin havuzuna girer (EN üretim → EN feed)
     })[0]
     rid = route_row["id"]
     wp_rows = []
@@ -463,17 +484,20 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         "title": d["title"],
         "summary": d.get("description") or "",
         "weather_note": None,
-        "budget_note": BUDGET_LABELS.get(chosen.get("budget_level"), "uygun"),
+        "budget_note": _budget_label(chosen.get("budget_level"), lang),
         "stops": [{"seq": i, "name": w["name"], "narrative": w.get("note") or ""}
                   for i, w in enumerate(exp)],
-        "social_signal": "Bu rota az önce senin için üretildi — ilk yürüyen sen olabilirsin.",
+        "social_signal": ("This route was just generated for you — you could be the first to walk it."
+                          if lang == "en"
+                          else "Bu rota az önce senin için üretildi — ilk yürüyen sen olabilirsin."),
     }
     return {"route": chosen, "ai": ai}
 
 
 def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None,
                force_generate: bool = False, gen_center: tuple | None = None,
-               gen_district: str | None = None, app_city: str | None = None) -> dict:
+               gen_district: str | None = None, app_city: str | None = None,
+               lang: str = "tr") -> dict:
     env = load_env()
 
     # Agent adımları: her aşamanın süresi + tek satır özeti (app bekleme ekranı + jüri için)
@@ -542,7 +566,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     def _generated_response() -> dict | None:
         """2.7: yepyeni rota üret; başarılıysa plan_route ile aynı şekilde yanıt döndür."""
         g = _generate_route(env, text, intent, weather, budget_max, user_id, profile_text, _mark,
-                            city, gen_center, gen_district)
+                            city, gen_center, gen_district, lang)
         if not g:
             return None
         return {
@@ -622,7 +646,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
         },
     }
     try:
-        raw = nvidia_chat(env, COMPOSER_SYS, json.dumps(composer_input, ensure_ascii=False),
+        raw = nvidia_chat(env, COMPOSER_SYS + _lang_directive(lang), json.dumps(composer_input, ensure_ascii=False),
                           json_mode=True, temperature=0.6, max_tokens=700)
         ai = json.loads(raw)
         if not isinstance(ai, dict) or not ai.get("stops"):
@@ -661,12 +685,12 @@ ENRICH_SYS = (
 )
 
 
-def enrich_route(stops: list[dict]) -> dict:
+def enrich_route(stops: list[dict], lang: str = "tr") -> dict:
     """Kullanıcının eklediği duraklar (ad+not) → AI başlık/etiket/kategori/anlatı."""
     env = load_env()
     names = [{"name": s.get("name"), "note": s.get("note")} for s in stops]
     try:
-        raw = nvidia_chat(env, ENRICH_SYS, json.dumps(names, ensure_ascii=False),
+        raw = nvidia_chat(env, ENRICH_SYS + _lang_directive(lang), json.dumps(names, ensure_ascii=False),
                           json_mode=True, temperature=0.5, max_tokens=600)
         data = json.loads(raw)
         if not isinstance(data, dict):

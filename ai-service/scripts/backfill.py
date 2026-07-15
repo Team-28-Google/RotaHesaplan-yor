@@ -1,12 +1,15 @@
-"""SANA backfill — seed_routes.json'u Supabase'e yazar ve her rotayı NVIDIA ile
-embedleyip ai_memory_embeddings'e ekler (Social Memory'nin beslendiği yer).
+"""SANA backfill — seed_routes.json (TR) + seed_routes_en.json (EN) Supabase'e yazar
+ve her rotayı NVIDIA ile embedleyip ai_memory_embeddings'e ekler (Social Memory).
 
 Çalıştır:  py ai-service/scripts/backfill.py
-Idempotent: mevcut seed rotalarını (is_seed=true) silip yeniden yazar.
+Idempotent: mevcut TÜM seed rotalarını (is_seed=true) silip yeniden yazar.
+ÖNKOŞUL: migration 0024 (routes.lang kolonu) uygulanmış olmalı.
+EN dosyası yoksa yalnız TR yüklenir (önce: py translate_seed.py).
 """
 from __future__ import annotations
 
 import json
+import os
 import secrets
 
 from sana_seed_lib import (
@@ -14,6 +17,7 @@ from sana_seed_lib import (
     sb_delete, sb_get, sb_insert,
 )
 
+SEED_EN = os.path.join(os.path.dirname(SEED_JSON), "seed_routes_en.json")
 SEED_EMAIL = "seed@sana.app"
 SEED_USERNAME = "sana_seed"
 
@@ -55,44 +59,58 @@ def embed_text(route: dict) -> str:
     return f"{route['title']}. {route['description']} Etiketler: {tags}. Duraklar: {stops}."
 
 
+def insert_route(env: dict, route: dict, author_id: str, lang: str):
+    """Tek rotayı + waypoint'lerini + embedding'ini yazar (lang etiketiyle)."""
+    waypoints = route.pop("waypoints")
+    route["author_id"] = author_id
+    route["lang"] = lang  # 0024: dile göre havuz
+
+    # 1) rota
+    inserted = sb_insert(env, "routes", route)
+    route_id = inserted[0]["id"]
+
+    # 2) waypoint'ler
+    for w in waypoints:
+        w["route_id"] = route_id
+    sb_insert(env, "waypoints", waypoints)
+
+    # 3) embedding (sadece experience durakları metne girer)
+    content = embed_text({**route, "waypoints": waypoints})
+    vec = nvidia_embed(env, content, input_type="passage")
+    sb_insert(env, "ai_memory_embeddings", {
+        "route_id": route_id,
+        "source_type": "route",
+        "content": content,
+        "embedding": vec,
+        "metadata": {"city": route["city"], "vibe_tags": route["vibe_tags"], "lang": lang},
+    })
+    print(f"  [ok/{lang}] {route['title']}  ({len(waypoints)} durak, embed {len(vec)} boyut)")
+
+
 def main():
     env = load_env()
     with open(SEED_JSON, encoding="utf-8") as f:
-        routes = json.load(f)
-    print(f"{len(routes)} rota yüklendi.")
+        tr_routes = json.load(f)
+    en_routes = []
+    if os.path.exists(SEED_EN):
+        with open(SEED_EN, encoding="utf-8") as f:
+            en_routes = json.load(f)
+        print(f"{len(tr_routes)} TR + {len(en_routes)} EN rota yüklendi.")
+    else:
+        print(f"{len(tr_routes)} TR rota yüklendi (EN dosyası yok — önce translate_seed.py).")
 
     author_id = ensure_seed_author(env)
 
-    # Eski seed rotalarını temizle (cascade: waypoints + embeddings silinir)
+    # Eski seed rotalarını temizle (cascade: waypoints + embeddings silinir) — tüm diller
     print("Eski seed rotaları temizleniyor...")
     sb_delete(env, "routes", "is_seed=eq.true")
 
-    for route in routes:
-        waypoints = route.pop("waypoints")
-        route["author_id"] = author_id
+    for route in tr_routes:
+        insert_route(env, route, author_id, "tr")
+    for route in en_routes:
+        insert_route(env, route, author_id, "en")
 
-        # 1) rota
-        inserted = sb_insert(env, "routes", route)
-        route_id = inserted[0]["id"]
-
-        # 2) waypoint'ler
-        for w in waypoints:
-            w["route_id"] = route_id
-        sb_insert(env, "waypoints", waypoints)
-
-        # 3) embedding (sadece experience durakları metne girer)
-        content = embed_text({**route, "waypoints": waypoints})
-        vec = nvidia_embed(env, content, input_type="passage")
-        sb_insert(env, "ai_memory_embeddings", {
-            "route_id": route_id,
-            "source_type": "route",
-            "content": content,
-            "embedding": vec,
-            "metadata": {"city": route["city"], "vibe_tags": route["vibe_tags"]},
-        })
-        print(f"  [ok] {route['title']}  ({len(waypoints)} durak, embed {len(vec)} boyut)")
-
-    print("\nBackfill tamam.")
+    print(f"\nBackfill tamam. ({len(tr_routes)} TR + {len(en_routes)} EN)")
 
 
 if __name__ == "__main__":

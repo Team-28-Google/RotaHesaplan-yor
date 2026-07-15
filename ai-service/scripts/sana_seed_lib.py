@@ -90,6 +90,29 @@ def nvidia_embed(env: dict, text: str, input_type: str = "passage") -> list[floa
     return r["data"][0]["embedding"]
 
 
+# --------------------------- NVIDIA chat (çeviri) ---------------------------
+def nvidia_chat(env: dict, system: str, user: str, json_mode: bool = False,
+                temperature: float = 0.2) -> str:
+    """NVIDIA NIM chat/completions — seed çevirisi için. provider.py ile aynı endpoint."""
+    url = env["NVIDIA_BASE_URL"].rstrip("/") + "/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {env['NVIDIA_API_KEY']}",
+        "Content-Type": "application/json",
+    }
+    body: dict = {
+        "model": env.get("NVIDIA_CHAT_MODEL", "meta/llama-3.3-70b-instruct"),
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        "temperature": temperature,
+    }
+    if json_mode:
+        body["response_format"] = {"type": "json_object"}
+    r = http_post(url, headers, body)
+    return (r["choices"][0]["message"]["content"] or "").strip()
+
+
 # --------------------------- SerpApi (cache'li) ---------------------------
 def serpapi_search(env: dict, query: str, ll: str, hl: str = "tr") -> dict:
     """google_maps engine araması. Yanıt diske cache'lenir → kota dostu."""
