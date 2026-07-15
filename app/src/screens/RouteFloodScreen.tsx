@@ -14,7 +14,7 @@ import OSMMap, { type OSMMarker, type OSMPolyline } from "../components/OSMMap";
 import Skeleton from "../components/Skeleton";
 import { pop, success, tap } from "../lib/haptics";
 import AddStopSheet from "../components/AddStopSheet";
-import CollapsibleSheet from "../components/CollapsibleSheet";
+import CollapsibleSheet, { type SheetState } from "../components/CollapsibleSheet";
 import {
   addComment, addRouteToCollection, addStop, canEditRoute, currentUserId, fetchComments,
   fetchCommentSummary, fetchMyCollections, fetchNavRoute, fetchRoute, fetchSpendStats,
@@ -83,6 +83,8 @@ function downsample(pts: { lat: number; lng: number }[], max: number) {
 
 export default function RouteFloodScreen({ route: navRoute, navigation }: RouteFloodScreenProps) {
   const insets = useSafeAreaInsets();
+  // Detay paneli tam-açık yüksekliği (üstte geri butonu + durum çubuğu için pay bırak)
+  const sheetFull = Dimensions.get("window").height - insets.top - 46;
   const { colors } = useTheme();
   const { t, lang } = useLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -98,6 +100,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const journeyStart = useRef<number | null>(null);
   const [track, setTrack] = useState<{ lat: number; lng: number }[]>([]); // yürünen iz (4.2)
   const visitedRef = useRef<Set<number>>(new Set()); // GPS ile varılan duraklar (3.11 hile koruması)
+  const [sheetState, setSheetState] = useState<SheetState>("mid"); // detay paneli: full/mid/peek
 
   // Yorumlar
   const [comments, setComments] = useState<FloodComment[]>([]);
@@ -566,7 +569,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         markers={markers}
         padding={48}
         style={styles.map}
-        overlayInsetBottom={journey ? 140 : SHEET_H - 60}
+        overlayInsetBottom={journey ? 140 : (sheetState === "peek" ? 40 : SHEET_H - 60)}
         userLocation={userLoc}
         followLocation={journey ? userLoc : null}
         followHeading={journey ? userLoc?.heading ?? null : null}
@@ -606,10 +609,22 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
         </View>
       )}
 
-      {/* 4.0a: detay paneli — aşağı kaydırınca TAM harita; yolculukta tamamen gizli */}
+      {/* 4.0a: detay paneli — 3 konum: yukarı çek TAM EKRAN, orta, aşağı çek TAM HARİTA;
+          yolculukta tamamen gizli. Scroll yalnız tam-açıkken (orta = önizleme). */}
       {!journey && (
-      <CollapsibleSheet style={styles.sheet} peekLabel={t("flood.peek")}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
+      <CollapsibleSheet
+        style={styles.sheet}
+        peekLabel={t("flood.peek")}
+        midHeight={SHEET_H}
+        fullHeight={sheetFull}
+        onSnap={setSheetState}
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 36 }}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={sheetState === "full"}
+        >
           {/* Hero */}
           <View style={styles.hero}>
             <View style={styles.titleRow}>
