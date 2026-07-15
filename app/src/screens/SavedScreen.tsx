@@ -261,7 +261,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
                     <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={1}>{item.title}</Text>
                     {tab === "mine" && (
                       <Text style={styles.visBadge}>
-                        {item.is_public === false ? "Özel" : "Açık"}
+                        {item.is_public === false ? t("saved.private") : t("saved.public")}
                       </Text>
                     )}
                   </View>

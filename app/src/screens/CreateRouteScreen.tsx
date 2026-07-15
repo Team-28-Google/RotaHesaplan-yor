@@ -152,7 +152,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
     return (
       <View style={styles.screen}>
         <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
-          <TouchableOpacity onPress={() => setEnriched(null)} hitSlop={12}><Text style={styles.back}>‹ Düzenle</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setEnriched(null)} hitSlop={12}><Text style={styles.back}>‹ {t("common.edit")}</Text></TouchableOpacity>
           <Text style={styles.topTitle}>{t("create.confirmTitle")}</Text>
           <View style={{ width: 64 }} />
         </View>
@@ -345,11 +345,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
 
   label: { fontFamily: font.bold, fontSize: 13, color: colors.textFaint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
   titleInput: { backgroundColor: colors.surface, borderRadius: radius.md, padding: 14, fontSize: 18, fontFamily: font.extra, color: colors.text, borderWidth: 1, borderColor: colors.border },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, alignItems: "center" },
   tag: {
     color: colors.primaryDark, fontFamily: font.bold, fontSize: 12.5,
     backgroundColor: colors.primarySoft, paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: radius.pill, overflow: "hidden",
+    includeFontPadding: false, textAlignVertical: "center", // Türkçe karakter (ü/ğ/ı) arka plan bozulması fix'i
   },
   reviewStop: { flexDirection: "row", gap: 12, alignItems: "flex-start", marginTop: 12 },
   stopName: { fontFamily: font.extra, fontSize: 15, color: colors.text },

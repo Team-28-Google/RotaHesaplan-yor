@@ -72,9 +72,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       setRoutes(await fetchRoutes(c));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Yüklenemedi");
+      setError(e instanceof Error ? e.message : t("home.loadError"));
     }
-  }, []);
+  }, [t]);
 
   // İlk açılışta şehir hiç seçilmemişse seçiciyi kendiliğinden aç (keşfedilebilirlik);
   // kullanıcı kapatırsa bu oturumda bir daha zorlamayız.

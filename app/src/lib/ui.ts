@@ -63,6 +63,10 @@ const VIBE_EN: Record<string, string> = {
   "luks": "luxury", "populer": "popular", "sessiz": "quiet", "kalabalik": "crowded",
   "otantik": "authentic", "modern": "modern", "klasik": "classic", "bohem": "bohemian",
   "muze": "museum", "park": "park", "cami": "mosque", "kilise": "church",
+  // AI üreticinin serbest ürettiği yaygın etiketler (2.7 GENERATOR_SYS)
+  "yaratici": "creative", "nostaljik": "nostalgic", "renkli": "colorful", "ozgun": "original",
+  "dingin": "serene", "ferah": "airy", "trend": "trendy", "trendy": "trendy", "genc": "youthful",
+  "ilham-verici": "inspiring", "keyif": "delight", "kesif": "discovery", "yerel": "local",
 };
 
 /** Vibe etiketini aktif dile çevirir; TR'de aynen, EN'de bilinen slug çevrilir,
