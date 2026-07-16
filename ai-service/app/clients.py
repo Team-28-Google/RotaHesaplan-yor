@@ -583,9 +583,10 @@ def city_coords(env: dict, city: str) -> tuple[float, float]:
     return _CITY_COORDS["istanbul"]
 
 
-def google_reverse_geocode_place(env: dict, lat: float, lng: float) -> dict | None:
+def google_reverse_geocode_place(env: dict, lat: float, lng: float, lang: str = "tr") -> dict | None:
     """Koordinattan yer: TR'de İL (admin_area_1), dünyada ŞEHİR (locality).
-    → {"name": "Muğla"|"Berlin", "country_code": "TR"|"DE"} — kanonikleştirme çağıranda."""
+    → {"name": "Muğla"|"Berlin", "country_code": "TR"|"DE"} — kanonikleştirme çağıranda.
+    lang: ad dili (EN modda "Munich" — app'in EN şehir anahtarlarıyla tutarlı)."""
     key = _google_server_key(env)
     if not key:
         return None
@@ -593,7 +594,7 @@ def google_reverse_geocode_place(env: dict, lat: float, lng: float) -> dict | No
            + urllib.parse.urlencode({
                "latlng": f"{lat:.6f},{lng:.6f}",
                "result_type": "locality|administrative_area_level_1",
-               "language": "tr", "key": key,
+               "language": "en" if lang == "en" else "tr", "key": key,
            }))
     try:
         r = _req(url, timeout=15)
@@ -613,9 +614,9 @@ def google_reverse_geocode_place(env: dict, lat: float, lng: float) -> dict | No
     return {"name": name, "country_code": country} if name else None
 
 
-def google_reverse_geocode_city(env: dict, lat: float, lng: float) -> str | None:
+def google_reverse_geocode_city(env: dict, lat: float, lng: float, lang: str = "tr") -> str | None:
     """Geriye uyumluluk: yalnız yer adını döner (TR'de il, dünyada şehir)."""
-    p = google_reverse_geocode_place(env, lat, lng)
+    p = google_reverse_geocode_place(env, lat, lng, lang)
     return p["name"] if p else None
 
 

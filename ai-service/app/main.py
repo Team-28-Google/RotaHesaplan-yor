@@ -111,6 +111,7 @@ class SnapTrackRequest(BaseModel):
 class DetectCityRequest(BaseModel):
     lat: float
     lng: float
+    lang: str = Field("tr", pattern="^(tr|en)$")  # 4.x: şehir adı app diliyle tutarlı (Munich/Münih)
 
 
 class CitySearchRequest(BaseModel):
@@ -315,7 +316,7 @@ def detect_city(req: DetectCityRequest, x_app_key: str | None = Header(None)) ->
     """Konumdan şehir algılama (Geocoding, TÜM DÜNYA): TR'de il → kanonik ad
     (Datça→Mugla); yurtdışında şehir adı aynen (Berlin). Çözülemezse city:null."""
     _guard_app_key(x_app_key)
-    place = google_reverse_geocode_place(load_env(), req.lat, req.lng)
+    place = google_reverse_geocode_place(load_env(), req.lat, req.lng, req.lang)
     if not place:
         return {"ok": False, "province": None, "city": None, "country": None}
     if place.get("country_code") == "TR":

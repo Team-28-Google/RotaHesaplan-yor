@@ -50,6 +50,29 @@ COMPOSER_SYS = (
 BUDGET_LABELS = {1: "çok uygun (₺)", 2: "uygun (₺₺)", 3: "orta (₺₺₺)", 4: "lüks (₺₺₺₺)"}
 BUDGET_LABELS_EN = {1: "very budget (₺)", 2: "affordable (₺₺)", 3: "mid (₺₺₺)", 4: "premium (₺₺₺₺)"}
 
+# Ajan adımları (Plan bekleme ekranında görünür) — EN modda İngilizce (4.x)
+_STEP_EN = {
+    "Niyet çözümlendi": "Intent parsed",
+    "Hafıza tarandı": "Memory scanned",
+    "Hava kontrol edildi": "Weather checked",
+    "Rotalar eşleştirildi": "Routes matched",
+    "Rota seçildi": "Route selected",
+    "Anlatı yazıldı": "Narrative composed",
+    "Mekânlar arandı": "Places searched",
+    "Yeni rota kuruldu": "New route built",
+    "Zenginleştirildi": "Enriched",
+}
+_NOTE_EN = [  # not alanındaki yaygın TR kalıpları (sıra önemli: uzun kalıp önce)
+    (" gerçek aday", " real candidates"), (" aday", " candidates"),
+    (" durak", " stops"), ("bütçe ", "budget "),
+    ("profil bulundu", "profile found"), ("profil yok", "no profile"),
+    ("profil + ", "profile + "), (" davranış", " behaviors"),
+    ("veri yok", "no data"), ("yedek anlatı", "fallback narrative"),
+    ("foto + sokak geometrisi + hafıza", "photos + street geometry + memory"),
+    ("kapalı zorlandı", "indoor forced"), ("konumunun çevresi", "around your location"),
+    (" merkezi", " center"),
+]
+
 
 def _budget_label(level, lang: str = "tr") -> str:
     return (BUDGET_LABELS_EN if lang == "en" else BUDGET_LABELS).get(level, "affordable" if lang == "en" else "uygun")
@@ -135,16 +158,21 @@ def save_memory_event(user_id: str, kind: str, route_id: str) -> dict:
     return {"ok": True, "content": content}
 
 
-def fallback_ai(route: dict, exp: list, weather: dict) -> dict:
-    """Composer (LLM) takılırsa: rotayı yine de mekan notlarıyla döndür."""
+def fallback_ai(route: dict, exp: list, weather: dict, lang: str = "tr") -> dict:
+    """Composer (LLM) takılırsa: rotayı yine de mekan notlarıyla döndür (app dilinde)."""
     temp = weather.get("temp")
+    en = lang == "en"
     return {
         "title": route.get("title"),
-        "summary": route.get("description") or "Hafızandan sana göre seçtiğimiz bir rota.",
-        "weather_note": (f"Bugün hava {temp}°, {weather.get('desc', '')}." if temp is not None else ""),
-        "budget_note": f"Bütçe: {BUDGET_LABELS.get(route.get('budget_level'), 'uygun')}.",
+        "summary": route.get("description") or (
+            "A route picked for you from your memory." if en else "Hafızandan sana göre seçtiğimiz bir rota."),
+        "weather_note": ((f"Today it's {temp}°, {weather.get('desc', '')}." if en
+                          else f"Bugün hava {temp}°, {weather.get('desc', '')}.") if temp is not None else ""),
+        "budget_note": (f"Budget: {_budget_label(route.get('budget_level'), lang)}." if en
+                        else f"Bütçe: {_budget_label(route.get('budget_level'), lang)}."),
         "stops": [{"seq": i, "name": w["name"], "narrative": w.get("note") or ""} for i, w in enumerate(exp)],
-        "social_signal": "Yakında senin gibi rotalar seven kişiler olabilir.",
+        "social_signal": ("People who love routes like you may be nearby soon." if en
+                          else "Yakında senin gibi rotalar seven kişiler olabilir."),
         "_fallback": True,
     }
 
@@ -366,7 +394,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         district = {"name": "konumunun çevresi", "lat": gen_center[0], "lng": gen_center[1], "vibes": []}
         # Şehir de KONUMDAN türetilir (tüm dünya) — app'in aktif şehri başka yerde
         # kalmış olabilir (Antalya'da üretilen rota İstanbul'a yazılmasın)
-        detected = norm_city(google_reverse_geocode_city(env, gen_center[0], gen_center[1]))
+        detected = norm_city(google_reverse_geocode_city(env, gen_center[0], gen_center[1], lang))
         wanted = norm_city(intent.get("city"))
         if wanted and wanted == city and detected and detected != wanted:
             # Cümlede AÇIKÇA şehir var ("Antalya'da...", "Berlin'de...") ama konum başka
@@ -506,6 +534,12 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
 
     def _mark(name: str, note: str = "") -> None:
         now = time.perf_counter()
+        if lang == "en":  # ajan adımları app dilinde görünsün
+            name = _STEP_EN.get(name, name)
+            for a, b in _NOTE_EN:
+                note = note.replace(a, b)
+            if note == "genel · budget 4" or note.startswith("genel"):
+                note = note.replace("genel", "general", 1)
         steps.append({"name": name, "ms": int((now - _t[0]) * 1000), "note": note})
         _t[0] = now
 
@@ -608,6 +642,10 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
             # 3.13: ÖZEL rota yalnız sahibine önerilebilir (service RLS bypass'ı deler; elle koru)
             if r.get("is_public") is False and r.get("author_id") != user_id:
                 continue
+            # 0024: dil havuzu — TR moduna EN rota (ya da tersi) önerilmez
+            # (embedding çok dilli, cross-match olabiliyor; eski satırlarda lang yok → 'tr')
+            if (r.get("lang") or "tr") != lang:
+                continue
             fit = r.get("weather_fit", "any")
             if allowed_fits is not None and fit not in allowed_fits:
                 continue
@@ -625,8 +663,22 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     else:
         chosen = _pick(None)
     if chosen is None:
-        chosen = get_route(env, candidates[0]["route_id"])
-        chosen["_similarity"] = candidates[0].get("similarity")
+        # Son çare de DİL havuzuna saygılı: hava filtresiz ilk uygun-dilli aday;
+        # hiç yoksa üretime düş (yanlış dilde rota önermek yerine)
+        for c in candidates:
+            r = get_route(env, c["route_id"])
+            if not r or (r.get("lang") or "tr") != lang:
+                continue
+            if r.get("is_public") is False and r.get("author_id") != user_id:
+                continue
+            r["_similarity"] = c.get("similarity")
+            chosen = r
+            break
+        if chosen is None:
+            res = _generated_response()
+            if res:
+                return res
+            return {"ok": False, "reason": "no_match", "intent": intent, "weather": weather, "steps": steps}
 
     wps = sorted(chosen.get("waypoints", []), key=lambda w: w.get("seq", 0))
     exp = [w for w in wps if w.get("kind") == "experience"]
@@ -640,7 +692,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
         "hava": weather,
         "rota": {
             "title": chosen.get("title"),
-            "butce": BUDGET_LABELS.get(chosen.get("budget_level"), "uygun"),
+            "butce": _budget_label(chosen.get("budget_level"), lang),
             "vibe_tags": chosen.get("vibe_tags"),
             "duraklar": [{"seq": i, "name": w["name"], "not": w.get("note")} for i, w in enumerate(exp)],
         },
@@ -650,9 +702,9 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
                           json_mode=True, temperature=0.6, max_tokens=700)
         ai = json.loads(raw)
         if not isinstance(ai, dict) or not ai.get("stops"):
-            ai = fallback_ai(chosen, exp, weather)
+            ai = fallback_ai(chosen, exp, weather, lang)
     except Exception:  # noqa: BLE001 — composer takılırsa rota yine dönsün
-        ai = fallback_ai(chosen, exp, weather)
+        ai = fallback_ai(chosen, exp, weather, lang)
     _mark("Anlatı yazıldı", "yedek anlatı" if ai.get("_fallback") else f"{len(ai.get('stops', []))} durak")
 
     return {
