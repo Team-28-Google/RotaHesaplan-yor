@@ -1,7 +1,8 @@
 import { Image } from "expo-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Dimensions, Keyboard, Modal, Platform, ScrollView, StyleSheet,
+  Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -43,6 +44,27 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
   const [mName, setMName] = useState("");
   const [mNote, setMNote] = useState("");
   const [enriched, setEnriched] = useState<EnrichResult | null>(null);
+
+  // Klavye: alt panel (sonuçlar/duraklar) klavyenin ÜSTÜNDE kalsın. Ölçümlü —
+  // panelin gerçekte ne kadar örtüldüğü hesaplanır; sistem zaten yer açtıysa 0
+  // (çift-telafi/fırlama olmaz). Kör "klavye boyu kadar it" yaklaşımı yasak.
+  const rootRef = useRef<View>(null);
+  const [kbPad, setKbPad] = useState(0);
+  useEffect(() => {
+    const showEv = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEv = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const s = Keyboard.addListener(showEv, (e) => {
+      const kbTop = e.endCoordinates?.screenY
+        ?? Dimensions.get("window").height - (e.endCoordinates?.height ?? 0);
+      requestAnimationFrame(() => {
+        rootRef.current?.measureInWindow((_x, y, _w, h) => {
+          setKbPad(Math.max(0, y + h - kbTop)); // örtüşme kadar daralt (harita küçülür)
+        });
+      });
+    });
+    const hide = Keyboard.addListener(hideEv, () => setKbPad(0));
+    return () => { s.remove(); hide.remove(); };
+  }, []);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,10 +108,10 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const clearSearch = () => { setQuery(""); setResults([]); setError(null); };
+  const clearSearch = () => { Keyboard.dismiss(); setQuery(""); setResults([]); setError(null); };
   const addFromResult = (p: PlaceResult) => {
     setStops((prev) => [...prev, { name: p.name, lat: p.lat, lng: p.lng }]);
-    clearSearch();
+    clearSearch(); // klavye de kapanır → harita + CTA anında geri gelir
   };
 
   const markers: OSMMarker[] = stops.map((s, i) => ({
@@ -185,7 +207,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
 
   // ----- DÜZENLEME EKRANI -----
   return (
-    <View style={styles.screen}>
+    <View ref={rootRef} style={[styles.screen, { paddingBottom: kbPad }]}>
       <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}><Text style={styles.back}>{t("onb.back")}</Text></TouchableOpacity>
         <Text style={styles.topTitle}>{t("create.title")}</Text>
@@ -215,14 +237,16 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
         </View>
       </View>
 
-      <View style={styles.mapWrap}>
+      {/* Klavye açıkken harita KÜÇÜLÜR (kaybolmaz) → sonuç listesine geniş alan
+          kalır ama bağlam da görünür; klavye kapanınca eski boyuna döner */}
+      <View style={[styles.mapWrap, kbPad > 0 && { height: 130 }]}>
         <OSMMap markers={markers} polylines={polylines} onMapPress={(lat, lng) => setPending({ lat, lng })} padding={40} />
         <View style={styles.hint} pointerEvents="none">
           <Text style={styles.hintText}>{t("create.hint")}</Text>
         </View>
       </View>
 
-      <View style={styles.panel}>
+      <View style={[styles.panel, { paddingBottom: 16 + insets.bottom }]}>
         {results.length > 0 ? (
           <>
             <View style={styles.resultsHead}>
@@ -260,6 +284,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
               ))}
             </ScrollView>
             {error && <Text style={styles.error}>⚠️ {error}</Text>}
+            {kbPad === 0 && ( /* yazarken CTA gizli — sonuç alanını kapatmasın */
             <TouchableOpacity
               style={[styles.cta, (stops.length < 2 || busy) && styles.ctaOff]}
               onPress={goEnrich}
@@ -268,6 +293,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
             >
               {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>{t("create.aiComplete", { n: stops.length })}</Text>}
             </TouchableOpacity>
+            )}
           </>
         )}
       </View>
@@ -302,7 +328,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   back: { color: colors.primary, fontFamily: font.bold, fontSize: 16 },
   topTitle: { fontFamily: font.extra, fontSize: 17, color: colors.text },
 
-  mapWrap: { height: "46%" },
+  mapWrap: { height: "46%", overflow: "hidden" },
   hint: { position: "absolute", top: 12, alignSelf: "center", backgroundColor: "rgba(15,23,42,0.8)", paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill },
   hintText: { color: "#fff", fontFamily: font.semibold, fontSize: 13 },
 
