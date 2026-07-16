@@ -172,6 +172,11 @@ def sb_delete(env: dict, table: str, query: str):
     return _request(url, "DELETE", _sb_headers(env, "return=minimal"))
 
 
+def sb_patch(env: dict, table: str, query: str, body: dict):
+    url = env["SUPABASE_URL"].rstrip("/") + f"/rest/v1/{table}?" + query
+    return _request(url, "PATCH", _sb_headers(env, "return=minimal"), body)
+
+
 def sb_admin_create_user(env: dict, email: str, password: str) -> dict:
     url = env["SUPABASE_URL"].rstrip("/") + "/auth/v1/admin/users"
     body = {"email": email, "password": password, "email_confirm": True}
