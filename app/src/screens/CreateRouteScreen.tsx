@@ -157,6 +157,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
           ...s,
           category: enriched.stops[i]?.category ?? "other",
           narrative: enriched.stops[i]?.narrative ?? s.note ?? "",
+          photo_tip: enriched.stops[i]?.photo_tip || undefined,
         })),
       });
       setBusy(false); // Alert geri tuşuyla kapatılırsa buton spinner'da kalmasın
@@ -191,6 +192,12 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
               <View style={{ flex: 1 }}>
                 <Text style={styles.stopName}>{s.name}</Text>
                 <Text style={styles.stopNarr}>{enriched.stops[i]?.narrative || s.note}</Text>
+                {!!enriched.stops[i]?.photo_tip && (
+                  <View style={styles.photoTipRow}>
+                    <Icon name="camera-outline" size={13} color={colors.primaryDark} />
+                    <Text style={styles.photoTipText}>{enriched.stops[i].photo_tip}</Text>
+                  </View>
+                )}
               </View>
             </View>
           ))}
@@ -379,6 +386,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     includeFontPadding: false, textAlignVertical: "center", // Türkçe karakter (ü/ğ/ı) arka plan bozulması fix'i
   },
   reviewStop: { flexDirection: "row", gap: 12, alignItems: "flex-start", marginTop: 12 },
+  photoTipRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6,
+    backgroundColor: colors.primarySoft, borderRadius: radius.md,
+    paddingHorizontal: 10, paddingVertical: 6,
+  },
+  photoTipText: { flex: 1, color: colors.primaryDark, fontSize: 12.5, lineHeight: 17, fontFamily: font.medium },
   stopName: { fontFamily: font.extra, fontSize: 15, color: colors.text },
   stopNarr: { fontFamily: font.regular, fontSize: 13.5, color: colors.textMuted, marginTop: 3, lineHeight: 19 },
 

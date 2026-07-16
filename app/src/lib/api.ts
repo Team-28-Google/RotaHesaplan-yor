@@ -521,6 +521,7 @@ export interface GenOptions {
  *  forceGenerate → 🎲 yepyeni rota üretilir (2.7, daha uzun sürer). */
 export async function planRoute(
   text: string, forceWeatherFit?: "indoor", forceGenerate?: boolean, gen?: GenOptions,
+  explore?: boolean, // Keşif modu (2.9): bakir/yerel yerlerden üret
 ): Promise<PlanResponse> {
   const uid = await currentUserId();
   let res: Response;
@@ -538,6 +539,7 @@ export async function planRoute(
         gen_district: gen?.district,
         city: await getActiveCity(), // 3.0c: cümlede şehir yoksa bu kullanılır
         lang: _dataLang, // 4.x: EN modda üretim anlatısı İngilizce + rota EN havuzuna
+        explore: explore || undefined, // 2.9: keşif modu
       }),
     }, forceGenerate ? 150_000 : 90_000);
   } catch (e) {
@@ -829,7 +831,7 @@ export interface CreateRouteInput {
   description: string;
   vibe_tags: string[];
   weather_fit: string;
-  stops: (CreateStop & { category: string; narrative: string })[];
+  stops: (CreateStop & { category: string; narrative: string; photo_tip?: string })[];
 }
 
 /** Rotayı + waypoint'leri kaydeder, sonra hafızaya embedler. Yeni route_id döner. */
@@ -867,6 +869,7 @@ export async function createRoute(input: CreateRouteInput): Promise<string> {
     route_id: routeId, seq: i, name: s.name, lat: s.lat, lng: s.lng,
     category: s.category, kind: "experience", note: s.narrative || s.note || null,
     transport_mode: i === 0 ? "start" : "walk",
+    metadata: s.photo_tip ? { photo_tip: s.photo_tip } : {}, // foto ipucu kalıcı (2.9)
   }));
   const { error: wErr } = await supabase.from("waypoints").insert(waypoints);
   if (wErr) throw wErr;

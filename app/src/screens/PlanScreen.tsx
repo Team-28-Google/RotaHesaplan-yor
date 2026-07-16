@@ -84,6 +84,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   const [genMode, setGenMode] = useState(false); // 🎲 bekleme adımları üretim varyantında aksın
   // 2.7b: mod en başta seçilir; üretimde başlangıç konumu sorulur
   const [mode, setMode] = useState<"match" | "generate">("match");
+  const [explore, setExplore] = useState(false); // Keşif modu (2.9): bakir/yerel yerler
   const [loc, setLoc] = useState<string>("ai"); // "ai" | "me" | semt adı
   const [myLoc, setMyLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [activeCity, setActiveCityState] = useState("Istanbul"); // 3.0c: semtler şehre göre
@@ -125,7 +126,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await planRoute(text.trim(), force, generate, gen);
+      const res = await planRoute(text.trim(), force, generate, gen, generate && explore);
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("plan.genError"));
@@ -228,6 +229,16 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
                 </TouchableOpacity>
               ))}
             </View>
+            {/* Keşif modu (2.9): puanı yüksek + yorumu az "gizli cevher" mekânlar */}
+            <TouchableOpacity
+              style={[styles.locChip, explore && styles.locChipOn, { alignSelf: "flex-start" }]}
+              onPress={() => { tap(); setExplore(!explore); }}
+            >
+              <Text style={[styles.locChipText, explore && styles.locChipTextOn]}>
+                {t("plan.exploreMode")}
+              </Text>
+            </TouchableOpacity>
+            {explore && <Text style={styles.locLabel}>{t("plan.exploreHint")}</Text>}
           </View>
         )}
 
@@ -384,6 +395,10 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
     result.generated
       ? exp[i]?.note ?? ""
       : ai.stops?.find((s) => s.seq === i)?.narrative ?? exp[i]?.note ?? "";
+  // Foto ipucu (2.9): üretilende waypoint.metadata'da kalıcı; havuz rotasında composer'dan
+  const photoTip = (i: number): string =>
+    ((exp[i]?.metadata as Record<string, unknown> | null)?.photo_tip as string | undefined)
+      ?? ai.stops?.find((s) => s.seq === i)?.photo_tip ?? "";
 
   return (
     <View style={styles.container}>
@@ -471,6 +486,12 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
                     )}
                   </View>
                   {!!narrative(i) && <Text style={styles.stopNote}>{narrative(i)}</Text>}
+                  {!!photoTip(i) && (
+                    <View style={styles.photoTipRow}>
+                      <Icon name="camera-outline" size={13} color={colors.primaryDark} />
+                      <Text style={styles.photoTipText}>{photoTip(i)}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
             ))}
@@ -660,6 +681,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   legText: { fontSize: 12, color: colors.primaryDark, fontFamily: font.bold },
   stopName: { fontSize: 16, fontFamily: font.extra, color: colors.text },
   stopNote: { marginTop: 7, color: colors.textMuted, lineHeight: 20, fontSize: 14, fontFamily: font.regular },
+  // Foto ipucu (2.9): kamera ikonu + kısa ipucu — anlatıdan görsel olarak ayrışır
+  photoTipRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6,
+    backgroundColor: colors.primarySoft, borderRadius: radius.md,
+    paddingHorizontal: 10, paddingVertical: 6,
+  },
+  photoTipText: { flex: 1, color: colors.primaryDark, fontSize: 12.5, lineHeight: 17, fontFamily: font.medium },
 
   nearby: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   nearbyTitle: { fontSize: 13, color: colors.textFaint, fontFamily: font.bold, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 },

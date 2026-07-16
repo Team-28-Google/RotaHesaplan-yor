@@ -75,7 +75,7 @@ export interface PlanAI {
   summary?: string;
   weather_note?: string;
   budget_note?: string;
-  stops?: { seq: number; name: string; narrative: string }[];
+  stops?: { seq: number; name: string; narrative: string; photo_tip?: string }[];
   social_signal?: string;
 }
 // Mekan arama sonucu (SerpApi)
@@ -104,7 +104,7 @@ export interface EnrichResult {
   description: string;
   vibe_tags: string[];
   weather_fit: "indoor" | "outdoor" | "any";
-  stops: { category: string; narrative: string }[];
+  stops: { category: string; narrative: string; photo_tip?: string }[];
 }
 
 export interface PlanResponse {

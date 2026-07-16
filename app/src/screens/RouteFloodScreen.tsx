@@ -740,6 +740,12 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
                     )}
                   </View>
                   {!!w.note && <Text style={styles.note}>{w.note}</Text>}
+                  {!!(w.metadata as Record<string, unknown> | null)?.photo_tip && (
+                    <View style={styles.photoTipRow}>
+                      <Icon name="camera-outline" size={13} color={colors.primaryDark} />
+                      <Text style={styles.photoTipText}>{String((w.metadata as Record<string, unknown>).photo_tip)}</Text>
+                    </View>
+                  )}
                   <View style={styles.stopFoot}>
                     {getRating(w.metadata) !== undefined && <Text style={styles.rating}>★ {getRating(w.metadata)}</Text>}
                     <TouchableOpacity onPress={() => openDirections(w.lat, w.lng)} hitSlop={6}>
@@ -1474,6 +1480,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   legText: { fontSize: 12, color: colors.primaryDark, fontFamily: font.bold },
   stopName: { fontSize: 16, fontFamily: font.extra, color: colors.text },
   note: { marginTop: 7, color: colors.textMuted, lineHeight: 20, fontSize: 14, fontFamily: font.regular },
+  // Foto ipucu (2.9): kamera ikonu + "en iyi kare + saat" — kalıcı (waypoint.metadata)
+  photoTipRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6,
+    backgroundColor: colors.primarySoft, borderRadius: radius.md,
+    paddingHorizontal: 10, paddingVertical: 6,
+  },
+  photoTipText: { flex: 1, color: colors.primaryDark, fontSize: 12.5, lineHeight: 17, fontFamily: font.medium },
 
   nearby: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   nearbyTitle: { fontSize: 13, color: colors.textFaint, fontFamily: font.bold, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 },
