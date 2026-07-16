@@ -218,6 +218,29 @@
 - [x] 🤖 `0009_fix_like_count.sql` yazıldı: security definer + mevcut beğenilerden sayaç backfill.
 - [x] 👤 SQL Editor'de çalıştırıldı → kalpler gerçek sayıyı gösteriyor.
 
+### ⬜ 2.8 SANA AI KİŞİLİĞİ — markaya özel persona 🤖 ★ (kullanıcı isteği 16 Tem)
+- [ ] Ortak PERSONA bloğu: tüm üretken prompt'lara (composer/enrich/generator/yorum
+  özeti) tek yerden eklenen SANA sesi — "şehri iyi bilen samimi gezgin arkadaş";
+  jenerik AI dili yasak ("keşfetmeye hazır mısın?" tarzı klişeler), kısa-sıcak-somut.
+- [ ] Marka sözlüğü + üslup kuralları; TR ve EN'de AYNI kişilik (_lang_directive uyumlu).
+- [ ] Ton profile esner (genç→enerjik, sakin→dingin) ama kişilik sabit.
+- [ ] Hızlı karşılaştırma: aynı rota eski/yeni prompt — demoda fark gösterilebilir.
+
+### 🟡 2.9 Testçi önerisi özellikler (16 Tem — değerlendirildi, sıralandı)
+- [x] **Yaş + "kim için" kişiselleştirme** — intent.audience ("5 yaşında çocuk",
+  "yaşlı anne") + birth_date→profil (plan anında). Canlı LLM testi 3/3 ✓ (16 Tem)
+- [ ] Fotoğraf ipucu + altın saat: durak başına "en iyi kare + en iyi saat"
+  (enrich/composer alanı) ~2-3sa ★ ucuz/ayrıştırıcı
+- [ ] "Keşif modu" — bakir/yerel yerler: puan yüksek + yorum sayısı düşük
+  heuristiği + üretici prompt biası ~2-3sa
+- [ ] Grup rotası: birden çok kullanıcının profilini harmanla (embedding ort. +
+  vibe kesişimi) → herkese hitap eden rota ~1g ★ jüri hikâyesi en güçlüsü
+- [ ] Kalem kalem tahmini bütçe: kategori+fiyat seviyesinden LLM tahmini; mevcut
+  GERÇEK harcama istatistiğiyle yan yana ("tahmin vs gerçek") ~yarım gün
+- [ ] (kısmi) Sakin saatler rozeti — yalnız seed'lerde SerpApi popular_times var;
+  canlı mekânlarda resmi Google verisi YOK, LLM'e uydurtma yasak
+- [ ] (yapılmayacak) Drone önerisi — hukuki risk (SHGM); yalnız genel uyarı cümlesi
+
 ## FAZ 3 — SOSYAL & VİRAL
 
 ### 🟡 3.0b TASARIM REVİZYONU: Ana sayfa + Paylaşım menüsü ★ KULLANICI İSTEĞİ (4 Tem)
@@ -528,6 +551,8 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 ## Günlük
 | Tarih | Madde | Durum / Not |
 |---|---|---|
+| 16 Tem | **Yaş + "kim için" kişiselleştirme (2.9 ilk madde)** | intent.audience ("çocuğum için"→"5 yaşında çocuk", "annem için"→"yaşlı anne", kendisi→null; canlı LLM 3/3 ✓) + birth_date→plan-anı yaş; audience profili domine eder; ajan adımında "· X için" görünür. Commit/deploy bekliyor. Ayrıca 2.8 (AI kişiliği) + 2.9 listesi TODO'ya eklendi |
+| 16 Tem | **Dile göre rota havuzu + i18n cihaz fix turu** | 0024 lang kolonu + 27 TR + 27 EN seed (upsert'li backfill artık testçi verisini korur) · eşleştirme dil filtresi · nav/ajan adımları/detect-city EN · panel 3-konum + her yerden sürükleme · şehir seçici sabit boy + exonim etiketler · Rota Oluştur klavye düzeni. 8 commit push'landı; EAS update bekliyor 👤 |
 | 14 Tem | **GÜVENLİK REVIEW — TÜM bulgular kapatıldı** (b04f2e4) | Kalan orta/düşük hepsi bitti: #3a bot kalkanı (X-App-Key/SANA_APP_SECRET, anonim maliyet uçları) · #4 verified artık SUNUCU trigger'ında (0023 — iz duraklarla haversine, sahte doğrulanmış yolculuk imkânsız) · #5 spend görünürlük (0019) · silme/yönetim politikaları (0020: journey/foto/koleksiyon rename+ayrıl/token revoke) + app UI · sayaç RPC (0021) + favori gate (0022) + token upsert yarışı. Migration'lar 0017–0023 SQL Editor'de çalıştırılacak (👤) |
 | 14 Tem | **GÜVENLİK REVIEW + gelir modeli (FAZ 6)** | Derin review: servis kimlik doğrulaması (token'dan user_id, sahiplik guard'ları — 6ef0a63) + profiles_private (0017, KVKK) + liderlik view'ları→RPC (0018, Advisor CRITICAL). Kota tavanları 0 TL (kullanıcı). Air Quality+Elevation açılırsa entegre edilecek. FAZ 6 monetizasyon yol haritası eklendi (Premium/RevenueCat, sunucu-taraflı entitlement) |
 | 13 Tem | **TÜM-TÜRKİYE + 4.0c (Geocoding/Roads) + EMOJİ TEMİZLİĞİ** | 81 il (norm_city+_TR_PROVINCES), bilinmeyen ilde Geocoding il merkezi → AI üretim (Antalya canlı ✓); /detect-city + /snap-track; CityPicker: ✕ + aşağı kaydır + "Konumumdan bul" + dinamik şehir kaydı; emoji chrome'u 14 dosyada Ionicons/düz metne çevrildi (koleksiyon emoji kapağı kullanıcı içeriği olarak kaldı); Kayıtlı filtre çubuğu ezilme fix'i (flexShrink:0 + FlatList flex:1); EAS Update preview'a atıldı + testçi yönergesi. Servis commit'leri: 23625cc + c29665c (push bekliyor). EAS dev build: başlatıldı→İPTAL (kullanıcı kararı: taze onaysız bulut build yok) |
