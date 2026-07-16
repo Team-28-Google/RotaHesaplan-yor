@@ -218,13 +218,19 @@
 - [x] 🤖 `0009_fix_like_count.sql` yazıldı: security definer + mevcut beğenilerden sayaç backfill.
 - [x] 👤 SQL Editor'de çalıştırıldı → kalpler gerçek sayıyı gösteriyor.
 
-### ⬜ 2.8 SANA AI KİŞİLİĞİ — markaya özel persona 🤖 ★ (kullanıcı isteği 16 Tem)
-- [ ] Ortak PERSONA bloğu: tüm üretken prompt'lara (composer/enrich/generator/yorum
-  özeti) tek yerden eklenen SANA sesi — "şehri iyi bilen samimi gezgin arkadaş";
-  jenerik AI dili yasak ("keşfetmeye hazır mısın?" tarzı klişeler), kısa-sıcak-somut.
-- [ ] Marka sözlüğü + üslup kuralları; TR ve EN'de AYNI kişilik (_lang_directive uyumlu).
-- [ ] Ton profile esner (genç→enerjik, sakin→dingin) ama kişilik sabit.
-- [ ] Hızlı karşılaştırma: aynı rota eski/yeni prompt — demoda fark gösterilebilir.
+### 🟡 2.8 SANA AI KİŞİLİĞİ — markaya özel persona 🤖 ★ (16 Tem: çekirdek TAMAM)
+- [x] Ortak PERSONA bloğu: composer/enrich/generator/yorum özetine tek yerden eklenen
+  SANA sesi — "şehri iyi bilen samimi gezgin arkadaş"; klişe yasağı (büyüleyici,
+  unutulmaz, keşfetmeye hazır mısın...), kısa-sıcak-somut; canlı tonda doğrulandı.
+- [x] Ton profile esner (persona içinde) ama kişilik sabit; TR/EN aynı (_lang_directive).
+- [x] BONUS — niyet kalitesi: INTENT_SYS kanonik etiket sözlüğü + papağanlama yasağı
+  ("park ağırlıklı"→park,yesil; canlı 4/4 ✓) + deterministik audience→vibe biası
+  (çocuk→park/yesil/aile, yaşlı→sakin) + _VIBE_QUERIES park/aile/lezzet sorguları
+  — "çocuk için park istedin, tarihi köşk önerdi" vakası kapandı.
+- [ ] Demoda eski/yeni karşılaştırma görseli (video için, opsiyonel).
+- [ ] (TESLİM SONRASI) Chat'i Gemini 2.0 Flash'a taşı (hibrit: embedding NVIDIA'da
+  kalır — vector(1024) kilidi; NVIDIA otomatik yedek). Anahtar .env'de hazır;
+  16 Tem'de değerlendirildi, teslim riski nedeniyle ertelendi (kullanıcı kararı).
 
 ### 🟡 2.9 Testçi önerisi özellikler (16 Tem — değerlendirildi, sıralandı)
 - [x] **Yaş + "kim için" kişiselleştirme** — intent.audience ("5 yaşında çocuk",
@@ -233,10 +239,14 @@
   (enrich/composer alanı) ~2-3sa ★ ucuz/ayrıştırıcı
 - [ ] "Keşif modu" — bakir/yerel yerler: puan yüksek + yorum sayısı düşük
   heuristiği + üretici prompt biası ~2-3sa
-- [ ] Grup rotası: birden çok kullanıcının profilini harmanla (embedding ort. +
-  vibe kesişimi) → herkese hitap eden rota ~1g ★ jüri hikâyesi en güçlüsü
-- [ ] Kalem kalem tahmini bütçe: kategori+fiyat seviyesinden LLM tahmini; mevcut
-  GERÇEK harcama istatistiğiyle yan yana ("tahmin vs gerçek") ~yarım gün
+- [x] **Grup rotası** (16 Tem): Plan'da @kullanıcıadı çipleri (maks 4) → sunucu
+  profilleri harmanlar (vibe kesişimi öncelikli, bütçe en kısıtlı üye; "HERKESE
+  hitap et" direktifi); ajan adımında "N kişilik grup"; bulunamayan üye uyarısı.
+  Canlı test ✓ (üye bulundu + not_found + harmanlı eşleşme)
+- [x] **Kalem kalem tahmini bütçe** (16 Tem): /estimate-budget — LLM kişi başı TL
+  tahmini (kılavuz aralıklı, kelepçeli) + waypoint.metadata.est_cost KALICI cache;
+  rota detayında açılır kart, gerçek harcamanın yanında. Canlı ✓ (Kadıköy 450₺;
+  2. çağrı cache 0.2sn)
 - [ ] (kısmi) Sakin saatler rozeti — yalnız seed'lerde SerpApi popular_times var;
   canlı mekânlarda resmi Google verisi YOK, LLM'e uydurtma yasak
 - [ ] (yapılmayacak) Drone önerisi — hukuki risk (SHGM); yalnız genel uyarı cümlesi
