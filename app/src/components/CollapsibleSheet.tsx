@@ -86,8 +86,14 @@ export default function CollapsibleSheet({
 
   const collapsed = idx === lastIdx;
 
+  // 3-konum + tam-açık DEĞİLKEN panelin HER YERİ sürüklenebilir (GMaps hissi) —
+  // içerik scroll'u zaten yalnız tam-açıkken aktif, çakışma olmaz. Dokunuşlar
+  // etkilenmez (responder yalnız |dy|>6 harekette devreye girer).
+  const bodyPan = three && idx !== 0 ? pan.panHandlers : {};
+
   return (
     <Animated.View
+      {...bodyPan}
       style={[style, three ? { height: fullHeight } : null, { transform: [{ translateY: y }] }]}
       onLayout={(e) => {
         if (!three) {

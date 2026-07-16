@@ -713,7 +713,7 @@ export async function detectCity(lat: number, lng: number): Promise<{ key: strin
     const res = await fetchWithTimeout(`${AI_SERVICE_URL}/detect-city`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...appKeyHeader },
-      body: JSON.stringify({ lat, lng }),
+      body: JSON.stringify({ lat, lng, lang: _dataLang }), // EN modda "Munich" — şehir anahtarı dille tutarlı
     }, 35_000); // Render soğuk başlangıcı ~30 sn — kısa timeout "bulunamadı" verdiriyordu
     if (!res.ok) return null;
     const j = await res.json();

@@ -2,12 +2,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Animated, Dimensions, KeyboardAvoidingView, Modal, PanResponder,
-  Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Animated, Dimensions, Modal, PanResponder,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 
 import { cityLatLng, detectCity, searchCities, type CityHit } from "../lib/api";
-import { canonKey, CITIES, citiesOfCountry, dynCities, registerCity, searchProvinces, unregisterCity } from "../lib/cities";
+import { canonKey, CITIES, citiesOfCountry, cityDisplayLabel, dynCities, registerCity, searchProvinces, unregisterCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { useLocale } from "../lib/localeContext";
 import { supabase } from "../lib/supabase";
@@ -132,6 +132,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
   ).current;
   useEffect(() => { if (visible) dragY.setValue(0); }, [visible, dragY]);
 
+
   // Şehir başına rota sayısı — sunucuda gruplanır (0021); yalnız herkese açık rotalar,
   // aktif dile göre (0024: EN modu İngilizce havuzu sayar)
   useEffect(() => {
@@ -145,7 +146,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.bg} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <View style={styles.bg}>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
         <Animated.View style={[styles.sheet, { transform: [{ translateY: dragY }] }]}>
           <View {...pan.panHandlers}>
@@ -179,9 +180,9 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
             )}
           </View>
 
-          {/* Liste sabit yükseklikte KAYDIRILIR — sheet büyüyüp ekranı itmez */}
+          {/* Liste sabit çerçeve içinde KAYDIRILIR — panel boyu içerikle DEĞİŞMEZ */}
           <ScrollView
-            style={{ maxHeight: Math.min(400, Dimensions.get("window").height * 0.48) }}
+            style={{ flex: 1 }}
             contentContainerStyle={{ gap: 10 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -192,7 +193,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                 <Ionicons name="location-outline" size={20} color={colors.textMuted} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{p.label}</Text>
+                <Text style={styles.name}>{cityDisplayLabel(p.key, p.label, lang)}</Text>
                 <Text style={styles.districts}>
                   {counts[p.key] != null ? t("city.routeCount", { n: counts[p.key] }) : t("city.aiWillGenerate")}
                 </Text>
@@ -293,7 +294,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
                   <Ionicons name="location-outline" size={20} color={on ? colors.primary : colors.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.name, on && styles.nameOn]}>{c.label}</Text>
+                  <Text style={[styles.name, on && styles.nameOn]}>{cityDisplayLabel(c.key, c.label, lang)}</Text>
                   <Text style={styles.districts} numberOfLines={1}>
                     {c.districts.length ? c.districts.slice(0, 3).join(" · ") : t("city.aiWillGenerate")}
                   </Text>
@@ -317,7 +318,7 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
           })}
           </ScrollView>
         </Animated.View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -327,6 +328,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   sheet: {
     backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
     paddingHorizontal: 18, paddingTop: 10, paddingBottom: 30, gap: 10, ...shadow(14),
+    // SABİT boy: içerik/arama sonucu değişince panel büyüyüp küçülmez (liste içeride kayar).
+    // Klavye (~%40) ile birlikte ekrana SIĞACAK kadar kısa — sığmazsa sistem pencereyi
+    // kaydırıp başlığı ekran dışına atıyordu ("Which city" görünmüyordu).
+    height: Math.min(Math.round(Dimensions.get("window").height * 0.56), 520),
   },
   handle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 4 },
   headRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },

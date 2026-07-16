@@ -232,6 +232,27 @@ export function citiesOfCountry(q: string, lang: "tr" | "en" = "tr"): { name: st
   return hit.cities.map((c) => ({ name: cityDisplay(c, lang), country }));
 }
 
+// Exonim sözlüğü (COUNTRIES tuple'larından): canonKey → {tr, en}.
+// "Münih" TR'de eklendiyse EN listede "Munich" gösterilir (kayıtlı etiket donmaz).
+const _EXONYM: Record<string, { tr: string; en: string }> = {};
+for (const c of COUNTRIES) {
+  for (const city of c.cities) {
+    if (Array.isArray(city)) {
+      const pair = { tr: city[0], en: city[1] };
+      _EXONYM[fold(city[0]).replace(/\s+/g, " ")] = pair;
+      _EXONYM[fold(city[1]).replace(/\s+/g, " ")] = pair;
+    }
+  }
+}
+
+/** Kayıtlı şehir etiketini AKTİF dile çevirir: bilinen exonim varsa o (Münih↔Munich);
+ *  yoksa EN'de ASCII kanonik anahtar (İstanbul→Istanbul), TR'de etiket aynen. */
+export function cityDisplayLabel(key: string, label: string, lang: "tr" | "en"): string {
+  const hit = _EXONYM[fold(label)] ?? _EXONYM[fold(key)];
+  if (hit) return lang === "en" ? hit.en : hit.tr;
+  return lang === "en" ? key : label; // key zaten ASCII kanonik — EN gösterim için yeterli
+}
+
 /** Servisin norm_city kanoniğiyle aynı anahtar: Türkçe karakterler ASCII'ye
  *  (Münih→Munih) — DB city kolonu ve filtreler her iki uçta aynı kalır. */
 export const canonKey = (s: string) =>
