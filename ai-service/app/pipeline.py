@@ -8,6 +8,7 @@ Test:  cd ai-service && py -m app.pipeline "Bugün İstanbul'da yalnızım, kafa
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 
@@ -21,11 +22,28 @@ from app.clients import (
 )
 
 # --------------------------- Prompt'lar ---------------------------
+# 2.8 SANA KİŞİLİĞİ: tüm üretken prompt'ların başına eklenen ortak ses.
+# Niyet ayrıştırıcıya EKLENMEZ (o üretici değil, çözümleyici).
+PERSONA = (
+    "SANA'NIN SESİ: Şehri iyi bilen, samimi bir gezgin arkadaşsın. Kısa, sıcak ve "
+    "SOMUT cümleler kur; yerel dokuyu ve küçük ayrıntıları öne çıkar ('köşedeki "
+    "fırının kokusu' gibi). Abartı ve klişe AI kalıpları YASAK: 'büyüleyici', "
+    "'unutulmaz bir deneyim', 'keşfetmeye hazır mısın', 'cennet köşesi', 'eşsiz' "
+    "yazma. Emoji kullanma. Bilmediğin şeyi uydurma. Kullanıcı profili varsa tonu "
+    "ona esnet (genç→enerjik, sakin seven→dingin) ama bu kişilikten çıkma.\n\n"
+)
+
 INTENT_SYS = (
     "Sen SANA'nın niyet ayrıştırıcısısın. Kullanıcının serbest metnini yapılandırılmış "
-    "JSON'a çevir. SADECE şu alanlarla geçerli JSON döndür, başka metin yazma:\n"
+    "JSON'a çevir. SADECE geçerli JSON döndür, başka metin yazma.\n"
+    "vibe_tags KURALI: cümlede GERÇEKTEN geçen/ima edilen temaları yakala ve ŞU "
+    "SÖZLÜKTEN seç (1-4 adet): sakin, kafa-dinleme, tarih, kultur, sanat, deniz, "
+    "manzara, kahve, yesil, park, gece, yuruyus, sosyal, fotograf, kesif, "
+    "butce-dostu, aile, lezzet. Cümlede karşılığı OLMAYAN etiketi EKLEME; "
+    "('park ağırlıklı' → park,yesil · 'kafa dinlemek' → kafa-dinleme).\n"
+    "Alanlar:\n"
     '{"city": string (örn. "Istanbul"), "mood": string (kısa, örn. "sakin"), '
-    '"vibe_tags": string[] (örn. ["kafa-dinleme","butce-dostu"]), '
+    '"vibe_tags": string[], '
     '"budget_max": integer 1-4 (1=çok ucuz, 4=lüks), '
     '"group_size": integer, "time_available_min": integer, '
     '"indoor_outdoor_pref": "indoor"|"outdoor"|"any", '
@@ -327,6 +345,9 @@ _VIBE_QUERIES = {
     "manzara": ["seyir terası", "manzara noktası"],
     "kahve": ["üçüncü dalga kahveci"],
     "yesil": ["park", "koru"],
+    "park": ["park", "çocuk oyun alanı olan park"],
+    "aile": ["aileye uygun park", "çocuk dostu kafe", "bilim müzesi"],
+    "lezzet": ["yerel lokanta", "meşhur tatlıcı"],
     "gece": ["gece manzarası", "canlı cadde"],
     "yuruyus": ["yürüyüş yolu", "seyir noktası"],
     "sosyal": ["popüler kafe", "çarşı"],
@@ -462,7 +483,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     gen = None
     for temp in (0.7, 0.4):  # ilk deneme yaratıcı; bozuk JSON'da daha soğuk tekrar
         try:
-            raw = nvidia_chat(env, GENERATOR_SYS + (EXPLORE_DIRECTIVE if explore else "") + _lang_directive(lang),
+            raw = nvidia_chat(env, PERSONA + GENERATOR_SYS + (EXPLORE_DIRECTIVE if explore else "") + _lang_directive(lang),
                               json.dumps(gen_input, ensure_ascii=False),
                               json_mode=True, temperature=temp, max_tokens=500, timeout=35)
             d = json.loads(raw)
@@ -563,7 +584,8 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
 def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None,
                force_generate: bool = False, gen_center: tuple | None = None,
                gen_district: str | None = None, app_city: str | None = None,
-               lang: str = "tr", explore: bool = False) -> dict:
+               lang: str = "tr", explore: bool = False,
+               group_usernames: list | None = None) -> dict:
     env = load_env()
     if explore:  # Keşif modu: havuz değil, bakir yerlerden YEPYENİ rota
         force_generate = True
@@ -649,6 +671,75 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
             f"anlatı tamamen ona uygun olsun; planlayan kişinin kendi zevkleri ikincil. "
             + profile_text
         ).strip()
+        # DETERMİNİSTİK vibe biası: LLM'in etiket çıkarımına güvenme — "5 yaşında çocuk"
+        # rotası park/aile sinyali olmadan tarihi köşke düşebiliyordu (cihazda görüldü).
+        # Bu etiketler hem havuz eşleştirmesini (embedding) hem üretici sorgularını yönlendirir.
+        aud_l = audience.lower()
+        m_age = re.search(r"(\d{1,2})", aud_l)
+        aud_age = int(m_age.group(1)) if m_age else None
+        bias: list[str] = []
+        if any(k in aud_l for k in ("çocuk", "cocuk", "child", "kid", "bebek", "oğl", "ogl", "kız", "kiz")) \
+                or (aud_age is not None and aud_age <= 12):
+            bias = ["park", "yesil", "aile"]
+        elif any(k in aud_l for k in ("anne", "baba", "yaşlı", "yasli", "dede", "anneanne", "babaanne",
+                                      "elder", "büyük", "buyuk")):
+            bias = ["sakin", "yesil"]
+        for tag in bias:
+            if tag not in (intent.get("vibe_tags") or []):
+                intent.setdefault("vibe_tags", []).append(tag)
+
+    # GRUP PLANI (2.9): üyelerin onboarding profilleri harmanlanır — "bireysel
+    # hafızadan grup hafızasına". Vibe kesişimi öncelikli (herkese hitap), boşsa
+    # birleşim; bütçe en kısıtlı üyeye göre. Üye adları yanıtla döner (UI çipleri).
+    group_found: list[str] = []
+    group_notfound: list[str] = []
+    if group_usernames:
+        member_txts: list[str] = []
+        vibe_sets: list[set] = []
+        member_budgets: list[int] = []
+        own_vibes = set(((profile or {}).get("metadata") or {}).get("vibes") or [])
+        if own_vibes:
+            vibe_sets.append(own_vibes)  # planlayan da grubun üyesi
+        for uname in [u.strip().lstrip("@").lower() for u in group_usernames if u and u.strip()][:4]:
+            try:
+                rows = sb_select(env, "profiles", f"username=ilike.{uname}&select=id,username&limit=1")
+            except Exception:  # noqa: BLE001
+                rows = []
+            if not rows:
+                group_notfound.append(uname)
+                continue
+            m_name = rows[0].get("username") or uname
+            group_found.append(m_name)
+            try:
+                prof = _load_profile(env, rows[0]["id"])
+            except Exception:  # noqa: BLE001
+                prof = None
+            content = (prof or {}).get("content") or ""
+            meta = (prof or {}).get("metadata") or {}
+            if content:
+                member_txts.append(f"@{m_name}: {content}")
+            if meta.get("vibes"):
+                vibe_sets.append(set(meta["vibes"]))
+            if meta.get("budget"):
+                try:
+                    member_budgets.append(int(meta["budget"]))
+                except (TypeError, ValueError):
+                    pass
+        if group_found:
+            group_line = " | ".join(member_txts) if member_txts else "üyelerin tercih kaydı yok"
+            profile_text = (
+                f"GRUP PLANI ({1 + len(group_found)} kişi): rota HERKESE hitap etmeli — "
+                f"ortak paydayı bul, tek kişinin zevkine teslim olma. Üyeler → {group_line}. "
+                + profile_text
+            ).strip()
+            if vibe_sets:
+                inter = set.intersection(*vibe_sets) if len(vibe_sets) > 1 else set(vibe_sets[0])
+                pick = list(inter) if inter else list(set().union(*vibe_sets))[:4]
+                for tg in pick:
+                    if tg not in (intent.get("vibe_tags") or []):
+                        intent.setdefault("vibe_tags", []).append(tg)
+            if member_budgets:
+                budget_max = min(budget_max, {1: 2, 2: 3, 3: 4}.get(min(member_budgets), 4))
 
     _note = "profil yok"
     if profile and pref_notes:
@@ -659,7 +750,12 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
         _note = f"{len(pref_notes)} davranış"
     if audience:
         _note += (f" · for {audience}" if lang == "en" else f" · {audience} için")
+    if group_found:
+        _note += (f" · group of {1 + len(group_found)}" if lang == "en"
+                  else f" · {1 + len(group_found)} kişilik grup")
     _mark("Hafıza tarandı", _note)
+    _group = ({"members": group_found, "not_found": group_notfound}
+              if (group_found or group_notfound) else None)
 
     # [2] Data: hava
     weather = get_weather(env, city) or {"bias": "any", "desc": "", "temp": None, "rainy": False}
@@ -677,7 +773,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
             "intent": intent, "weather": weather,
             "route_id": g["route"].get("id"), "route": g["route"], "ai": g["ai"],
             "personalized": bool(profile or pref_notes), "profile": profile_text or None,
-            "forced_fit": None, "steps": steps,
+            "forced_fit": None, "steps": steps, "group": _group,
         }
 
     # [2b] Kullanıcı açıkça yeni rota istedi (🎲) → eşleştirmeyi atla, üret
@@ -767,7 +863,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
         },
     }
     try:
-        raw = nvidia_chat(env, COMPOSER_SYS + _lang_directive(lang), json.dumps(composer_input, ensure_ascii=False),
+        raw = nvidia_chat(env, PERSONA + COMPOSER_SYS + _lang_directive(lang), json.dumps(composer_input, ensure_ascii=False),
                           json_mode=True, temperature=0.6, max_tokens=700)
         ai = json.loads(raw)
         if not isinstance(ai, dict) or not ai.get("stops"):
@@ -787,6 +883,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
         "profile": profile_text or None,
         "forced_fit": force_weather_fit,
         "steps": steps,
+        "group": _group,
     }
 
 
@@ -815,7 +912,7 @@ def enrich_route(stops: list[dict], lang: str = "tr") -> dict:
     env = load_env()
     names = [{"name": s.get("name"), "note": s.get("note")} for s in stops]
     try:
-        raw = nvidia_chat(env, ENRICH_SYS + _lang_directive(lang), json.dumps(names, ensure_ascii=False),
+        raw = nvidia_chat(env, PERSONA + ENRICH_SYS + _lang_directive(lang), json.dumps(names, ensure_ascii=False),
                           json_mode=True, temperature=0.5, max_tokens=600)
         data = json.loads(raw)
         if not isinstance(data, dict):
@@ -850,6 +947,67 @@ SUMMARY_SYS = (
 _SUMMARY_CACHE: dict = {}  # route_id → (timestamp, sonuç); TTL 1 saat
 
 
+# --------------------------- Kalem kalem tahmini bütçe (2.9) ---------------------------
+BUDGET_SYS = (
+    "Sen SANA'nın bütçe tahmincisisin. Şehir ve rota durakları (ad, kategori, fiyat "
+    "seviyesi 0-4) verilir. Her durak için KİŞİ BAŞI gerçekçi maliyet tahmini yap "
+    "(Türkiye, TL). Kılavuz aralıklar: park/cami/manzara/sahil/yürüyüş = 0 (ücretsiz); "
+    "kahve sev.1 100-200, sev.2 200-400; yemek sev.2 300-600, sev.3 600-1200, sev.4 1200+; "
+    "müze/ören girişi 100-450; çarşı/alışveriş gezmesi 0. Kategoriye uygun aralıkta kal, "
+    "abartma. SADECE şu JSON:\n"
+    '{"items": [{"seq": int, "cost": int (TL kişi başı; ücretsizse 0)}], "total": int}'
+)
+
+
+def estimate_budget(route_id: str) -> dict:
+    """Rota için kalem kalem tahmini bütçe (kişi başı, TL). İlk çağrıda LLM tahmin eder
+    ve waypoint.metadata.est_cost'a KALICI yazılır (cache) — sonraki açılışlar bedava.
+    Gerçek harcama istatistiğinin (journey_spend) yanında 'tahmin vs gerçek' gösterilir."""
+    env = load_env()
+    r = get_route(env, route_id)
+    if not r:
+        return {"ok": False, "reason": "not_found"}
+    wps = sorted(r.get("waypoints", []), key=lambda w: w.get("seq", 0))
+    exp = [w for w in wps if w.get("kind") == "experience"]
+    if not exp:
+        return {"ok": False, "reason": "no_stops"}
+
+    def _payload(costs: dict) -> dict:
+        items = [{"seq": w.get("seq"), "name": w["name"], "cost": int(costs.get(w.get("seq"), 0))}
+                 for w in exp]
+        return {"ok": True, "items": items, "total": sum(i["cost"] for i in items)}
+
+    # 1) Cache: tüm duraklarda est_cost varsa LLM'e gitme
+    cached = {w.get("seq"): (w.get("metadata") or {}).get("est_cost") for w in exp}
+    if all(v is not None for v in cached.values()):
+        return {**_payload(cached), "cached": True}
+
+    # 2) LLM tahmini (tek çağrı)
+    stops_in = [{"seq": w.get("seq"), "ad": w["name"], "kategori": w.get("category") or "other",
+                 "fiyat_seviyesi": w.get("price_level")} for w in exp]
+    raw = nvidia_chat(env, BUDGET_SYS,
+                      json.dumps({"sehir": r.get("city"), "duraklar": stops_in}, ensure_ascii=False),
+                      json_mode=True, temperature=0.2, max_tokens=400)
+    d = json.loads(raw)
+    costs: dict = {}
+    for it in d.get("items") or []:
+        try:
+            costs[int(it["seq"])] = max(0, min(int(it["cost"]), 10000))  # uçuk değer kelepçesi
+        except (KeyError, TypeError, ValueError):
+            continue
+
+    # 3) Kalıcılaştır: metadata MERGE (rating/photo_tip ezilmez)
+    for w in exp:
+        seq = w.get("seq")
+        if seq in costs and w.get("id"):
+            meta = {**(w.get("metadata") or {}), "est_cost": costs[seq]}
+            try:
+                sb_patch(env, "waypoints", {"id": f"eq.{w['id']}"}, {"metadata": meta})
+            except Exception:  # noqa: BLE001 — cache yazılamazsa tahmin yine döner
+                pass
+    return {**_payload(costs), "cached": False}
+
+
 def summarize_comments(route_id: str) -> dict:
     now = time.time()
     hit = _SUMMARY_CACHE.get(route_id)
@@ -867,7 +1025,7 @@ def summarize_comments(route_id: str) -> dict:
             for r in bodies
         )
         try:
-            raw = nvidia_chat(env, SUMMARY_SYS, text, json_mode=True, temperature=0.4, max_tokens=200)
+            raw = nvidia_chat(env, PERSONA + SUMMARY_SYS, text, json_mode=True, temperature=0.4, max_tokens=200)
             d = json.loads(raw)
             res = {"ok": True, "summary": d.get("summary", ""), "tags": (d.get("tags") or [])[:3],
                    "count": len(bodies)}

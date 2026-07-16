@@ -22,6 +22,7 @@ from app.pipeline import _TR_PROVINCES, norm_city
 from app.pipeline import embed_route as run_embed_route
 from app.pipeline import enrich_photos as run_enrich_photos
 from app.pipeline import enrich_route as run_enrich_route
+from app.pipeline import estimate_budget as run_estimate_budget
 from app.pipeline import plan_route as run_pipeline
 from app.pipeline import route_geometry as run_route_geometry
 from app.pipeline import save_memory_event, save_onboarding_memory, summarize_comments
@@ -54,6 +55,8 @@ class PlanRouteRequest(BaseModel):
     lang: str = Field("tr", pattern="^(tr|en)$")
     # Keşif modu (2.9): bakir/yerel yerlerden YEPYENİ rota — puanı yüksek, yorumu az
     explore: bool = False
+    # Grup planı (2.9): üyelerin kullanıcı adları — profilleri harmanlanır (maks 4)
+    group_usernames: list[str] = Field(default_factory=list, max_length=4)
 
 
 class OnboardingMemoryRequest(BaseModel):
@@ -181,7 +184,8 @@ def plan_route(req: PlanRouteRequest, authorization: str | None = Header(None),
     try:
         gen_center = (req.gen_lat, req.gen_lng) if req.gen_lat is not None and req.gen_lng is not None else None
         return run_pipeline(req.text, uid, req.force_weather_fit, req.force_generate,
-                            gen_center, req.gen_district, req.city, req.lang, req.explore)
+                            gen_center, req.gen_district, req.city, req.lang, req.explore,
+                            req.group_usernames)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
 
@@ -251,6 +255,17 @@ def nav_route(req: NavRouteRequest, x_app_key: str | None = Header(None)) -> dic
     _guard_app_key(x_app_key)
     leg = google_nav_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng, req.mode, req.lang)
     return {"ok": bool(leg), **(leg or {})}
+
+
+@app.post("/estimate-budget")
+def estimate_budget(req: EmbedRouteRequest, x_app_key: str | None = Header(None)) -> dict:
+    """Kalem kalem tahmini bütçe (2.9): kişi başı TL. İlk çağrıda LLM + kalıcı cache
+    (waypoint.metadata.est_cost) — sonraki çağrılar LLM'siz döner."""
+    _guard_app_key(x_app_key)
+    try:
+        return run_estimate_budget(req.route_id)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Bütçe hatası: {e}") from e
 
 
 @app.post("/enrich-photos")
