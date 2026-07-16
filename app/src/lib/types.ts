@@ -110,6 +110,8 @@ export interface EnrichResult {
 export interface PlanResponse {
   ok: boolean;
   reason?: string;
+  /** Grup planı (2.9): bulunan/bulunamayan üye kullanıcı adları */
+  group?: { members: string[]; not_found?: string[] } | null;
   intent?: Record<string, unknown>;
   weather?: PlanWeather;
   route_id?: string;

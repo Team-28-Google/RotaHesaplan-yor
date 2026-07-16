@@ -85,6 +85,16 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
   // 2.7b: mod en başta seçilir; üretimde başlangıç konumu sorulur
   const [mode, setMode] = useState<"match" | "generate">("match");
   const [explore, setExplore] = useState(false); // Keşif modu (2.9): bakir/yerel yerler
+  // Grup planı (2.9): üye kullanıcı adları — profilleri sunucuda harmanlanır
+  const [members, setMembers] = useState<string[]>([]);
+  const [memberInput, setMemberInput] = useState("");
+  const addMember = () => {
+    const u = memberInput.trim().replace(/^@+/, "").toLowerCase();
+    setMemberInput("");
+    if (!u || members.includes(u) || members.length >= 4) return;
+    tap();
+    setMembers([...members, u]);
+  };
   const [loc, setLoc] = useState<string>("ai"); // "ai" | "me" | semt adı
   const [myLoc, setMyLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [activeCity, setActiveCityState] = useState("Istanbul"); // 3.0c: semtler şehre göre
@@ -126,7 +136,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await planRoute(text.trim(), force, generate, gen, generate && explore);
+      const res = await planRoute(text.trim(), force, generate, gen, generate && explore, members);
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("plan.genError"));
@@ -241,6 +251,43 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
             {explore && <Text style={styles.locLabel}>{t("plan.exploreHint")}</Text>}
           </View>
         )}
+
+        {/* Grup planı (2.9): arkadaş kullanıcı adları — herkese hitap eden rota */}
+        <View style={{ gap: 8 }}>
+          <Text style={styles.locLabel}>{t("plan.groupTitle")}</Text>
+          <View style={styles.chips}>
+            {members.map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.locChip, styles.locChipOn]}
+                onPress={() => { tap(); setMembers(members.filter((x) => x !== m)); }}
+              >
+                <Text style={[styles.locChipText, styles.locChipTextOn]}>@{m}  ✕</Text>
+              </TouchableOpacity>
+            ))}
+            {members.length < 4 && (
+              <View style={[styles.locChip, { flexDirection: "row", alignItems: "center", gap: 6 }]}>
+                <TextInput
+                  style={[styles.locChipText, { minWidth: 110, paddingVertical: 0 }]}
+                  value={memberInput}
+                  onChangeText={setMemberInput}
+                  placeholder={t("plan.groupAdd")}
+                  placeholderTextColor={colors.textFaint}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onSubmitEditing={addMember}
+                  returnKeyType="done"
+                />
+                {!!memberInput.trim() && (
+                  <TouchableOpacity onPress={addMember} hitSlop={8}>
+                    <Icon name="add-circle" size={18} color={colors.primary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </View>
+          {members.length > 0 && <Text style={styles.locLabel}>{t("plan.groupHint")}</Text>}
+        </View>
 
         <TextInput
           style={styles.input}
@@ -418,6 +465,16 @@ function PlanResult({ result, onReset, onIndoor, onGenerate, onOpenRoute }: {
             </Text>
             <Text style={styles.title}>{ai.title ?? route.title}</Text>
             {!!ai.summary && <Text style={styles.summary}>{ai.summary}</Text>}
+            {!!result.group?.members?.length && (
+              <Text style={styles.profileNote}>
+                {t("plan.groupFor", { names: result.group.members.map((m) => "@" + m).join(", ") })}
+              </Text>
+            )}
+            {!!result.group?.not_found?.length && (
+              <Text style={[styles.profileNote, { color: colors.danger }]}>
+                {t("plan.groupNotFound", { names: result.group.not_found.join(", ") })}
+              </Text>
+            )}
             {!!result.profile && (
               <Text style={styles.profileNote} numberOfLines={2}>
                 {t("plan.memoryProfile", { profile: result.profile.replace("Kullanıcı profili: ", "") })}

@@ -16,8 +16,9 @@ import { pop, success, tap } from "../lib/haptics";
 import AddStopSheet from "../components/AddStopSheet";
 import CollapsibleSheet, { type SheetState } from "../components/CollapsibleSheet";
 import {
-  addComment, addRouteToCollection, addStop, canEditRoute, currentUserId, fetchComments,
+  addComment, addRouteToCollection, addStop, canEditRoute, currentUserId, estimateBudget, fetchComments,
   fetchCommentSummary, fetchMyCollections, fetchNavRoute, fetchRoute, fetchSpendStats,
+  type EstBudget,
   forkRoute, getFavoriteIds, getOrCreateShareToken, publishRoute, refreshRouteExtras,
   removeStop, sendMemoryEvent, setFavorite, snapTrack, staticMapUrl, uploadPhoto,
   type CollectionInfo, type CommentSummary, type FloodComment, type WalkLeg,
@@ -124,6 +125,9 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
   const [spent, setSpent] = useState<number | null>(null);
   const journeyRemoteId = useRef<string | null>(null);
   const [spendStats, setSpendStats] = useState<{ avg: number; reports: number } | null>(null);
+  // 💰 Tahmini bütçe (2.9): kalem kalem, kişi başı — gerçek harcamanın yanında "tahmin vs gerçek"
+  const [estBudget, setEstBudget] = useState<EstBudget | null>(null);
+  const [estOpen, setEstOpen] = useState(false);
 
   // Mikro-animasyonlar
   const heartScale = useRef(new Animated.Value(1)).current;
@@ -156,6 +160,7 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
     getFavoriteIds().then((s) => setFav(s.has(routeId))).catch(() => {});
     fetchComments(routeId).then(setComments).catch(() => {});
     fetchSpendStats(routeId).then(setSpendStats).catch(() => {}); // 💸 sosyal kanıt (3.8)
+    estimateBudget(routeId).then(setEstBudget).catch(() => {});   // 💰 tahmini bütçe (2.9)
   }, [routeId]);
 
   const refreshRouteState = async () => {
@@ -647,6 +652,23 @@ export default function RouteFloodScreen({ route: navRoute, navigation }: RouteF
               <Text style={styles.spendNote}>
                 {t("flood.spendNote", { avg: spendStats.avg, n: spendStats.reports })}
               </Text>
+            )}
+            {/* 💰 Tahmini bütçe (2.9): dokun → kalem kalem döküm */}
+            {estBudget && (
+              <TouchableOpacity style={styles.estCard} onPress={() => { tap(); setEstOpen(!estOpen); }} activeOpacity={0.85}>
+                <View style={styles.estHead}>
+                  <Icon name="wallet-outline" size={15} color={colors.primaryDark} />
+                  <Text style={styles.estTitle}>{t("flood.estBudget", { n: estBudget.total })}</Text>
+                  <Icon name={estOpen ? "chevron-up" : "chevron-down"} size={14} color={colors.primaryDark} />
+                </View>
+                {estOpen && estBudget.items.map((it) => (
+                  <View key={it.seq} style={styles.estRow}>
+                    <Text style={styles.estName} numberOfLines={1}>{it.name}</Text>
+                    <Text style={styles.estCost}>{it.cost > 0 ? `~${it.cost}₺` : t("flood.estFree")}</Text>
+                  </View>
+                ))}
+                {estOpen && <Text style={styles.estDisc}>{t("flood.estDisclaimer")}</Text>}
+              </TouchableOpacity>
             )}
             <View style={styles.tagRow}>
               {(route.vibe_tags ?? []).map((tag) => (
@@ -1480,6 +1502,17 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   legText: { fontSize: 12, color: colors.primaryDark, fontFamily: font.bold },
   stopName: { fontSize: 16, fontFamily: font.extra, color: colors.text },
   note: { marginTop: 7, color: colors.textMuted, lineHeight: 20, fontSize: 14, fontFamily: font.regular },
+  // Tahmini bütçe kartı (2.9)
+  estCard: {
+    marginTop: 10, backgroundColor: colors.primarySoft, borderRadius: radius.md,
+    paddingHorizontal: 12, paddingVertical: 9,
+  },
+  estHead: { flexDirection: "row", alignItems: "center", gap: 7 },
+  estTitle: { flex: 1, color: colors.primaryDark, fontFamily: font.bold, fontSize: 13.5 },
+  estRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 7 },
+  estName: { flex: 1, color: colors.text, fontFamily: font.medium, fontSize: 12.5 },
+  estCost: { color: colors.primaryDark, fontFamily: font.bold, fontSize: 12.5 },
+  estDisc: { marginTop: 8, color: colors.textFaint, fontFamily: font.regular, fontSize: 11, lineHeight: 15 },
   // Foto ipucu (2.9): kamera ikonu + "en iyi kare + saat" — kalıcı (waypoint.metadata)
   photoTipRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6,

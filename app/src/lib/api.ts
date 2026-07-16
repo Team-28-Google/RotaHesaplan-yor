@@ -522,6 +522,7 @@ export interface GenOptions {
 export async function planRoute(
   text: string, forceWeatherFit?: "indoor", forceGenerate?: boolean, gen?: GenOptions,
   explore?: boolean, // Keşif modu (2.9): bakir/yerel yerlerden üret
+  group?: string[],  // Grup planı (2.9): üye kullanıcı adları (maks 4)
 ): Promise<PlanResponse> {
   const uid = await currentUserId();
   let res: Response;
@@ -540,6 +541,7 @@ export async function planRoute(
         city: await getActiveCity(), // 3.0c: cümlede şehir yoksa bu kullanılır
         lang: _dataLang, // 4.x: EN modda üretim anlatısı İngilizce + rota EN havuzuna
         explore: explore || undefined, // 2.9: keşif modu
+        group_usernames: group?.length ? group : undefined, // 2.9: grup planı
       }),
     }, forceGenerate ? 150_000 : 90_000);
   } catch (e) {
@@ -635,6 +637,26 @@ export interface CityHit {
   place_id?: string;   // Autocomplete sonucu — koordinat seçimde çözülür
   lat?: number;        // Geocoding yedeği doğrudan koordinat verir
   lng?: number;
+}
+
+// --------------------------- Tahmini bütçe (2.9) ---------------------------
+export interface EstBudget { items: { seq: number; name: string; cost: number }[]; total: number }
+
+/** Kalem kalem tahmini bütçe (kişi başı TL). İlk çağrı LLM (~4sn), sonrası sunucu
+ *  cache'inden anında. Başarısızsa null — kart gösterilmez, akış bozulmaz. */
+export async function estimateBudget(routeId: string): Promise<EstBudget | null> {
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/estimate-budget`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
+      body: JSON.stringify({ route_id: routeId }),
+    }, 30_000);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.ok ? { items: j.items ?? [], total: j.total ?? 0 } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** DÜNYA şehir OTOMATİK-TAMAMLAMA (şehir seçicideki kutu): yazdıkça ön-ek eşleştirmeli
