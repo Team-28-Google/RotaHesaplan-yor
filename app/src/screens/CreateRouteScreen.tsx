@@ -49,22 +49,37 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
   // panelin gerçekte ne kadar örtüldüğü hesaplanır; sistem zaten yer açtıysa 0
   // (çift-telafi/fırlama olmaz). Kör "klavye boyu kadar it" yaklaşımı yasak.
   const rootRef = useRef<View>(null);
-  const [kbPad, setKbPad] = useState(0);
+  const kbTopRef = useRef<number | null>(null); // açık klavyenin ekran-üstü Y'si
+  const [kbPad, setKbPad] = useState(0);   // pencere DARALMAYAN cihazlarda örtüşme telafisi
+  const [kbOpen, setKbOpen] = useState(false); // harita küçültme + CTA gizleme bununla
+
+  // Örtüşmeyi YENİDEN ölç — klavye olayında + pencere her boyut değiştirdiğinde (onLayout).
+  // Tek seferlik ölçüm yarışa giriyordu: biz ölçtükten SONRA sistem pencereyi daraltınca
+  // 288px'lik çift telafi kalıyor, panel sıfır yüksekliğe iniyordu (cihazda DBG ile kanıtlandı).
+  // onLayout sayesinde daralma gelince yeniden ölçülür → örtüşme 0 → padding kendini düzeltir.
+  const recomputePad = () => {
+    const kt = kbTopRef.current;
+    if (kt == null) { setKbPad(0); return; }
+    rootRef.current?.measureInWindow((_x, y, _w, h) => {
+      setKbPad(Math.max(0, y + h - kt));
+    });
+  };
   useEffect(() => {
     const showEv = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEv = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
     const s = Keyboard.addListener(showEv, (e) => {
-      const kbTop = e.endCoordinates?.screenY
+      setKbOpen(true);
+      kbTopRef.current = e.endCoordinates?.screenY
         ?? Dimensions.get("window").height - (e.endCoordinates?.height ?? 0);
-      requestAnimationFrame(() => {
-        rootRef.current?.measureInWindow((_x, y, _w, h) => {
-          setKbPad(Math.max(0, y + h - kbTop)); // örtüşme kadar daralt (harita küçülür)
-        });
-      });
+      requestAnimationFrame(recomputePad);
     });
-    const hide = Keyboard.addListener(hideEv, () => setKbPad(0));
+    const hide = Keyboard.addListener(hideEv, () => {
+      kbTopRef.current = null;
+      setKbOpen(false);
+      setKbPad(0);
+    });
     return () => { s.remove(); hide.remove(); };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -214,7 +229,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
 
   // ----- DÜZENLEME EKRANI -----
   return (
-    <View ref={rootRef} style={[styles.screen, { paddingBottom: kbPad }]}>
+    <View ref={rootRef} onLayout={recomputePad} style={[styles.screen, { paddingBottom: kbPad }]}>
       <View style={[styles.topbar, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}><Text style={styles.back}>{t("onb.back")}</Text></TouchableOpacity>
         <Text style={styles.topTitle}>{t("create.title")}</Text>
@@ -246,7 +261,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
 
       {/* Klavye açıkken harita KÜÇÜLÜR (kaybolmaz) → sonuç listesine geniş alan
           kalır ama bağlam da görünür; klavye kapanınca eski boyuna döner */}
-      <View style={[styles.mapWrap, kbPad > 0 && { height: 130 }]}>
+      <View style={[styles.mapWrap, kbOpen && { height: 120 }]}>
         <OSMMap markers={markers} polylines={polylines} onMapPress={(lat, lng) => setPending({ lat, lng })} padding={40} />
         <View style={styles.hint} pointerEvents="none">
           <Text style={styles.hintText}>{t("create.hint")}</Text>
@@ -254,12 +269,22 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
       </View>
 
       <View style={[styles.panel, { paddingBottom: 16 + insets.bottom }]}>
-        {results.length > 0 ? (
+        {query.trim().length >= 2 ? (
+          /* ARAMA AKTİF: her zaman sonuç çerçevesi — aranıyor/sonuç/boş NET görünür
+             (eskiden arama sürerken panel bomboş kalıyor, "sonuçlar çıkmıyor" hissi veriyordu) */
           <>
             <View style={styles.resultsHead}>
               <Text style={styles.panelTitle}>{t("create.results")}</Text>
               <TouchableOpacity onPress={clearSearch} hitSlop={10}><Text style={styles.back}>{t("common.close")}</Text></TouchableOpacity>
             </View>
+            {searching && results.length === 0 ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 14 }}>
+                <ActivityIndicator color={colors.primary} size="small" />
+                <Text style={styles.empty}>{t("create.searchingPlaces")}</Text>
+              </View>
+            ) : results.length === 0 ? (
+              <Text style={styles.empty}>{error ?? t("create.noResults")}</Text>
+            ) : null}
             <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               {results.map((p, i) => (
                 <TouchableOpacity key={i} style={styles.resultRow} onPress={() => addFromResult(p)} activeOpacity={0.85}>
@@ -291,7 +316,7 @@ export default function CreateRouteScreen({ navigation }: CreateRouteScreenProps
               ))}
             </ScrollView>
             {error && <Text style={styles.error}>⚠️ {error}</Text>}
-            {kbPad === 0 && ( /* yazarken CTA gizli — sonuç alanını kapatmasın */
+            {!kbOpen && ( /* yazarken CTA gizli — sonuç alanını kapatmasın */
             <TouchableOpacity
               style={[styles.cta, (stops.length < 2 || busy) && styles.ctaOff]}
               onPress={goEnrich}
