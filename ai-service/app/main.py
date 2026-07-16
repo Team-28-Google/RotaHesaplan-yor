@@ -52,6 +52,8 @@ class PlanRouteRequest(BaseModel):
     city: str | None = None
     # 4.x: üretilen anlatının dili + rotanın havuz etiketi (EN modda İngilizce yaz)
     lang: str = Field("tr", pattern="^(tr|en)$")
+    # Keşif modu (2.9): bakir/yerel yerlerden YEPYENİ rota — puanı yüksek, yorumu az
+    explore: bool = False
 
 
 class OnboardingMemoryRequest(BaseModel):
@@ -179,7 +181,7 @@ def plan_route(req: PlanRouteRequest, authorization: str | None = Header(None),
     try:
         gen_center = (req.gen_lat, req.gen_lng) if req.gen_lat is not None and req.gen_lng is not None else None
         return run_pipeline(req.text, uid, req.force_weather_fit, req.force_generate,
-                            gen_center, req.gen_district, req.city, req.lang)
+                            gen_center, req.gen_district, req.city, req.lang, req.explore)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Pipeline hatası: {e}") from e
 

@@ -12,6 +12,7 @@ import sys
 import time
 
 import random
+from datetime import date
 
 from app.clients import (
     _CITY_COORDS, city_coords, get_route, get_weather, google_photo_url, google_place_lookup,
@@ -27,7 +28,10 @@ INTENT_SYS = (
     '"vibe_tags": string[] (örn. ["kafa-dinleme","butce-dostu"]), '
     '"budget_max": integer 1-4 (1=çok ucuz, 4=lüks), '
     '"group_size": integer, "time_available_min": integer, '
-    '"indoor_outdoor_pref": "indoor"|"outdoor"|"any"}'
+    '"indoor_outdoor_pref": "indoor"|"outdoor"|"any", '
+    '"audience": string|null (rota KİMİN İÇİN — kullanıcı BAŞKASI için istiyorsa onu '
+    'kısaca yaz, örn. "5 yaşında çocuk", "yaşlı anne", "16 yaşındaki kardeş"; '
+    'kendisi/geneli içinse null)}'
 )
 
 COMPOSER_SYS = (
@@ -39,10 +43,13 @@ COMPOSER_SYS = (
     "1. Durakların SIRASINI değiştirme, yeni mekan UYDURMA. Sadece verilen durakları kullan.\n"
     "2. Her durak için TEK cümlelik sıcak bir anlatı yaz (kısa tut); yazarın notunu zenginleştir.\n"
     "3. Havaya 1 cümlelik pratik dokunuş kat. Bütçeyi açıkça belirt.\n"
-    "4. SADECE şu JSON ile dön:\n"
+    "4. Her durağa 1 KISA fotoğraf ipucu yaz: en iyi kare/açı + en iyi SAAT "
+    "(altın saat, gün batımı vb.; mekân türüne uygun, somut; uydurma iddia yok).\n"
+    "5. SADECE şu JSON ile dön:\n"
     '{"title": string, "summary": string (2-3 cümle, davetkar), '
     '"weather_note": string, "budget_note": string, '
-    '"stops": [{"seq": int, "name": string, "narrative": string}], '
+    '"stops": [{"seq": int, "name": string, "narrative": string, '
+    '"photo_tip": string (en iyi kare + en iyi saat, 1 kısa cümle)}], '
     '"social_signal": string (kısa, "yakında senin gibi X seven birkaç kişi var" tarzı simüle mesaj)}'
 )
 
@@ -64,6 +71,7 @@ _STEP_EN = {
 }
 _NOTE_EN = [  # not alanındaki yaygın TR kalıpları (sıra önemli: uzun kalıp önce)
     (" gerçek aday", " real candidates"), (" aday", " candidates"),
+    (" gizli cevher", " hidden gems"),
     (" durak", " stops"), ("bütçe ", "budget "),
     ("profil bulundu", "profile found"), ("profil yok", "no profile"),
     ("profil + ", "profile + "), (" davranış", " behaviors"),
@@ -190,6 +198,7 @@ def parse_intent(env: dict, text: str) -> dict:
     d.setdefault("indoor_outdoor_pref", "any")
     d.setdefault("vibe_tags", [])
     d.setdefault("mood", "")
+    d.setdefault("audience", None)  # "5 yaşında çocuk" — rota başkası içinse
     return d
 
 
@@ -347,6 +356,13 @@ GENERATOR_SYS = (
     '"budget_level": 1-4, "stops": [integer (aday index, yürüme sırasında)]}'
 )
 
+# Keşif modu direktifi (2.9): bakir/yerel yerler — GENERATOR_SYS'e eklenir
+EXPLORE_DIRECTIVE = (
+    "\n\nKEŞİF MODU: Turistik klasikleri ve zincir mekânları ATLA. 'yorum' sayısı "
+    "DÜŞÜK ama puanı YÜKSEK adayları (yerellerin bildiği gizli cevherler) TERCİH et; "
+    "herkesin gittiği yerler yerine keşif hissi ver. vibe_tags'a 'kesif' ekle."
+)
+
 
 def _pick_district(city: str, vibe_tags: list, mood: str) -> dict:
     """Şehrin semtlerinden niyet vibe'larıyla en çok örtüşeni; eşitlikte rastgele (çeşitlilik)."""
@@ -387,7 +403,7 @@ def _gather_candidates(env: dict, district: dict, vibe_tags: list, mood: str) ->
 def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_max: int,
                     user_id: str | None, profile_text: str, _mark, city: str = "Istanbul",
                     gen_center: tuple | None = None, gen_district: str | None = None,
-                    lang: str = "tr") -> dict | None:
+                    lang: str = "tr", explore: bool = False) -> dict | None:
     """Yepyeni rota üret + kalıcılaştır + zenginleştir. Başarısızsa None (çağıran no_match döner).
     Merkez önceliği: kullanıcı konumu > seçilen semt > AI semt seçimi (2.7b; 3.0c şehir-bazlı)."""
     if gen_center:
@@ -415,7 +431,19 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     else:
         district = _pick_district(city, intent.get("vibe_tags") or [], intent.get("mood") or "")
     cands = _gather_candidates(env, district, intent.get("vibe_tags") or [], intent.get("mood") or "")
-    _mark("Mekânlar arandı", f"{len(cands)} gerçek aday · {district['name']}")
+    if explore and cands:
+        # Keşif modu (2.9): "gizli cevher" = puanı yüksek + yorumu az (yerellerin bildiği).
+        # Cevherler listenin BAŞINA — LLM index seçerken önce onları görür; az cevher
+        # çıkarsa kalan adaylar yedek olarak durur (rota yine kurulabilsin).
+        def _gem(c: dict) -> bool:
+            r, n = c.get("rating"), c.get("rating_count")
+            return r is not None and n is not None and r >= 4.3 and 5 <= n <= 250
+        gems = [c for c in cands if _gem(c)]
+        rest = [c for c in cands if not _gem(c)]
+        cands = gems + rest
+        _mark("Mekânlar arandı", f"{len(cands)} aday · {len(gems)} gizli cevher · {district['name']}")
+    else:
+        _mark("Mekânlar arandı", f"{len(cands)} gerçek aday · {district['name']}")
     if len(cands) < 4:
         return None
 
@@ -424,6 +452,7 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         price = _PRICE_ENUM.get(c.get("price_level") or "", None)
         lines.append(
             f"{i}. {c['name']} | tür: {','.join(c['types'][:3]) or '?'} | puan: {c.get('rating') or '?'}"
+            f" | yorum: {c.get('rating_count') if c.get('rating_count') is not None else '?'}"
             f" | fiyat: {price if price is not None else '?'} | ({c['lat']:.4f},{c['lng']:.4f})"
         )
     gen_input = {
@@ -433,7 +462,8 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     gen = None
     for temp in (0.7, 0.4):  # ilk deneme yaratıcı; bozuk JSON'da daha soğuk tekrar
         try:
-            raw = nvidia_chat(env, GENERATOR_SYS + _lang_directive(lang), json.dumps(gen_input, ensure_ascii=False),
+            raw = nvidia_chat(env, GENERATOR_SYS + (EXPLORE_DIRECTIVE if explore else "") + _lang_directive(lang),
+                              json.dumps(gen_input, ensure_ascii=False),
                               json_mode=True, temperature=temp, max_tokens=500, timeout=35)
             d = json.loads(raw)
             picks = []
@@ -468,9 +498,12 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
         budget = int(d.get("budget_level") or 2)
     except (TypeError, ValueError):
         budget = 2
+    tags = list((d.get("vibe_tags") or [])[:5])
+    if explore and "kesif" not in tags:
+        tags = tags[:4] + ["kesif"]  # keşif rotası etiketini garanti et
     route_row = sb_insert(env, "routes", {
         "author_id": author, "title": d["title"], "description": d.get("description") or "",
-        "city": city, "vibe_tags": (d.get("vibe_tags") or [])[:5],
+        "city": city, "vibe_tags": tags,
         "weather_fit": d.get("weather_fit") if d.get("weather_fit") in ("indoor", "outdoor", "any") else "any",
         "budget_level": min(max(budget, 1), 4), "is_seed": False,
         "is_public": False,  # 3.13: üretilen rota da ÖZEL başlar; kullanıcı paylaşınca açılır
@@ -481,13 +514,18 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
     for seq, c in enumerate(picks):
         e = e_stops[seq] if seq < len(e_stops) and isinstance(e_stops[seq], dict) else {}
         photo = google_photo_url(env, c.get("photo_name"))  # foto adı elimizde: tek media çağrısı
+        meta: dict = {}
+        if c.get("rating") is not None:
+            meta["rating"] = c["rating"]
+        if e.get("photo_tip"):
+            meta["photo_tip"] = e["photo_tip"]  # kalıcı foto ipucu — detay çizelgesinde görünür
         wp_rows.append({
             "route_id": rid, "seq": seq, "name": c["name"], "lat": c["lat"], "lng": c["lng"],
             "category": e.get("category") or "other", "kind": "experience",
             "note": e.get("narrative") or "", "place_id": c.get("place_id"),
             "transport_mode": "start" if seq == 0 else "walk",
             "photo_urls": [photo] if photo else [],
-            "metadata": {"rating": c["rating"]} if c.get("rating") is not None else {},
+            "metadata": meta,
         })
     sb_insert(env, "waypoints", wp_rows)
     cover = next((w["photo_urls"][0] for w in wp_rows if w["photo_urls"]), None)
@@ -525,8 +563,10 @@ def _generate_route(env: dict, text: str, intent: dict, weather: dict, budget_ma
 def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | None = None,
                force_generate: bool = False, gen_center: tuple | None = None,
                gen_district: str | None = None, app_city: str | None = None,
-               lang: str = "tr") -> dict:
+               lang: str = "tr", explore: bool = False) -> dict:
     env = load_env()
+    if explore:  # Keşif modu: havuz değil, bakir yerlerden YEPYENİ rota
+        force_generate = True
 
     # Agent adımları: her aşamanın süresi + tek satır özeti (app bekleme ekranı + jüri için)
     steps: list[dict] = []
@@ -583,6 +623,33 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     # Kullanıcı cümlede bütçe belirtmediyse (varsayılan 4) profil bütçesini uygula
     if profile and budget_max >= 4 and prof_budget:
         budget_max = {1: 2, 2: 3, 3: 4}.get(int(prof_budget), 4)
+    # Yaş → profil (plan anında hesap; embedding'e yazılmaz, her yıl bayatlamaz).
+    # 0017: birth_date profiles_private'ta — service role RLS'i aşar, yalnız plan
+    # kişiselleştirmesine girer, asla yanıtla dışarı sızmaz.
+    if user_id:
+        try:
+            rows = sb_select(env, "profiles_private", f"id=eq.{user_id}&select=birth_date&limit=1")
+            bd = (rows[0].get("birth_date") if rows else None) or ""
+            if len(bd) >= 10:
+                y, m, dd = int(bd[:4]), int(bd[5:7]), int(bd[8:10])
+                today = date.today()
+                age = today.year - y - ((today.month, today.day) < (m, dd))
+                if 10 <= age <= 100:
+                    profile_text = (profile_text + f" Kullanıcı yaklaşık {age} yaşında.").strip()
+        except Exception:  # noqa: BLE001 — yaş süs; okunamazsa kişiselleştirme yaşsız sürer
+            pass
+
+    # Rota BAŞKASI içinse ("çocuğum için", "annem için"): o kişinin ihtiyacı
+    # planlayanın kendi zevklerini DOMİNE eder — kahve seven ebeveynin çocuk
+    # rotası kafe turuna dönmesin
+    audience = (intent.get("audience") or "").strip() if isinstance(intent.get("audience"), str) else ""
+    if audience:
+        profile_text = (
+            f"ÖNEMLİ: Bu rota şu kişi İÇİN planlanıyor: {audience}. Durak seçimi ve "
+            f"anlatı tamamen ona uygun olsun; planlayan kişinin kendi zevkleri ikincil. "
+            + profile_text
+        ).strip()
+
     _note = "profil yok"
     if profile and pref_notes:
         _note = f"profil + {len(pref_notes)} davranış"
@@ -590,6 +657,8 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
         _note = "profil bulundu"
     elif pref_notes:
         _note = f"{len(pref_notes)} davranış"
+    if audience:
+        _note += (f" · for {audience}" if lang == "en" else f" · {audience} için")
     _mark("Hafıza tarandı", _note)
 
     # [2] Data: hava
@@ -600,7 +669,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
     def _generated_response() -> dict | None:
         """2.7: yepyeni rota üret; başarılıysa plan_route ile aynı şekilde yanıt döndür."""
         g = _generate_route(env, text, intent, weather, budget_max, user_id, profile_text, _mark,
-                            city, gen_center, gen_district, lang)
+                            city, gen_center, gen_district, lang, explore)
         if not g:
             return None
         return {
@@ -729,11 +798,15 @@ ENRICH_SYS = (
     "2. Her durağa bir kategori ata (şu kümeden): cafe, restaurant, street_food, park, "
     "historical_site, museum, mosque, church, bookstore, gallery, bazaar, viewpoint, waterfront, other.\n"
     "3. Her durağa 1 sıcak cümlelik anlatı yaz (varsa kullanıcının notunu zenginleştir).\n"
-    "4. SADECE şu JSON ile dön:\n"
+    "4. Her durağa fotoğraf ipucu: en iyi açı + en iyi saat, DOĞAL TEK CÜMLE "
+    "(en fazla ~14 kelime; 'en iyi kare/en iyi saat' kalıbını yazma, doğrudan söyle: "
+    "'Gece ışıkları yanınca alttan çek' gibi). Mekâna özgü ve somut; uydurma iddia yok.\n"
+    "5. SADECE şu JSON ile dön:\n"
     '{"title": string (kısa, davetkar), "description": string (1-2 cümle), '
     '"vibe_tags": string[] (3-5, örn. ["sakin","kafa-dinleme"]), '
     '"weather_fit": "indoor"|"outdoor"|"any", '
-    '"stops": [{"category": string, "narrative": string}]}'
+    '"stops": [{"category": string, "narrative": string, '
+    '"photo_tip": string (en iyi kare + en iyi saat, 1 kısa cümle)}]}'
 )
 
 
@@ -760,6 +833,7 @@ def enrich_route(stops: list[dict], lang: str = "tr") -> dict:
         out_stops.append({
             "category": e.get("category", "other"),
             "narrative": e.get("narrative", s.get("note") or ""),
+            "photo_tip": e.get("photo_tip") or "",  # en iyi kare + saat (4.x)
         })
     data["stops"] = out_stops
     return {"ok": True, **data}
