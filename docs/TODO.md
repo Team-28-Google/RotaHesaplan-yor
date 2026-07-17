@@ -530,7 +530,10 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
   basit `usage_log` tablosu) — neyi ücretlendireceğimizi VERİYLE seçelim.
 - [ ] Ücretsiz katman tanımı: kullanıcı başı günlük AI üretim limiti (örn. 2/gün) —
   servis tarafında token'lı sayaç (6ef0a63 kimlik altyapısı hazır).
-- [ ] 5.5 Analytics + Sentry (funnel: onboarding→plan→yolculuk→paylaşım).
+- [x] 5.5-B Hafif hata kaydı (16 Tem): yakalanmamış JS hataları → client_errors
+  tablosu (0025; yalnız-yazılır RLS, oturum kelepçesi, Expo Go uyumlu) —
+  Supabase Table Editor'den izlenir. Sentry değil; karar: test aşamasında bu yeter.
+- [ ] 5.5-A Analytics funnel'ı (onboarding→plan→yolculuk→paylaşım) — ayrı iş.
 
 ### 6.1 Store'a çıkış (ücretli olmanın ön şartı) 👤+🤖
 - [ ] İsim/marka kararı (SANA vs Rota Hesaplanıyor) + ikon final.
@@ -538,6 +541,9 @@ fix'i) + SerpApi çalışma zamanından söküldü (yalnız seed script'lerinde)
 - [ ] 🤖 EAS production build + Play submit; sürüm/updates kanalı düzeni.
 - [ ] 🤖 Gizlilik politikası + KVKK aydınlatma metni (store zorunluluğu; konum verisi!).
 - [ ] Render free→Starter kararı (uyuma sorunu ücretli kullanıcıya yakışmaz, ~$7/ay).
+- [ ] 🤖 TAM SENTRY (kullanıcı kararı 16 Tem: store yayınında ŞART) — @sentry/react-native
+  + config plugin (dev/production build ister, Expo Go'da native modül yok); native crash
+  + sourcemap; DSN 👤. Gelince client_errors emekliye ayrılır.
 
 ### 6.2 SANA Premium — abonelik (RevenueCat) 👤+🤖
 - [ ] 🤖 RevenueCat entegrasyonu (Expo uyumlu, dev build ister — 0.3'e bağlı);

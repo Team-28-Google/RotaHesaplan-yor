@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { joinCollectionByToken, joinRouteByToken, syncOnboardingMemory } from "./src/lib/api";
 import { AUTH_ENABLED, DEV_EMAIL, DEV_PASSWORD } from "./src/lib/config";
 import { ensureProfile, signIn } from "./src/lib/auth";
+import { initErrorLogging } from "./src/lib/errorLog";
 import { getOnboarding, markOnboardingSynced } from "./src/lib/onboarding";
 import { supabase } from "./src/lib/supabase";
 import { font } from "./src/lib/theme";
@@ -34,6 +35,10 @@ import PlanScreen from "./src/screens/PlanScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import RouteFloodScreen from "./src/screens/RouteFloodScreen";
 import SavedScreen from "./src/screens/SavedScreen";
+
+// 5.5-B: yakalanmamış JS hataları Supabase client_errors'a düşer (testçi görünürlüğü).
+// Modül yüklenir yüklenmez bağlanır — render öncesi hatalar da yakalansın.
+initErrorLogging();
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
