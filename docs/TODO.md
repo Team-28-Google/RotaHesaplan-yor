@@ -235,10 +235,12 @@
 ### 🟡 2.9 Testçi önerisi özellikler (16 Tem — değerlendirildi, sıralandı)
 - [x] **Yaş + "kim için" kişiselleştirme** — intent.audience ("5 yaşında çocuk",
   "yaşlı anne") + birth_date→profil (plan anında). Canlı LLM testi 3/3 ✓ (16 Tem)
-- [ ] Fotoğraf ipucu + altın saat: durak başına "en iyi kare + en iyi saat"
-  (enrich/composer alanı) ~2-3sa ★ ucuz/ayrıştırıcı
-- [ ] "Keşif modu" — bakir/yerel yerler: puan yüksek + yorum sayısı düşük
-  heuristiği + üretici prompt biası ~2-3sa
+- [x] **Fotoğraf ipucu + altın saat** (16 Tem): enrich+composer her durağa photo_tip
+  (mekâna özgü tek cümle); üretilende waypoint.metadata.photo_tip kalıcı; app 3 ekranda
+  kamera ikonlu kutu. Canlı LLM 2 tur rafine ✓
+- [x] **Keşif modu — gizli cevherler** (16 Tem): explore bayrağı üretime zorlar;
+  puan≥4.3 + yorum 5-250 "cevher" adaylar öne + prompt direktifi + 'kesif' etiketi;
+  Plan'da anahtar (TR/EN); ajan adımı "N aday · M gizli cevher"
 - [x] **Grup rotası** (16 Tem): Plan'da @kullanıcıadı çipleri (maks 4) → sunucu
   profilleri harmanlar (vibe kesişimi öncelikli, bütçe en kısıtlı üye; "HERKESE
   hitap et" direktifi); ajan adımında "N kişilik grup"; bulunamayan üye uyarısı.
@@ -250,6 +252,28 @@
 - [ ] (kısmi) Sakin saatler rozeti — yalnız seed'lerde SerpApi popular_times var;
   canlı mekânlarda resmi Google verisi YOK, LLM'e uydurtma yasak
 - [ ] (yapılmayacak) Drone önerisi — hukuki risk (SHGM); yalnız genel uyarı cümlesi
+
+### ⬜ 2.10 SIRADAKİ — Fable turu (17 Tem'de not alındı, Fable gelince yapılacak) 🤖
+Kullanıcı istekleri; hepsi Fable'a bırakıldı (Opus turunda uygulanmadı):
+- [ ] **Konum izni akışı düzelt** — kullanıcı bir kez "bir daha sorma" ile reddedince
+  sistem penceresi HİÇ çıkmıyor, app sessizce "izin yok" diyor ("izin sormuyor" sanılıyor).
+  Doğrusu: sorulabiliyorsa SOR, kalıcı reddedildiyse "Ayarları Aç" yönlendirmesi göster.
+  → **Başlangıç yapıldı:** `app/src/lib/locationPerm.ts` helper'ı YAZILDI (ensureLocationPermission:
+  getForegroundPermissions→canAskAgain→request→"Ayarları Aç" alert). KALAN: (a) helper'ı 3 çağrı
+  noktasına bağla — PlanScreen.tsx:120, SavedScreen.tsx:93, CityPicker.tsx:89 (findByLocation);
+  (b) i18n anahtarları ekle: `common.permSettingsBody`, `common.openSettings`, `common.cancel`
+  (helper bunları çağırıyor ama locales'te YOK); useUserLocation.ts pasif izleyici — dokunma.
+- [ ] **Ana sayfaya bulunduğun konumun HAVA DURUMU** — Home'a küçük hava kartı/rozeti
+  (bulunduğun il, °C + durum). Servis: /plan-route'un içinde Google Weather zaten var;
+  ya yeni hafif uç (`/weather?city=` ya da lat/lng) ya da mevcut get_weather'ı app'e aç.
+  Konum → şehir (detectCity) → hava. İzin yoksa aktif şehre düş.
+- [ ] **Şehir arama placeholder** — CityPicker arama kutusu placeholder'ı "Ülke + Şehir"
+  formatını ima etsin (örn. "Ülke ya da şehir ara — Almanya, Berlin…"). locales city.searchPlaceholder
+  TR+EN güncelle. (Şu an "Şehir ara — Türkiye + dünya (örn. Antalya, Berlin)")
+- [ ] **HARİTA FİX TURU** ★ — "rotayı çok saçma çiziyor". Beraber bakılacak: leg_geometry
+  yoksa/bozuksa kuş uçuşu zikzak; transit segment renk/çizim; marker hizası; kamera/fit
+  padding; olası yanlış sıra. Cihazda gözlemle → tek tek. (OSMMap.tsx + RouteFloodScreen
+  polylines + ai-service route_geometry). Somut vaka görüntüsüyle başlanacak.
 
 ## FAZ 3 — SOSYAL & VİRAL
 

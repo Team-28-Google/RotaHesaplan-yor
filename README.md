@@ -22,6 +22,7 @@ _Şehirde yalnız değilsin._
 | Muhammet Mustafa KAPLAN | Product Owner |
 | Eda ÇARKÇI | Scrum Master |
 | Betül SİRKECİ | Developer |
+| Melike ÇELİKER | İş Analisti |
 
 ## Ürün İsmi
 
@@ -37,8 +38,15 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 
 ## Ürün Özellikleri
 
-- **Seni Tanıyan Kişisel Öneriler** — Uygulama seni kullandıkça tanır. Beğendiğin rotalar, tamamladığın yolculuklar ve yaptığın yorumlar hatırlanır; böylece aynı cümleyi yazsan bile öneriler tam sana göre şekillenir.
+- **Seni Tanıyan Kişisel Öneriler** — Uygulama seni kullandıkça tanır. Beğendiğin rotalar, tamamladığın yolculuklar, yorumların ve **yaşın** hatırlanır; aynı cümleyi yazsan bile öneriler tam sana göre şekillenir.
 - **İstediğini Kendi Cümlelerinle Anlat** — "Bugün kafa dinlemek istiyorum, bütçem az" gibi gündelik bir cümle yazman yeterli. Uygulama ne istediğini anlar ve sana özel bir gün planı hazırlar.
+- **Başkası İçin Planla** — "5 yaşındaki çocuğumla park ağırlıklı bir gün" ya da "annem için sakin bir rota" de; plan **o kişiye göre** kurulur — senin kahve tutkun çocuk rotasını ele geçirmez.
+- **Grup Planı** — Arkadaşlarının kullanıcı adlarını ekle; uygulama herkesin kayıtlı tercihlerinden **ortak paydayı** bulur ve gruptaki herkese hitap eden tek bir rota üretir. Bütçe, en kısıtlı üyeye göre ayarlanır.
+- **Keşif Modu — Gizli Cevherler** — Turistik klasikler yerine puanı yüksek ama az bilinen, yerellerin gittiği mekânlardan rota kurar ("herkesin bildiği yol değil").
+- **Fotoğraf İpuçları** — Her durak için "en iyi kare + en iyi saat" önerisi: "Gece ışıkları yanınca kulenin altından çek" gibi mekâna özgü, altın-saat bilinçli ipuçları.
+- **Tahmini Bütçe, Kalem Kalem** — Rota açılınca kişi başı tahmini maliyet dökümü görürsün (park Ücretsiz, kafe ~₺300…); hemen yanında gezenlerin bildirdiği **gerçek harcama** ortalaması — tahmin ve gerçek yan yana.
+- **Tam Çok Dillilik (TR/EN)** — Arayüz, yapay zekâ anlatıları, ajan adımları ve adım adım navigasyon talimatları seçtiğin dilde. Rota havuzu bile dile göre ayrışır: İngilizce modda İngilizce rotalar keşfedersin (54 hazır rota: 27 TR + 27 EN).
+- **SANA'nın Kendi Sesi** — Tüm yapay zekâ metinleri tek bir kişilikten çıkar: şehri iyi bilen samimi bir gezgin arkadaş. Klişe "büyüleyici/unutulmaz" dili bilinçli olarak yasak.
 - **Planın Nasıl Hazırlandığını Gör** — Plan oluşturulurken uygulamanın hangi adımda olduğunu (isteğini anlama, tercihlerini hatırlama, havayı kontrol etme, sana uygun rotayı bulma, hikâyeni yazma) canlı olarak izlersin. Görünmez bir kutu değil; seninle birlikte düşünen bir yol arkadaşı hissi verir.
 - **Gerçek Sokaklardan Geçen Rotalar** — Duraklar arası yollar harita üzerinde kuş uçuşu düz çizgiyle değil, gerçekten yürüyeceğin sokaklar ve tahmini yürüme süreleriyle gösterilir.
 - **Adım Adım Canlı Yürüyüş** — Yolculuk sırasında bulunduğun yerden sıradaki durağa giden yol çizilir; sen ilerledikçe rota kendini günceller, harita yürüdüğün yöne döner ve varış süresi anlık değişir. Tıpkı bir navigasyon uygulaması gibi, ama şehri keşfetmek için.
@@ -50,7 +58,7 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 - **Fork ve Yayınlama** — Başkasının rotasına durak eklediğinde orijinal bozulmaz; kendi özel kopyan oluşur. "Rotanı paylaş" dediğinde herkese açılır.
 - **Ortak Koleksiyonlar ve Birlikte Düzenleme** — Davet linkiyle arkadaşını ekle; birlikte rota toplayın ya da aynı rotayı birlikte düzenleyin.
 - **Adil Liderlik** — Haftanın gezginleri ve en beğenilen rota yazarları. Yalnız durakların en az yarısına GPS ile gerçekten varılan yolculuklar sayılır — koltuktan "Bitir" liderliğe işlemez.
-- **Gerçek Harcama Bilgisi** — Rotayı gezenlerin bildirdiği ortalama maliyet ("ort. ₺X · N gezgin bildirdi") rota detayında görünür.
+- **Gerçek Harcama Bilgisi** — Rotayı gezenlerin bildirdiği ortalama maliyet ("ort. ₺X · N gezgin bildirdi") rota detayında, tahmini bütçe kartının yanında görünür.
 - **Yürüdüğün İzin Kaydı** — Gerçek GPS izin kaydedilir ve yola oturtulur; paylaşım kartında "planlanan yol / yürüdüğüm iz" seçimi yapılır.
 - **Kendi Rotanı Oluştur** — Haritaya kendi duraklarını eklersin; uygulama rotana başlık, etiket ve akıcı bir hikâye yazarak sana yardımcı olur. Oluşturduğun rota kaydedilir ve başkalarıyla paylaşılabilir.
 - **Topluluk Deneyimi ve Yorumlar** — Rotalara yorum yapabilir, puan verebilirsin. Yeterince yorum biriktiğinde, o rotayı gezenlerin ortak izlenimlerini özetleyen kısa bir topluluk değerlendirmesi görürsün.
@@ -64,7 +72,8 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 - Keşif ve deneyim odaklı gezginler
 - Rutinden uzaklaşmak, spontane plan yapmak isteyen 15–40 yaş arası şehir sakinleri
 - Gezdiği yerleri sosyal olarak paylaşmayı seven kullanıcılar
-- Türkiye'nin **81 ilinde ve dünya şehirlerinde** çalışır: hazır rota havuzu İstanbul + Ankara, İzmir, Bursa, Gaziantep, Muğla ile başlar; diğer her yerde yapay zekâ rotayı anında üretir
+- Arkadaş grubuyla gezen, "herkese uyan planı" bulmakta zorlanan gruplar
+- Türkiye'nin **81 ilinde ve dünya şehirlerinde**, **Türkçe ve İngilizce** çalışır: hazır rota havuzu İstanbul + Ankara, İzmir, Bursa, Gaziantep, Muğla ile başlar (her iki dilde); diğer her yerde yapay zekâ rotayı anında üretir
 
 ## Product Backlog
 
@@ -76,6 +85,72 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 > **Not:** Google Docs birden fazla sekme içerir (Sprint 1/2/3, Daily Scrum(konuşma kayıtları)) ve ekran görüntülerinin bulunduğu ayrı bir **Ürün Görselleri** sekmesi barındırır. İnceleme sırasında sekmelerin kontrol edilmesi önerilir.
 
 Repo içi başlangıç backlog'u için: [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT_BACKLOG.md)
+
+---
+
+## Sprint 1
+
+- **Sprint Notları:** _(Bu sprintte seçilen story'ler ve seçim gerekçesi buraya. Örn: proje iskeleti, kimlik doğrulama, temel ekranlar, AI hafıza altyapısı…)_
+- **Sprint içinde tamamlanması tahmin edilen puan:** _(örn. 100 puan)_
+- **Puan tamamlama mantığı:** Backlog, ilk yapılacak story'lere göre düzenlenmiştir. Sprint başına tahmin edilen puanı geçmeyecek şekilde sıradan seçimler yapılmıştır; story başına tahmin puanı, toplam puanın yarısından az tutulmuştur.
+
+**Daily Scrum:** Daily Scrum toplantılarının zamansal sebeplerden ötürü Slack üzerinden yapılmasına karar verilmiştir. Konuşma kayıtları:
+- _(Daily Scrum ekran görüntüleri / Google Docs "Daily Scrum" sekmesi linki buraya)_
+
+**Sprint Board Update:** Sprint board ekran görüntüleri:
+- _(Board screenshot 1 · 2 · 3 buraya)_
+
+**Ürün Durumu:** Ekran görüntüleri:
+- _(Uygulama ekran görüntüleri buraya)_
+
+**Sprint Review:**
+- Alınan kararlar: _(…)_
+- Sprint Review katılımcıları: _(…)_
+
+**Sprint Retrospective:**
+- _(…)_
+
+---
+
+## Sprint 2
+
+- **Sprint Notları:** _(Seçilen story'ler ve gerekçe. Örn: AI farklılaştırıcılar — kişiselleştirme, plan üretimi, canlı navigasyon…)_
+- **Sprint içinde tamamlanması tahmin edilen puan:** _(…)_
+- **Puan tamamlama mantığı:** _(…)_
+
+**Daily Scrum:** _(Slack konuşma kayıtları / link buraya)_
+
+**Sprint Board Update:** _(Board ekran görüntüleri buraya)_
+
+**Ürün Durumu:** _(Ekran görüntüleri buraya)_
+
+**Sprint Review:**
+- Alınan kararlar: _(…)_
+- Sprint Review katılımcıları: _(…)_
+
+**Sprint Retrospective:**
+- _(…)_
+
+---
+
+## Sprint 3
+
+- **Sprint Notları:** _(Seçilen story'ler ve gerekçe. Örn: sosyal & viral özellikler, çok dillilik, grup planı, cilalama ve teslim hazırlığı…)_
+- **Sprint içinde tamamlanması tahmin edilen puan:** _(…)_
+- **Puan tamamlama mantığı:** _(…)_
+
+**Daily Scrum:** _(Slack konuşma kayıtları / link buraya)_
+
+**Sprint Board Update:** _(Board ekran görüntüleri buraya)_
+
+**Ürün Durumu:** _(Ekran görüntüleri buraya)_
+
+**Sprint Review:**
+- Alınan kararlar: _(…)_
+- Sprint Review katılımcıları: _(…)_
+
+**Sprint Retrospective:**
+- _(…)_
 
 ---
 
@@ -111,17 +186,21 @@ SANA, yapay zekâ öncelikli üç katmanlı bir mimariye sahiptir. Kimlik doğru
 Plan üretimi, her aşaması ölçülen ve kullanıcıya gösterilen altı adımlı deterministik bir akıştır:
 
 ```
-1. Niyet Çözümleme    Serbest metin, yapılandırılmış JSON'a çevrilir; şehir adı 81 il
-                      listesi + Geocoding'e karşı doğrulanır (dünya şehirleri geçer,
-                      uydurma adlar elenir)
-2. Hafıza Tarama      Kullanıcının onboarding profili ve son davranışları okunur
+1. Niyet Çözümleme    Serbest metin, yapılandırılmış JSON'a çevrilir: temalar kanonik
+                      etiket sözlüğünden seçilir, rotanın KİMİN İÇİN olduğu yakalanır
+                      ("5 yaşında çocuk"); şehir adı 81 il + Geocoding'e doğrulanır
+2. Hafıza Tarama      Onboarding profili + son davranışlar + yaş; "kim için" ve GRUP
+                      üyelerinin profilleri harmanlanır (vibe kesişimi, ortak bütçe)
 3. Hava Kontrolü      Google Weather API (yağış durumunda kapalı mekân eğilimi)
-4. Rota Eşleştirme    NVIDIA embedding, pgvector kosinüs benzerliği (match_routes)
+4. Rota Eşleştirme    NVIDIA embedding, pgvector kosinüs benzerliği (match_routes);
+                      adaylar AKTİF DİLİN havuzundan seçilir (TR/EN ayrışık)
    └─ ÜRETİM YOLU     Havuz boşsa ya da kullanıcı isterse: Google Places'tan gerçek
                       mekân adayları → LLM yalnız SEÇİM yapar (uydurma imkânsız) →
-                      anlatı ikinci geçişte yazılır; il merkezi Geocoding'den bulunur
-5. Rota Seçimi        Bütçe, hava, görünürlük (özel rota sahibine) filtreleri
-6. Anlatı Yazımı      Seçilen rota için sıcak, kişiselleştirilmiş günlük anlatısı
+                      anlatı ikinci geçişte yazılır; KEŞİF MODUNDA puanı yüksek +
+                      yorumu az "gizli cevher" adaylar öncelik alır
+5. Rota Seçimi        Bütçe, hava, dil, görünürlük (özel rota sahibine) filtreleri
+6. Anlatı Yazımı      SANA kişiliğiyle (ortak persona bloğu) sıcak, kişiselleştirilmiş
+                      anlatı + durak başına fotoğraf ipucu; seçilen arayüz dilinde
 ```
 
 > **Model stratejisi:** Sohbet ve embedding NVIDIA NIM üzerinden yürütülür
@@ -132,7 +211,7 @@ Plan üretimi, her aşaması ölçülen ve kullanıcıya gösterilen altı adım
 
 | Katman | Teknoloji |
 |---|---|
-| Mobil | React Native, Expo SDK 54, TypeScript, React Navigation, expo-image, expo-haptics, expo-location, expo-linking (davet deep link'leri) |
+| Mobil | React Native, Expo SDK 54, TypeScript, React Navigation, expo-image, expo-haptics, expo-location, expo-linking (davet deep link'leri), expo-localization (TR/EN — cihaz dilinden başlar, uygulama içinden değiştirilir) |
 | Harita | react-native-maps (Google), Routes v2 (çok modlu navigasyon + transit hatları), Weather, Geocoding (şehir tespiti/araması — dünya geneli), Roads (iz düzeltme), Static Maps (kart arka planı) |
 | Backend | Supabase — PostgreSQL, pgvector (HNSW), Row Level Security, security-definer RPC'ler, Auth, Storage |
 | AI Servis | Python, FastAPI, deterministik pipeline (stdlib istemciler), Render blueprint |
@@ -157,7 +236,7 @@ cp app/.env.example app/.env
 cp ai-service/.env.example ai-service/.env
 
 # 2) Veritabanı — Supabase SQL editöründe sırayla çalıştırın
-#    supabase/migrations/0001 ... 0016
+#    supabase/migrations/0001 ... 0025
 
 # 3) AI servis
 cd ai-service && python -m venv .venv
