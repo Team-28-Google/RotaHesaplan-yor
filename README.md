@@ -86,10 +86,11 @@ Uygulamanın merkezinde **yapay zekâ hafızası** bulunur. Kullanıcı doğal d
 Repo içi başlangıç backlog'u için: [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT_BACKLOG.md)
 
 ---
+![Sprint 1 — proje ilk hali](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.10.15.jpeg)
 
 ## Sprint 1
 
-![Sprint 1 — proje ilk hali](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.10.15.jpeg)
+
 
 ![Sprint 1 — Sprint board](docs/screenshots/Ekran%20Resmi%202026-07-19%2016.10.57.png)
 
