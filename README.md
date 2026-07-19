@@ -90,8 +90,6 @@ Repo içi başlangıç backlog'u için: [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT
 
 ## Sprint 1
 
-
-
 ![Sprint 1 — Sprint board](docs/screenshots/Ekran%20Resmi%202026-07-19%2016.10.57.png)
 
 **Sprint Review:**

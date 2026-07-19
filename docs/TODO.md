@@ -270,11 +270,20 @@ Kullanıcı istekleri; hepsi Fable'a bırakıldı (Opus turunda uygulanmadı):
 - [ ] **Şehir arama placeholder** — CityPicker arama kutusu placeholder'ı "Ülke + Şehir"
   formatını ima etsin (örn. "Ülke ya da şehir ara — Almanya, Berlin…"). locales city.searchPlaceholder
   TR+EN güncelle. (Şu an "Şehir ara — Türkiye + dünya (örn. Antalya, Berlin)")
-- [ ] **HARİTA FİX TURU** ★ — "rotayı çok saçma çiziyor". Beraber bakılacak: leg_geometry
-  yoksa/bozuksa kuş uçuşu zikzak; transit segment renk/çizim; marker hizası; kamera/fit
-  padding; olası yanlış sıra. Cihazda gözlemle → tek tek. (OSMMap.tsx + RouteFloodScreen
-  polylines + ai-service route_geometry). Somut vaka görüntüsüyle başlanacak.
-
+- [ ] **Harita-şehir senkron bug'ı** (20 Tem): Bursa'dayken Home'dan İstanbul'a geçince
+  Harita sekmesi BURSA'da kalıyor ama alttaki kartlar İstanbul rotaları. Muhtemel neden:
+  şehir değişiminde MapScreen `selectedId` sıfırlanmıyor → bayat focusId, OSMMap'teki
+  `if (ready && !focusId) fitAll()` genel-bakış fit'ini engelliyor (bayat id polylines'ta
+  da yok → odak fit'i de çalışmıyor → kamera eski şehirde asılı kalıyor). Dene:
+  `load()` şehir değişimini algılayınca `setSelectedId(null); setActive(0)`.
+- [x] ~~HARİTA FİX TURU~~ (19-20 Tem ÇÖZÜLDÜ): kök neden = backfill'in seed geometrisini
+  silmesi → 54 rota Routes'tan yeniden üretildi (add_geometry --missing-only eklendi,
+  backfill sonrası hatırlatma basıyor); geometri yoksa artık ince KESİKLİ tahmin çizilir
+  (gerçek yol gibi kalın çizilmez); vapur bacağına elle çizilmiş 7 noktalı deniz yolu
+  (Sarayburnu'nu doğudan dolaşır); sıfır etkileşimli ikiz test rotası silindi.
+  NOT: K1/K2 "GMaps'e benzetme" paketi denendi, cihazda görsel kirlilik yaptı → kullanıcı
+  kararıyla TAMAMEN geri alındı (bağlam çizgileri/kümeleme/mavi nokta/trafik/manevra).
+  İleride tek tek, her adım cihaz onayıyla denenebilir.
 ## FAZ 3 — SOSYAL & VİRAL
 
 ### 🟡 3.0b TASARIM REVİZYONU: Ana sayfa + Paylaşım menüsü ★ KULLANICI İSTEĞİ (4 Tem)
