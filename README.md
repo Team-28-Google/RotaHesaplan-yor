@@ -89,9 +89,9 @@ Repo içi başlangıç backlog'u için: [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT
 
 ## Sprint 1
 
-![Sprint 1 — proje ilk hali](<WhatsApp Image 2026-07-19 at 16.10.15.jpeg>)
+![Sprint 1 — proje ilk hali](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.10.15.jpeg)
 
-![Sprint 1 — Sprint board](<Ekran Resmi 2026-07-19 16.10.57.png>)
+![Sprint 1 — Sprint board](docs/screenshots/Ekran%20Resmi%202026-07-19%2016.10.57.png)
 
 **Sprint Review:**
 
@@ -134,7 +134,7 @@ Repo içi başlangıç backlog'u için: [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT
 
 ## Sprint 2
 
-![Sprint 2 — Sprint board](<Ekran Resmi 2026-07-19 16.11.07.png>)
+![Sprint 2 — Sprint board](docs/screenshots/Ekran%20Resmi%202026-07-19%2016.11.07.png)
 
 **Sprint Review:**
 
@@ -200,13 +200,13 @@ bırakalım.
 
 *Betül’ün Pazar Çalışması:
 
-![Rakip analizi — pazar araştırması](<Ekran Resmi 2026-07-17 20.03.18.png>)
+![Rakip analizi — pazar araştırması](docs/screenshots/Ekran%20Resmi%202026-07-17%2020.03.18.png)
 
 ---
 
 ## Sprint 3
 
-![Sprint 3 — Sprint board](<Ekran Resmi 2026-07-19 16.11.15.png>)
+![Sprint 3 — Sprint board](docs/screenshots/Ekran%20Resmi%202026-07-19%2016.11.15.png)
 
 **Sprint Review:**
 
@@ -220,28 +220,28 @@ bırakalım.
 
 **1. Sprint Görselleri**
 
-![alt text](<WhatsApp Image 2026-07-19 at 16.29.42 (2).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.29.41.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.29.42.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.29.42 (1).jpeg>)
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.29.42%20%282%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.29.41.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.29.42.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.29.42%20%281%29.jpeg)
 
 **2. Sprint Görselleri**
 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.20.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.25 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.25.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.24 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.24.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.23 (2).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.23 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.23.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.22 (2).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.22 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.22.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.21 (2).jpeg>)
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.21 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.21.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.30.20 (1).jpeg>)
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.20.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.25%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.25.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.24%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.24.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.23%20%282%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.23%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.23.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.22%20%282%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.22%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.22.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.21%20%282%29.jpeg)
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.21%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.21.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.30.20%20%281%29.jpeg)
 
 ---
 
@@ -249,69 +249,69 @@ bırakalım.
 
 **1. Sprint Konuşmaları**
 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.27 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.27.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.26.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.25 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.25.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.24.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.26.10.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.26.08.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.41.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.40 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.40.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.39 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.39.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.38 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.38.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.37 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.37.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.36 (2).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.36 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.36.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.35 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.35.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.34 (2).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.27.34 (1).jpeg>)
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.34.jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.33 (1).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.33.jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.32 (2).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.32 (1).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.32.jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.31 (1).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.27.31.jpeg>)
-  ![alt text](<WhatsApp Image 2026-07-19 at 16.27.30.jpeg>) 
-  ![alt text](<WhatsApp Image 2026-07-19 at 16.27.29 (1).jpeg>)
-   ![alt text](<WhatsApp Image 2026-07-19 at 16.27.29.jpeg>) 
-   ![alt text](<WhatsApp Image 2026-07-19 at 16.27.28 (1).jpeg>) 
-   ![alt text](<WhatsApp Image 2026-07-19 at 16.27.28.jpeg>)
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.27%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.27.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.26.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.25%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.25.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.24.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.26.10.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.26.08.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.41.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.40%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.40.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.39%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.39.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.38%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.38.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.37%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.37.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.36%20%282%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.36%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.36.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.35%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.35.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.34%20%282%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.34%20%281%29.jpeg)
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.34.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.33%20%281%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.33.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.32%20%282%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.32%20%281%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.32.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.31%20%281%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.31.jpeg)
+  ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.30.jpeg) 
+  ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.29%20%281%29.jpeg)
+   ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.29.jpeg) 
+   ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.28%20%281%29.jpeg) 
+   ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.27.28.jpeg)
 
 **2. Sprint Konuşmaları**
 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (2).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (3).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (4).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (5).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.17.00.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.17.00 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.17.00 (2).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.20.01.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.57 (1).jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.57.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.56.jpeg>) 
-![alt text](<WhatsApp Image 2026-07-19 at 16.16.55.jpeg>)
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.54 (1).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.54-1.jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.53-1.jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.14.58-1.jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58.jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (1).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (2).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (3).jpeg>) 
- ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (4).jpeg>)
-  ![alt text](<WhatsApp Image 2026-07-19 at 16.16.59.jpeg>)
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.59%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.59%20%282%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.59%20%283%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.59%20%284%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.59%20%285%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.17.00.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.17.00%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.17.00%20%282%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.20.01.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.57%20%281%29.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.57.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.56.jpeg) 
+![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.55.jpeg)
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.54%20%281%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.54-1.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.53-1.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.14.58-1.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.58.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.58%20%281%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.58%20%282%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.58%20%283%29.jpeg) 
+ ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.58%20%284%29.jpeg)
+  ![alt text](docs/screenshots/WhatsApp%20Image%202026-07-19%20at%2016.16.59.jpeg)
 ---
 
 ## Genel Mimari
