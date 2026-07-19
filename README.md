@@ -6,7 +6,6 @@
 
 _Şehirde yalnız değilsin._
 
-
 </div>
 
 ---
@@ -90,68 +89,229 @@ Repo içi başlangıç backlog'u için: [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT
 
 ## Sprint 1
 
-- **Sprint Notları:** _(Bu sprintte seçilen story'ler ve seçim gerekçesi buraya. Örn: proje iskeleti, kimlik doğrulama, temel ekranlar, AI hafıza altyapısı…)_
-- **Sprint içinde tamamlanması tahmin edilen puan:** _(örn. 100 puan)_
-- **Puan tamamlama mantığı:** Backlog, ilk yapılacak story'lere göre düzenlenmiştir. Sprint başına tahmin edilen puanı geçmeyecek şekilde sıradan seçimler yapılmıştır; story başına tahmin puanı, toplam puanın yarısından az tutulmuştur.
+![Sprint 1 — proje ilk hali](<WhatsApp Image 2026-07-19 at 16.10.15.jpeg>)
 
-**Daily Scrum:** Daily Scrum toplantılarının zamansal sebeplerden ötürü Slack üzerinden yapılmasına karar verilmiştir. Konuşma kayıtları:
-- _(Daily Scrum ekran görüntüleri / Google Docs "Daily Scrum" sekmesi linki buraya)_
-
-**Sprint Board Update:** Sprint board ekran görüntüleri:
-- _(Board screenshot 1 · 2 · 3 buraya)_
-
-**Ürün Durumu:** Ekran görüntüleri:
-- _(Uygulama ekran görüntüleri buraya)_
+![Sprint 1 — Sprint board](<Ekran Resmi 2026-07-19 16.10.57.png>)
 
 **Sprint Review:**
-- Alınan kararlar: _(…)_
-- Sprint Review katılımcıları: _(…)_
+
+**Tamamlananlar:**
+
+1. Takım içinde proje fikri, benzer projelerin incelenmesi ve yapay zekanın uygulamaya nasıl entegre edileceği konuları görüşüldü.
+2. Muhammet, uygulamanın en temel halini ayağa kaldırdı ve Expo uygulaması üzerinden takımla paylaştı.
+
+**Geri Bildirim / Karar:**
+
+1. Eda, kullanıcıların kriterlerini girerek AI'ın baştan rota oluşturması ve yol üstündeki güzel yerleri önermesi fikrini sundu.
+
+2. Betül tarafından hava durumu, müze tadilatı veya taşıt grevi gibi durumlarda devreye girecek "AI Çözümü " fikri ortaya atıldı.
+
+3. Sana ismi uygunsuz görülmüştür.Yeni isim pazar araştırmasına ve hedef kitle araştırmasına uygun olarak değiştirilecektir. 
+
+**Engeller:**
+
+1. Tasarım için "planawai.com" platformunun benzerliğinden dolayı yeni özelliklerin ve tasarımın yeniden incelenmesine karar verildi.
+
+2. Arayüz tarafında yapılacaklar netleşmediği için Muhammet, backend'i düzenleyebilmek adına Stitch uygulamasından bir demo hazırlanmasını talep etti.
 
 **Sprint Retrospective:**
-- _(…)_
+
+**Devam Et:**
+
+1. İletişimin zor olduğu ve mesai bildirimlerinin kaçırıldığı Slack yerine, iletişimi hızlandırmak adına kurduğumuz WhatsApp grubunu aktif olarak kullanmaya devam edelim.
+
+2. Araç (ExpoGo) davetleri gönderildikten sonra, bağlantı hatalarını önlemek için ekipten "daveti kabul ettim" teyidi istemeye devam edelim.
+
+3. Kodun veya tasarımın mükemmel olmasını beklemeden, en basit halini  bile hızlıca takımla paylaşıp incelemeye açma alışkanlığımıza devam edelim.
+
+4. "Dynamic Emergency Rerouting" gibi projeyi öne çıkaracak vizyoner yapay zeka fikirleri üreterek uzun mesajlarla vizyon paylaşımına devam edelim.
+
+**Bırak:**
+
+1. Toplantı mesajlarını kaçırmamak için bildirimlerin kapalı kalmasına izin vermeyi bırakalım.
 
 ---
 
 ## Sprint 2
 
-- **Sprint Notları:** _(Seçilen story'ler ve gerekçe. Örn: AI farklılaştırıcılar — kişiselleştirme, plan üretimi, canlı navigasyon…)_
-- **Sprint içinde tamamlanması tahmin edilen puan:** _(…)_
-- **Puan tamamlama mantığı:** _(…)_
-
-**Daily Scrum:** _(Slack konuşma kayıtları / link buraya)_
-
-**Sprint Board Update:** _(Board ekran görüntüleri buraya)_
-
-**Ürün Durumu:** _(Ekran görüntüleri buraya)_
+![Sprint 2 — Sprint board](<Ekran Resmi 2026-07-19 16.11.07.png>)
 
 **Sprint Review:**
-- Alınan kararlar: _(…)_
-- Sprint Review katılımcıları: _(…)_
+
+**Tamamlananlar:**
+
+1. Uygulamanın yeni arayüz tasarımına geçildi,
+emojiler temizlendi; sisteme 81 il ve Türkçe
+destekli dünya şehirleri eklendi.
+
+2. AI rota üretici, paylaşım özellikleri, rozet
+sistemi, kullanıcı giriş/kayıt sistemi ve
+filtreleme çubuğu entegre edildi.
+
+3. Uygulamanın ana ekranının en altına
+kullanıcıların sıralandığı "en çok gezenler"
+(liderlik) tablosu geliştirildi.
+
+**Geri Bildirim / Karar:**
+
+1. Betül tarafından hazırlanan rakip analizi
+(pazar araştırması) tablosu incelenerek,
+uygulamada olmayan yeni özelliklerin
+projeye eklenmesi kararlaştırıldı.
+*Betül’ün çalışması SPRİNT 2 sekmesinin sonunda eklidir.
+
+2. Anketle belirlenen potansiyel uygulama
+isimlerinin pazardaki diğer ürünlere
+benzemesi sebebiyle daha özgün bir marka
+ismi aranmasına karar verildi.
+
+**Engeller:**
+
+1. Yapay zeka  modelinin yalnızca lokalde
+çalışması nedeniyle rota oluşturma sırasında
+sunucu hatası (403) yaşandı, backend
+entegrasyonu gerektiği tespit edildi.
+
+2. Haritada yürüyüş rotasının deniz üzerinden
+çizilmesi, filtre aramasında sürekli
+İstanbul'un çıkması ve mekanlara ait yanlış açıklamaların (Anıtkabir) kopyalanması gibi
+hatalar raporlandı.
 
 **Sprint Retrospective:**
-- _(…)_
+
+**Başla:**
+
+1. Ekip üyelerinin stajı/yazokulu başladığı için haftalık planlama ve durum değerlendirme toplantılarını net bir saatte Google Meet / Zoom üzerinden düzenli olarak
+yapmaya başlayalım.
+
+**Devam Et:**
+
+1. Yeni özellikleri ve arayüzü mükemmelleştirmeyi beklemeden ExpoGo üzerinden hızlıca önizleme  sürümleri çıkararak takımla
+paylaşma pratiğine devam edelim.
+
+2. Ekip içi senkronizasyonu artırmak için WhatsApp grubundaki aktif hata
+bildirimi ve ekran görüntülü raporlama alışkanlığını sürdürelim.
+
+**Bırak:**
+
+1. Sunucu bağlantısı gerektiren temel modülleri tüm
+takımın test edebilmesi için sadece lokalde çalışır halde bırakma huyunu
+bırakalım.
+
+*Betül’ün Pazar Çalışması:
+
+![Rakip analizi — pazar araştırması](<Ekran Resmi 2026-07-17 20.03.18.png>)
 
 ---
 
 ## Sprint 3
 
-- **Sprint Notları:** _(Seçilen story'ler ve gerekçe. Örn: sosyal & viral özellikler, çok dillilik, grup planı, cilalama ve teslim hazırlığı…)_
-- **Sprint içinde tamamlanması tahmin edilen puan:** _(…)_
-- **Puan tamamlama mantığı:** _(…)_
-
-**Daily Scrum:** _(Slack konuşma kayıtları / link buraya)_
-
-**Sprint Board Update:** _(Board ekran görüntüleri buraya)_
-
-**Ürün Durumu:** _(Ekran görüntüleri buraya)_
+![Sprint 3 — Sprint board](<Ekran Resmi 2026-07-19 16.11.15.png>)
 
 **Sprint Review:**
-- Alınan kararlar: _(…)_
-- Sprint Review katılımcıları: _(…)_
 
 **Sprint Retrospective:**
-- _(…)_
 
+-
+
+---
+
+## Ürün Görselleri
+
+**1. Sprint Görselleri**
+
+![alt text](<WhatsApp Image 2026-07-19 at 16.29.42 (2).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.29.41.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.29.42.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.29.42 (1).jpeg>)
+
+**2. Sprint Görselleri**
+
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.20.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.25 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.25.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.24 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.24.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.23 (2).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.23 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.23.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.22 (2).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.22 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.22.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.21 (2).jpeg>)
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.21 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.21.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.30.20 (1).jpeg>)
+
+---
+
+## Konuşma Kayıtları
+
+**1. Sprint Konuşmaları**
+
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.27 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.27.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.26.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.25 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.25.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.24.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.26.10.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.26.08.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.41.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.40 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.40.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.39 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.39.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.38 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.38.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.37 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.37.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.36 (2).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.36 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.36.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.35 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.35.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.34 (2).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.27.34 (1).jpeg>)
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.34.jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.33 (1).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.33.jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.32 (2).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.32 (1).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.32.jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.31 (1).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.27.31.jpeg>)
+  ![alt text](<WhatsApp Image 2026-07-19 at 16.27.30.jpeg>) 
+  ![alt text](<WhatsApp Image 2026-07-19 at 16.27.29 (1).jpeg>)
+   ![alt text](<WhatsApp Image 2026-07-19 at 16.27.29.jpeg>) 
+   ![alt text](<WhatsApp Image 2026-07-19 at 16.27.28 (1).jpeg>) 
+   ![alt text](<WhatsApp Image 2026-07-19 at 16.27.28.jpeg>)
+
+**2. Sprint Konuşmaları**
+
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (2).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (3).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (4).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.59 (5).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.17.00.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.17.00 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.17.00 (2).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.20.01.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.57 (1).jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.57.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.56.jpeg>) 
+![alt text](<WhatsApp Image 2026-07-19 at 16.16.55.jpeg>)
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.54 (1).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.54-1.jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.53-1.jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.14.58-1.jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58.jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (1).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (2).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (3).jpeg>) 
+ ![alt text](<WhatsApp Image 2026-07-19 at 16.16.58 (4).jpeg>)
+  ![alt text](<WhatsApp Image 2026-07-19 at 16.16.59.jpeg>)
 ---
 
 ## Genel Mimari
