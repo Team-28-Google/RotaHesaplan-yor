@@ -758,7 +758,7 @@ def plan_route(text: str, user_id: str | None = None, force_weather_fit: str | N
               if (group_found or group_notfound) else None)
 
     # [2] Data: hava
-    weather = get_weather(env, city) or {"bias": "any", "desc": "", "temp": None, "rainy": False}
+    weather = get_weather(env, city, lang) or {"bias": "any", "desc": "", "temp": None, "rainy": False}
     _mark("Hava kontrol edildi",
           f"{weather.get('temp')}° {weather.get('desc', '')}".strip() if weather.get("temp") is not None else "veri yok")
 

@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CityPicker from "../components/CityPicker";
 import PressableScale from "../components/PressableScale";
 import Skeleton from "../components/Skeleton";
-import { fetchAuthorLeaderboard, fetchRoutes, fetchWeeklyLeaderboard, type AuthorLeaderRow } from "../lib/api";
+import { fetchAuthorLeaderboard, fetchCityWeather, fetchRoutes, fetchWeeklyLeaderboard, type AuthorLeaderRow, type CityWeather } from "../lib/api";
 import { cityInfo, getActiveCity, getChosenCity, setActiveCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { getOnboarding } from "../lib/onboarding";
@@ -20,7 +20,7 @@ import { useLocale } from "../lib/localeContext";
 import { useTheme } from "../lib/themeContext";
 import type { LeaderRow, RouteWithWaypoints } from "../lib/types";
 import Icon from "../components/Icon";
-import { fmtDuration, routeColor, vibeLabel, waypointIcon } from "../lib/ui";
+import { fmtDuration, routeColor, vibeLabel, waypointIcon, weatherIcon } from "../lib/ui";
 import type { HomeScreenProps } from "../navigation";
 
 // Kapaklar yüklenirken gösterilecek yumuşak bulanık yer tutucu
@@ -61,6 +61,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [authorLeaders, setAuthorLeaders] = useState<AuthorLeaderRow[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
   const [city, setCity] = useState("Istanbul"); // 3.0c: aktif şehir
+  const [weather, setWeather] = useState<CityWeather | null>(null); // 2.10: hava rozeti
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +70,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     try {
       const c = cityKey ?? (await getActiveCity());
       setCity(c);
+      fetchCityWeather(c).then(setWeather).catch(() => {}); // hava rozeti (2.10) — akışı bloklamaz
       setRoutes(await fetchRoutes(c));
       setError(null);
     } catch (e) {
@@ -178,16 +180,27 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <View style={styles.brandDot} />
           <View>
             <Text style={styles.brand}>SANA</Text>
-            <TouchableOpacity
-              onPress={() => { tap(); setCityPickerOpen(true); }}
-              hitSlop={8}
-              style={styles.cityChip}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="location" size={12} color={colors.primaryDark} />
-              <Text style={styles.cityChipText}>{cityInfo(city).label}</Text>
-              <Ionicons name="chevron-down" size={12} color={colors.textMuted} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <TouchableOpacity
+                onPress={() => { tap(); setCityPickerOpen(true); }}
+                hitSlop={8}
+                style={styles.cityChip}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="location" size={12} color={colors.primaryDark} />
+                <Text style={styles.cityChipText}>{cityInfo(city).label}</Text>
+                <Ionicons name="chevron-down" size={12} color={colors.textMuted} />
+              </TouchableOpacity>
+              {/* 2.10: aktif şehrin anlık havası — veri yoksa rozet hiç görünmez */}
+              {weather && (
+                <View style={styles.weatherChip}>
+                  <Icon name={weatherIcon(weather.cond, weather.rainy)} size={12} color={colors.primaryDark} />
+                  <Text style={styles.weatherChipText}>
+                    {Math.round(weather.temp)}°{weather.desc ? ` ${weather.desc}` : ""}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
         <View style={styles.headerBtns}>
@@ -422,6 +435,15 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 4,
   },
   cityChipText: { fontSize: 12, color: colors.text, fontFamily: font.bold },
+  weatherChip: {
+    flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3,
+    backgroundColor: colors.primarySoft, borderRadius: radius.pill,
+    paddingHorizontal: 9, paddingVertical: 4,
+  },
+  weatherChipText: {
+    fontSize: 12, color: colors.primaryDark, fontFamily: font.bold,
+    includeFontPadding: false, textAlignVertical: "center",
+  },
   headerBtns: { flexDirection: "row", alignItems: "center", gap: 8 },
   trophyBtn: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft,

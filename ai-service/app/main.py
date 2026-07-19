@@ -14,7 +14,7 @@ from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app.clients import (app_key_ok, google_autocomplete_city, google_nav_leg,
+from app.clients import (app_key_ok, get_weather, google_autocomplete_city, google_nav_leg,
                          google_place_latlng, google_reverse_geocode_place, google_search_city,
                          google_snap_to_roads, google_static_map, google_walk_leg, load_env,
                          nvidia_embed, sb_select, verify_supabase_token)
@@ -127,6 +127,11 @@ class CitySearchRequest(BaseModel):
 class CityLatLngRequest(BaseModel):
     place_id: str | None = None
     name: str | None = None
+
+
+class WeatherRequest(BaseModel):
+    city: str = Field(..., min_length=2)
+    lang: str = Field("tr", pattern="^(tr|en)$")
 
 
 # ---- Kimlik yardımcıları (güvenlik review #1) ----
@@ -255,6 +260,15 @@ def nav_route(req: NavRouteRequest, x_app_key: str | None = Header(None)) -> dic
     _guard_app_key(x_app_key)
     leg = google_nav_leg(load_env(), req.from_lat, req.from_lng, req.to_lat, req.to_lng, req.mode, req.lang)
     return {"ok": bool(leg), **(leg or {})}
+
+
+@app.post("/weather")
+def weather(req: WeatherRequest, x_app_key: str | None = Header(None)) -> dict:
+    """Aktif şehrin anlık havası (2.10): Home rozeti için. {temp, desc, cond, rainy}.
+    Google Weather → OpenWeather yedeği; ikisi de yoksa ok:false (app rozeti gizler)."""
+    _guard_app_key(x_app_key)
+    w = get_weather(load_env(), norm_city(req.city) or req.city, req.lang)
+    return {"ok": bool(w), **(w or {})}
 
 
 @app.post("/estimate-budget")

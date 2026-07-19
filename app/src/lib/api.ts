@@ -639,6 +639,33 @@ export interface CityHit {
   lng?: number;
 }
 
+// --------------------------- Hava durumu (2.10) ---------------------------
+export interface CityWeather { temp: number; desc: string; cond?: string; rainy?: boolean }
+const weatherCache = new Map<string, { at: number; w: CityWeather }>();
+
+/** Aktif şehrin anlık havası (Home rozeti). 20 dk modül cache'i — sekme
+ *  geçişlerinde API yakmaz. Başarısızsa null (cache'lenmez, sonra yeniden dener). */
+export async function fetchCityWeather(city: string, lang: "tr" | "en" = _dataLang): Promise<CityWeather | null> {
+  const key = `${city}|${lang}`;
+  const hit = weatherCache.get(key);
+  if (hit && Date.now() - hit.at < 20 * 60_000) return hit.w;
+  try {
+    const res = await fetchWithTimeout(`${AI_SERVICE_URL}/weather`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...appKeyHeader },
+      body: JSON.stringify({ city, lang }),
+    }, 15_000);
+    if (!res.ok) return null;
+    const j = await res.json();
+    if (!j.ok || j.temp == null) return null;
+    const w: CityWeather = { temp: j.temp, desc: j.desc ?? "", cond: j.cond, rainy: j.rainy };
+    weatherCache.set(key, { at: Date.now(), w });
+    return w;
+  } catch {
+    return null;
+  }
+}
+
 // --------------------------- Tahmini bütçe (2.9) ---------------------------
 export interface EstBudget { items: { seq: number; name: string; cost: number }[]; total: number }
 

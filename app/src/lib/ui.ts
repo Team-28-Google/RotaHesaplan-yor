@@ -8,6 +8,9 @@ export const routeColor = (i: number, palette: readonly string[]) =>
 export interface LegSegment {
   coords: { lat: number; lng: number }[];
   mode: TransportMode;
+  /** true = gerçek sokak geometrisi YOK, kuş uçuşu tahmin — haritada ince/kesikli
+   *  çizilir, asla gerçek yol gibi gösterilmez (harita fix turu). */
+  approx?: boolean;
 }
 
 /** Ardışık deneyim durakları → bacak segmentleri.
@@ -21,6 +24,7 @@ export function legSegments(exp: Waypoint[]): LegSegment[] {
     out.push({
       mode: cur.transport_mode,
       coords: geo ?? [{ lat: prev.lat, lng: prev.lng }, { lat: cur.lat, lng: cur.lng }],
+      approx: !geo,
     });
   }
   return out;
@@ -29,6 +33,7 @@ export function legSegments(exp: Waypoint[]): LegSegment[] {
 /** Segmentleri tek kesintisiz yola birleştirir (fit/odak ve genel bakış çizgileri için). */
 export const segmentsToPath = (segs: LegSegment[]) =>
   segs.flatMap((s, i) => (i === 0 ? s.coords : s.coords.slice(1)));
+
 
 // Emoji değil Ionicons adı döner — emoji chrome'u kaldırıldı ("AI vibe" temizliği)
 const TRANSPORT_ICON: Record<TransportMode, string> = {
@@ -68,6 +73,19 @@ const VIBE_EN: Record<string, string> = {
   "dingin": "serene", "ferah": "airy", "trend": "trendy", "trendy": "trendy", "genc": "youthful",
   "ilham-verici": "inspiring", "keyif": "delight", "kesif": "discovery", "yerel": "local",
 };
+
+/** Hava durumu → Ionicons adı. Sunucunun ham `cond` alanından eşler (CLEAR,
+ *  PARTLY_CLOUDY, RAIN...) — açıklama metninin diline bağımlı değildir. */
+export function weatherIcon(cond?: string, rainy?: boolean): string {
+  const c = (cond ?? "").toUpperCase();
+  if (rainy || /RAIN|DRIZZLE|SHOWER|STORM|THUNDER/.test(c)) return "rainy-outline";
+  if (/SNOW|SLEET|HAIL|ICE/.test(c)) return "snow-outline";
+  if (/FOG|MIST|HAZE|SMOKE/.test(c)) return "cloud-outline";
+  if (/PARTLY|MOSTLY_CLEAR/.test(c)) return "partly-sunny-outline";
+  if (/CLOUD|OVERCAST/.test(c)) return "cloudy-outline";
+  if (/CLEAR|SUN/.test(c)) return "sunny-outline";
+  return "partly-sunny-outline";
+}
 
 /** Vibe etiketini aktif dile çevirir; TR'de aynen, EN'de bilinen slug çevrilir,
  *  bilinmeyen (serbest AI etiketi) olduğu gibi kalır. */

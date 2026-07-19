@@ -714,7 +714,7 @@ _CITY_COORDS = {
 }
 
 
-def _weather_google(env: dict, city: str):
+def _weather_google(env: dict, city: str, lang: str = "tr"):
     key = _google_server_key(env)
     if not key:
         return None
@@ -723,7 +723,7 @@ def _weather_google(env: dict, city: str):
         "key": key,
         "location.latitude": lat,
         "location.longitude": lng,
-        "languageCode": "tr",
+        "languageCode": "en" if lang == "en" else "tr",
         "unitsSystem": "METRIC",
     })
     try:
@@ -740,16 +740,18 @@ def _weather_google(env: dict, city: str):
     return {
         "temp": round(float(temp), 1),
         "desc": desc,
+        "cond": ctype,  # ikon eşlemesi için ham durum (CLEAR/PARTLY_CLOUDY/RAIN...)
         "rainy": rainy,
         "bias": "indoor" if rainy else "any",
     }
 
 
-def _weather_openweather(env: dict, city: str):
+def _weather_openweather(env: dict, city: str, lang: str = "tr"):
     key = env.get("OPENWEATHER_API_KEY")
     if not key:
         return None
-    q = urllib.parse.urlencode({"q": city, "appid": key, "units": "metric", "lang": "tr"})
+    q = urllib.parse.urlencode({"q": city, "appid": key, "units": "metric",
+                                "lang": "en" if lang == "en" else "tr"})
     try:
         r = _req("https://api.openweathermap.org/data/2.5/weather?" + q, "GET")
     except Exception:
@@ -760,10 +762,11 @@ def _weather_openweather(env: dict, city: str):
     return {
         "temp": round(r.get("main", {}).get("temp", 0), 1),
         "desc": w.get("description", ""),
+        "cond": main.upper(),
         "rainy": rainy,
         "bias": "indoor" if rainy else "any",
     }
 
 
-def get_weather(env: dict, city: str = "Istanbul"):
-    return _weather_google(env, city) or _weather_openweather(env, city)
+def get_weather(env: dict, city: str = "Istanbul", lang: str = "tr"):
+    return _weather_google(env, city, lang) or _weather_openweather(env, city, lang)
