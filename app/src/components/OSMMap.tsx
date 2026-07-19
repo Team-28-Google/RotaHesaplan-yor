@@ -33,7 +33,7 @@ export type OSMPolyline = {
   color: string;
   coords: LatLng[];          // tam yol (fit/odak için; segments varsa birleştirilmiş hali)
   modes?: string[];          // modes[i] = coords[i]'ye ulaşım türü (transit ise kırmızı)
-  segments?: { coords: LatLng[]; mode?: string }[]; // bacak bazlı gerçek geometri (Routes)
+  segments?: { coords: LatLng[]; mode?: string; approx?: boolean }[]; // bacak bazlı geometri; approx = kuş uçuşu tahmin
 };
 type TransitLineData = { name: string; color: string; dashed?: boolean; coords: LatLng[] };
 
@@ -266,9 +266,12 @@ export default function OSMMap({
     ? markers.filter((m) => iconUris[iconSig(m, mode)] === undefined)
     : [];
 
-  // Tek rota (detay) → her zaman çiz. Çok rota (overview) → sadece seçili (tıklanan) görünür.
+  // Tek rota (detay) → her zaman tam kalite. Çok rota (genel bakış) → YALNIZ seçili
+  // rotanın çizgisi çizilir; diğerleri sadece pin/küme olarak görünür.
+  // (K1'de denenen "tüm rotalara soluk bağlam çizgisi" cihazda görsel kirlilik yaptı
+  // — 13 çizgi haritayı karalamaya çeviriyor; geri alındı, kümeleme yeterli bağlam.)
   const visibleLines = useMemo(
-    () => (polylines.length <= 1 ? polylines : focusId ? polylines.filter((p) => p.id === focusId) : []),
+    () => (polylines.length <= 1 ? polylines : polylines.filter((p) => p.id === focusId)),
     [polylines, focusId],
   );
 
@@ -344,26 +347,44 @@ export default function OSMMap({
           <Polyline key={`t${i}`} coordinates={t.coords.map(ll)} strokeColor={t.color} strokeWidth={3} lineDashPattern={t.dashed ? [4, 8] : undefined} />
         ))}
 
-        {/* Çizgiler: beyaz kenar (casing) + renkli üst; transit ayağı kırmızı */}
+        {/* Çizgiler: beyaz kenar (casing) YALNIZ gerçek sokak geometrisinde; kuş uçuşu
+            tahmin (approx) ince+kesikli+soluk çizilir — asla gerçek yol gibi görünmez */}
         {visibleLines.flatMap((line) => {
           const pts = line.coords.map(ll);
           if (pts.length < 2) return [];
-          const out: ReactNode[] = [
-            <Polyline key={`${line.id}-casing`} coordinates={pts} strokeColor="rgba(255,255,255,0.95)" strokeWidth={9} lineCap="round" lineJoin="round" />,
-          ];
+          const out: ReactNode[] = [];
           if (line.segments && line.segments.length) {
-            // Bacak bazlı gerçek geometri (Routes API): yürüme = rota rengi, transit = kırmızı
+            // Bacak bazlı geometri: gerçek yürüme = casing + rota rengi; transit = kesikli
+            // kırmızı; approx (geometri yok) = ince kesikli soluk tahmin çizgisi
             line.segments.forEach((seg, idx) => {
               if (seg.coords.length < 2) return;
+              const segPts = seg.coords.map(ll);
               const transit = TRANSIT.has((seg.mode ?? "").toLowerCase());
+              if (seg.approx && !transit) {
+                out.push(
+                  <Polyline key={`${line.id}-seg${idx}`} coordinates={segPts}
+                    strokeColor={line.color} strokeWidth={2.5} lineDashPattern={[6, 8]}
+                    lineCap="round" lineJoin="round" tappable onPress={() => onPressItem?.(line.id)} />,
+                );
+                return;
+              }
+              if (!transit) {
+                out.push(
+                  <Polyline key={`${line.id}-seg${idx}c`} coordinates={segPts}
+                    strokeColor="rgba(255,255,255,0.95)" strokeWidth={9} lineCap="round" lineJoin="round" />,
+                );
+              }
               out.push(
-                <Polyline key={`${line.id}-seg${idx}`} coordinates={seg.coords.map(ll)}
+                <Polyline key={`${line.id}-seg${idx}`} coordinates={segPts}
                   strokeColor={transit ? "#F87171" : line.color} strokeWidth={transit ? 6 : 5}
                   lineDashPattern={transit ? [10, 10] : undefined}
                   lineCap="round" lineJoin="round" tappable onPress={() => onPressItem?.(line.id)} />,
               );
             });
           } else if (line.modes && line.modes.length === pts.length) {
+            out.push(
+              <Polyline key={`${line.id}-casing`} coordinates={pts} strokeColor="rgba(255,255,255,0.95)" strokeWidth={9} lineCap="round" lineJoin="round" />,
+            );
             pts.slice(1).forEach((_, idx) => {
               const i = idx + 1;
               const transit = TRANSIT.has(line.modes![i]);
@@ -375,6 +396,7 @@ export default function OSMMap({
             });
           } else {
             out.push(
+              <Polyline key={`${line.id}-casing2`} coordinates={pts} strokeColor="rgba(255,255,255,0.95)" strokeWidth={9} lineCap="round" lineJoin="round" />,
               <Polyline key={`${line.id}-line`} coordinates={pts} strokeColor={line.color} strokeWidth={5}
                 lineCap="round" lineJoin="round" tappable onPress={() => onPressItem?.(line.id)} />,
             );

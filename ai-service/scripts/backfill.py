@@ -145,6 +145,8 @@ def main():
                 sb_delete(env, "routes", f"id=eq.{r['id']}")
 
     print(f"\nBackfill tamam. ({len(tr_routes)} TR + {len(en_routes)} EN — mevcutlar korunarak)")
+    print("HATIRLATMA: yeni eklenen rotaların sokak geometrisi YOKTUR — harita düz çizgiye")
+    print("düşmesin diye şimdi çalıştır:  py ai-service/scripts/add_geometry.py --missing-only")
 
 
 if __name__ == "__main__":

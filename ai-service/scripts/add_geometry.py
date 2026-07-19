@@ -1,8 +1,10 @@
 """Seed rotalara gerçek yürüme geometrisi yazar (Google Routes API).
 
 Ön koşul: supabase/migrations/0006_leg_geometry.sql çalıştırılmış olmalı.
-Çalıştır:  py "ai-service/scripts/add_geometry.py"           → geometri
-           py "ai-service/scripts/add_geometry.py" --photos  → geometri + Places foto/puan (3.2a)
+Çalıştır:  py "ai-service/scripts/add_geometry.py"                → geometri (TÜM rotalar)
+           py "ai-service/scripts/add_geometry.py" --missing-only → YALNIZ geometrisi eksik
+             rotalar (backfill sonrası standart adım — mevcut geometri yeniden hesaplanmaz)
+           py "ai-service/scripts/add_geometry.py" --photos       → geometri + Places foto/puan (3.2a)
            py "ai-service/scripts/add_geometry.py" --photos-only
 İdempotent: geometri yeniden hesaplanır; fotoğrafta fotolu duraklar atlanır.
 """
@@ -16,15 +18,41 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from app.clients import _req, _sb_headers, load_env  # noqa: E402
-from app.pipeline import enrich_photos, route_geometry  # noqa: E402
+from app.pipeline import _WALKISH, enrich_photos, route_geometry  # noqa: E402
+
+
+def routes_missing_geometry(env: dict) -> set:
+    """Yürünebilir bacağı olup leg_geometry'si NULL kalan rotaların id'leri.
+    (İlk durak asla bacak taşımaz, transit bacaklar geometri almaz — sayılmaz.)"""
+    url = (env["SUPABASE_URL"].rstrip("/")
+           + "/rest/v1/waypoints?kind=eq.experience"
+           + "&select=route_id,seq,leg_geometry,transport_mode&limit=5000")
+    wps = _req(url, "GET", _sb_headers(env)) or []
+    by_route: dict = {}
+    for w in wps:
+        by_route.setdefault(w["route_id"], []).append(w)
+    need = set()
+    for rid, items in by_route.items():
+        items.sort(key=lambda w: w.get("seq") or 0)
+        for w in items[1:]:  # ilk deneyim durağının bacağı yoktur
+            mode = (w.get("transport_mode") or "walk").lower()
+            if mode in _WALKISH and not w.get("leg_geometry"):
+                need.add(rid)
+                break
+    return need
 
 
 def main() -> None:
     photos = "--photos" in sys.argv or "--photos-only" in sys.argv
     geometry = "--photos-only" not in sys.argv
+    missing_only = "--missing-only" in sys.argv
     env = load_env()
     url = env["SUPABASE_URL"].rstrip("/") + "/rest/v1/routes?select=id,title&order=created_at.asc"
     routes = _req(url, "GET", _sb_headers(env)) or []
+    if missing_only:
+        need = routes_missing_geometry(env)
+        routes = [r for r in routes if r["id"] in need]
+        print(f"--missing-only: geometrisi eksik {len(routes)} rota bulundu.")
     if not routes:
         print("Rota bulunamadı.")
         return
