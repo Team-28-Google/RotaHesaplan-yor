@@ -5,6 +5,8 @@
 export const tr = {
   common: {
     cancel: "Vazgeç",
+    openSettings: "Ayarları Aç",
+    permSettingsBody: "Konum izni daha önce reddedilmiş — sistem artık izin penceresini göstermiyor. Ayarlar > Uygulamalar > SANA > İzinler'den konumu açabilirsin.",
     close: "Kapat",
     ok: "Tamam",
     save: "Kaydet",
@@ -34,7 +36,7 @@ export const tr = {
   city: {
     title: "Hangi şehirdesin?",
     subtitle: "Rotalar, harita ve AI planlama bu şehre göre çalışır.",
-    searchPlaceholder: "Şehir ara — Türkiye + dünya (örn. Antalya, Berlin)",
+    searchPlaceholder: "Ülke + şehir ara — örn. Almanya, Berlin, Antalya",
     byLocation: "Konumumdan bul",
     byLocationHint: "Türkiye'nin her ilinde çalışır — AI orada rota üretir",
     locating: "Konum alınıyor…",
@@ -396,6 +398,8 @@ type Loose<T> = { [K in keyof T]?: T[K] extends object ? Loose<T[K]> : string };
 export const en: Loose<typeof tr> = {
   common: {
     cancel: "Cancel",
+    openSettings: "Open Settings",
+    permSettingsBody: "Location permission was denied earlier — the system no longer shows the prompt. Enable location in Settings > Apps > SANA > Permissions.",
     close: "Close",
     ok: "OK",
     save: "Save",
@@ -425,7 +429,7 @@ export const en: Loose<typeof tr> = {
   city: {
     title: "Which city are you in?",
     subtitle: "Routes, map and AI planning work by this city.",
-    searchPlaceholder: "Search a city — Türkiye + world (e.g. Antalya, Berlin)",
+    searchPlaceholder: "Search country + city — e.g. Germany, Berlin, Antalya",
     byLocation: "Find from my location",
     byLocationHint: "Works in every province — AI generates routes there",
     locating: "Getting location…",

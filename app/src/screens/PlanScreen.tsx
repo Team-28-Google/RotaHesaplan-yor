@@ -18,6 +18,7 @@ import { pop, tap } from "../lib/haptics";
 import { useUserLocation } from "../lib/useUserLocation";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useLocale } from "../lib/localeContext";
+import { ensureLocationPermission } from "../lib/locationPerm";
 import { useTheme } from "../lib/themeContext";
 import type { PlaceResult, PlanResponse, Waypoint } from "../lib/types";
 import Icon from "../components/Icon";
@@ -117,8 +118,7 @@ export default function PlanScreen({ navigation }: PlanScreenProps) {
     setLoc("me");
     if (myLoc) return;
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") { setLoc("ai"); return; }
+      if (!(await ensureLocationPermission(t))) { setLoc("ai"); return; }
       const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setMyLoc({ lat: p.coords.latitude, lng: p.coords.longitude });
     } catch { setLoc("ai"); }

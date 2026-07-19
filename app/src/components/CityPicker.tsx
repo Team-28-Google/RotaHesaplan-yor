@@ -10,6 +10,7 @@ import { cityLatLng, detectCity, searchCities, type CityHit } from "../lib/api";
 import { canonKey, CITIES, citiesOfCountry, cityDisplayLabel, dynCities, registerCity, searchProvinces, unregisterCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { useLocale } from "../lib/localeContext";
+import { ensureLocationPermission } from "../lib/locationPerm";
 import { supabase } from "../lib/supabase";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/themeContext";
@@ -86,11 +87,8 @@ export default function CityPicker({ visible, current, onClose, onSelect }: {
     tap();
     setLocating(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(t("city.permTitle"), t("city.permBody"));
-        return;
-      }
+      // İzin: sorulabiliyorsa sistem penceresi; kalıcı reddedildiyse "Ayarları Aç" (2.10)
+      if (!(await ensureLocationPermission(t))) return;
       // Konum: önce hızlı son-bilinen; yoksa taze konumu 12 sn timeout'la al
       // (getCurrentPositionAsync bazı cihazlarda sonsuza kadar askıda kalabiliyor)
       let pos = await Location.getLastKnownPositionAsync();

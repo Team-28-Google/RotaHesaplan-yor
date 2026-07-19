@@ -15,6 +15,7 @@ import { cityInfo, getActiveCity } from "../lib/cities";
 import { tap } from "../lib/haptics";
 import { font, radius, shadow, type ThemeColors } from "../lib/theme";
 import { useLocale } from "../lib/localeContext";
+import { ensureLocationPermission } from "../lib/locationPerm";
 import { useTheme } from "../lib/themeContext";
 import type { RouteWithWaypoints } from "../lib/types";
 import { budgetLabel, routeColor, waypointIcon } from "../lib/ui";
@@ -90,8 +91,7 @@ export default function SavedScreen({ navigation }: SavedScreenProps) {
     setFilt("near");
     if (myLoc) return;
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") { setFilt(activeCity); return; }
+      if (!(await ensureLocationPermission(t))) { setFilt(activeCity); return; }
       const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setMyLoc({ lat: p.coords.latitude, lng: p.coords.longitude });
     } catch { setFilt(activeCity); }
