@@ -78,10 +78,10 @@ export default function MapScreen({ navigation }: MapScreenProps) {
     [routes, colors],
   );
   const markers = useMemo<OSMMarker[]>(() => {
-    // Rota başına tekil marker (genel bakış). Seçili rotanınki yerine DURAK marker'ları gelir:
-    // odaktayken durakların fotoğrafları görünür, odak değişince sadece onlar kaybolur.
-    const base = routes.flatMap((r, i) => {
-      if (r.id === selectedId) return [];
+    // Genel bakış: rota başına tekil foto marker. Bir rota SEÇİLİYKEN diğer rotaların
+    // pinleri GİZLENİR (GMaps davranışı — odaklı rota öne çıksın, harita sadeleşsin);
+    // yalnız seçili rotanın durak marker'ları görünür.
+    const base = selectedId ? [] : routes.flatMap((r, i) => {
       const exp = r.waypoints.filter((w) => w.kind === "experience");
       return exp[0]
         ? [{ id: r.id, lat: exp[0].lat, lng: exp[0].lng, color: routeColor(i, colors.routeColors), popup: r.title, photo: r.cover_photo_url ?? exp[0].photo_urls?.[0] ?? undefined }]

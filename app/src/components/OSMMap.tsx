@@ -14,7 +14,7 @@ import { useTheme } from "../lib/themeContext";
 // (react-native-maps'in "çeyrek render" bug'ı View-tabanlı marker'larda oluşur;
 // native bitmap ikonlar bu yola hiç girmez → kesin çözüm.)
 const BITMAP_MARKERS = Platform.OS === "android";
-const PIN = 66; // foto marker kutusu (dp)
+const PIN = 50; // foto marker kutusu (dp) — 66'ydı, harita kalabalığı için küçültüldü
 
 export type LatLng = { lat: number; lng: number };
 export type OSMMarker = {
@@ -221,6 +221,10 @@ function MapPin({ m, onSelect, onOpen, styles, iconUri }: {
           <View style={[styles.photoSquare, { borderColor: ring }]} collapsable={false}>
             <Image source={{ uri: m.photo }} style={styles.photoImg} resizeMode="cover" fadeDuration={0} />
           </View>
+        ) : m.photo ? (
+          // Fotoğraf GELİYOR (bitmap/prefetch bekleniyor) → numara yerine nötr yer tutucu
+          // kutusu göster; foto hazır olunca yerini alır (numara flaş'ı yok — regresyon fix'i)
+          <View style={[styles.photoSquare, styles.photoLoading, { borderColor: ring }]} collapsable={false} />
         ) : m.icon ? (
           <View style={styles.emojiWrap} collapsable={false}>
             <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={16} color={m.color} />
@@ -514,9 +518,11 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   // Sabit marker kutusu: hangi varyant çizilirse çizilsin snapshot boyutu değişmez
   pinBox: { width: PIN, height: PIN, alignItems: "center", justifyContent: "center" },
   photoSquare: {
-    width: PIN, height: PIN, borderRadius: 16, borderWidth: 3, overflow: "hidden", backgroundColor: "#fff",
+    width: PIN, height: PIN, borderRadius: 13, borderWidth: 2.5, overflow: "hidden", backgroundColor: "#fff",
   },
-  photoImg: { width: PIN - 6, height: PIN - 6 },
+  photoImg: { width: PIN - 5, height: PIN - 5 },
+  // Foto yüklenirken numara yerine gösterilen nötr yer tutucu (kısa; sonra foto gelir)
+  photoLoading: { backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
   // Bitmap üretimi için ekran dışı alan (görünmez ama LAYOUT ALIR — view-shot şartı)
   iconFactory: { position: "absolute", left: -1000, top: 0 },
 
