@@ -43,9 +43,21 @@ export default function MapScreen({ navigation }: MapScreenProps) {
   const [city, setCity] = useState("Istanbul"); // 3.0c: aktif şehir (Home'dan seçilir)
   const listRef = useRef<FlatList<RouteWithWaypoints>>(null);
 
+  // Şehir değişimini algıla: değişince seçimi/karüseli sıfırla — yoksa bayat focusId
+  // OSMMap'in genel-bakış fit'ini bloklar, kamera eski şehirde asılı kalır (Bursa→İstanbul bug'ı)
+  const prevCity = useRef<string | null>(null);
   const load = useCallback(() => {
     getActiveCity()
-      .then((c) => { setCity(c); return fetchRoutes(c); })
+      .then((c) => {
+        setCity(c);
+        if (prevCity.current !== null && prevCity.current !== c) {
+          setSelectedId(null);
+          setActive(0);
+          listRef.current?.scrollToOffset({ offset: 0, animated: false });
+        }
+        prevCity.current = c;
+        return fetchRoutes(c);
+      })
       .then((r) => { setRoutes(r); setError(null); })
       .catch((e) => setError(e instanceof Error ? e.message : t("map.loadError")))
       .finally(() => setLoading(false));

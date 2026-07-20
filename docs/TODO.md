@@ -270,12 +270,11 @@ Kullanıcı istekleri; hepsi Fable'a bırakıldı (Opus turunda uygulanmadı):
 - [ ] **Şehir arama placeholder** — CityPicker arama kutusu placeholder'ı "Ülke + Şehir"
   formatını ima etsin (örn. "Ülke ya da şehir ara — Almanya, Berlin…"). locales city.searchPlaceholder
   TR+EN güncelle. (Şu an "Şehir ara — Türkiye + dünya (örn. Antalya, Berlin)")
-- [ ] **Harita-şehir senkron bug'ı** (20 Tem): Bursa'dayken Home'dan İstanbul'a geçince
-  Harita sekmesi BURSA'da kalıyor ama alttaki kartlar İstanbul rotaları. Muhtemel neden:
-  şehir değişiminde MapScreen `selectedId` sıfırlanmıyor → bayat focusId, OSMMap'teki
-  `if (ready && !focusId) fitAll()` genel-bakış fit'ini engelliyor (bayat id polylines'ta
-  da yok → odak fit'i de çalışmıyor → kamera eski şehirde asılı kalıyor). Dene:
-  `load()` şehir değişimini algılayınca `setSelectedId(null); setActive(0)`.
+- [x] **Harita-şehir senkron bug'ı** (20 Tem ÇÖZÜLDÜ): Bursa→İstanbul geçince harita
+  Bursa'da kalıyordu (kartlar İstanbul). Kök neden doğrulandı: bayat `focusId`
+  OSMMap'teki `!focusId` genel-bakış fit guard'ını blokluyordu. Fix: (1) MapScreen
+  `load()` şehir değişimini algılayınca `setSelectedId(null)+setActive(0)+scroll 0`;
+  (2) OSMMap savunma — `hasValidFocus` (focusId polylines'ta yoksa "odak yok" say).
 - [x] ~~HARİTA FİX TURU~~ (19-20 Tem ÇÖZÜLDÜ): kök neden = backfill'in seed geometrisini
   silmesi → 54 rota Routes'tan yeniden üretildi (add_geometry --missing-only eklendi,
   backfill sonrası hatırlatma basıyor); geometri yoksa artık ince KESİKLİ tahmin çizilir

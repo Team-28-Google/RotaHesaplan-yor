@@ -274,6 +274,9 @@ export default function OSMMap({
     () => (polylines.length <= 1 ? polylines : polylines.filter((p) => p.id === focusId)),
     [polylines, focusId],
   );
+  // Savunma: focusId var ama mevcut polylines'ta yoksa (şehir değişimi → bayat id)
+  // "odak yok" say → genel-bakış fit'i bloklanmasın (kamera eski şehirde asılı kalmaz)
+  const hasValidFocus = !!focusId && polylines.some((p) => p.id === focusId);
 
   const allCoords = useMemo(() => {
     const c: { latitude: number; longitude: number }[] = [];
@@ -296,9 +299,9 @@ export default function OSMMap({
     }
   };
 
-  // Marker sayısı YA DA şehir bölgesi değişince genel bakışa sığdır — ama bir rota
-  // ODAKTAYKEN karışma (odaklı rotanın durakları eklenince kamera kaçmasın)
-  useEffect(() => { if (ready && !focusId) fitAll(); /* eslint-disable-next-line */ },
+  // Marker sayısı YA DA şehir bölgesi değişince genel bakışa sığdır — ama GEÇERLİ bir
+  // rota ODAKTAYKEN karışma (odaklı rotanın durakları eklenince kamera kaçmasın)
+  useEffect(() => { if (ready && !hasValidFocus) fitAll(); /* eslint-disable-next-line */ },
     [ready, markers.length, homeRegion?.latitude, homeRegion?.longitude]);
 
   // Odak değişimi: seçili rotaya uç (alt overlay'in ÜSTÜNE sığdır); seçim kalkınca genel bakışa dön
